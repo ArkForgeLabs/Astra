@@ -1,60 +1,16 @@
-[package]
+[workspace.package]
 name = "astra"
-version = "0.7.1"
+version = "0.8.0"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
 description = "Experimental LuaJIT webserver framework written in Rust + Axum"
 edition = "2021"
 license = "Apache-2.0"
 exclude = ["examples"]
 
-[features]
-default = ["sqlx", "compression"]
-sqlx = ["dep:sqlx"]
-compression = [
-    "dep:tower",
-    "tower-http/compression-full",
-    "tower-http/decompression-full",
-]
-
-[dependencies]
-axum = { version = "0.8.0", features = ["macros", "multipart"] }
-bytes = { version = "1.9.0", features = ["serde"] }
-chrono = { version = "0.4.39", features = ["serde"] }
-dotenvy = "0.15.7"
-mlua = { version = "0.10.2", features = [
-    "luajit",
-    "serialize",
-    "vendored",
-    "async",
-    "send",
-    "error-send",
-    "macros",
-    "anyhow",
-] }
-reqwest = { version = "0.12.11", features = [
-    "json",
-    "rustls-tls",
-    "charset",
-    "http2",
-    "macos-system-configuration",
-], default-features = false }
-serde = { version = "1.0.216", features = ["derive"] }
-serde_json = "1.0.133"
-sqlx = { version = "0.8.2", features = [
-    "runtime-tokio",
-    "tls-rustls",
-    "postgres",
-    "json",
-    "chrono",
-    "uuid",
-], optional = true }
-tokio = { version = "1.42.0", features = ["macros", "rt-multi-thread"] }
-toml = "0.8.19"
-tower = { version = "0.5.2", optional = true }
-tower-http = { version = "0.6.2", features = ["fs", "trace"] }
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-uuid = { version = "1.11.0", features = ["serde", "v4"] }
+[workspace]
+members = ["src/*"]
+exclude = ["src/docs", "src/lua"]
+resolver = "2"
 
 [profile.release]
 opt-level = 3

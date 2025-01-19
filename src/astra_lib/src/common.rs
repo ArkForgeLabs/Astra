@@ -4,7 +4,7 @@ pub static LUA: LazyLock<mlua::Lua> = LazyLock::new(mlua::Lua::new);
 
 pub async fn init() {
     let lua = &LUA;
-    let lib = include_str!("./lua/astra_bundle.lua");
+    let lib = include_str!("../../lua/astra_bundle.lua");
 
     #[allow(clippy::expect_used)]
     lua.load(lib)
