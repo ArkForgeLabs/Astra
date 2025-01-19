@@ -24,12 +24,11 @@ dotenvy = "0.15.7"
 mlua = { version = "0.10.2", features = [
     "luajit",
     "serialize",
-    "vendored",
     "async",
-    "send",
-    "error-send",
     "macros",
     "anyhow",
+    "module",
+    "userdata-wrappers",
 ] }
 reqwest = { version = "0.12.11", features = [
     "json",

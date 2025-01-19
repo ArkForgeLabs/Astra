@@ -1,4 +1,5 @@
-use crate::common::LUA;
+use std::sync::{Arc, Mutex};
+
 use axum::{
     body::Body,
     http::Request,
@@ -7,6 +8,11 @@ use axum::{
     Router,
 };
 use mlua::LuaSerdeExt;
+
+#[derive(Debug, Clone)]
+struct InternalState {
+    routes: Vec<Route>,
+}
 
 #[derive(Debug, Clone, Copy, mlua::FromLua, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -31,31 +37,31 @@ pub struct Route {
 }
 
 pub async fn route(details: Route, request: Request<Body>) -> axum::response::Response {
-    let request = {
-        match LUA.create_userdata(crate::requests::RequestLua::new(request).await) {
-            Ok(v) => Some(v),
-            Err(e) => {
-                eprintln!("Could not construct request: {e:#?}");
+    let request = crate::requests::RequestLua::new(request).await;
+    // let request = {
+    //     match lua.create_userdata(request) {
+    //         Ok(v) => Some(v),
+    //         Err(e) => {
+    //             eprintln!("Could not construct request: {e:#?}");
 
-                None
-            }
-        }
-    };
+    //             None
+    //         }
+    //     }
+    // };
     let mut response: axum::http::Response<Body>;
 
-    #[inline]
-    fn handle_result(result: mlua::Result<mlua::Value>) -> axum::http::Response<Body> {
+    let handle_result = |result: mlua::Result<mlua::Value>| -> axum::http::Response<Body> {
         match result {
             Ok(value) => match value {
                 mlua::Value::String(plain) => plain.to_string_lossy().into_response(),
-                mlua::Value::Table(_) => match LUA.from_value::<serde_json::Value>(value.clone()) {
-                    Ok(result) => axum::Json(result).into_response(),
-                    Err(e) => {
-                        eprintln!("Result Parsing Error: {e}");
+                // mlua::Value::Table(_) => match lua.from_value::<serde_json::Value>(value.clone()) {
+                //     Ok(result) => axum::Json(result).into_response(),
+                //     Err(e) => {
+                //         eprintln!("Result Parsing Error: {e}");
 
-                        axum::http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
-                    }
-                },
+                //         axum::http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
+                //     }
+                // },
                 _ => axum::http::StatusCode::OK.into_response(),
             },
             Err(e) => {
@@ -64,51 +70,53 @@ pub async fn route(details: Route, request: Request<Body>) -> axum::response::Re
                 axum::http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }
         }
-    }
+    };
+
+    let response_details = crate::responses::ResponseLua::new();
 
     // if a response userdata can be created
-    match LUA.create_userdata(crate::responses::ResponseLua::new()) {
-        Ok(response_details) => {
-            response = handle_result(
-                details
-                    .function
-                    .call_async::<mlua::Value>((request, response_details.clone()))
-                    .await,
-            );
+    response = handle_result(
+        details
+            .function
+            .call_async::<mlua::Value>((request, response_details.clone()))
+            .await,
+    );
 
-            if let Ok(response_details) = response_details.borrow::<crate::responses::ResponseLua>()
-            {
-                *response.status_mut() = response_details.status_code;
+    // if let Ok(response_details) = response_details.borrow::<crate::responses::ResponseLua>() {
+    *response.status_mut() = response_details.status_code;
 
-                for (key, value) in response_details.headers.iter() {
-                    response.headers_mut().insert(key, value.clone());
-                }
-            }
-
-            response
-        }
-        Err(e) => {
-            eprintln!("Could not craft a response details userdata: {e:#?}");
-            response = handle_result(details.function.call_async::<mlua::Value>(request).await);
-            response
-        }
+    for (key, value) in response_details.headers.iter() {
+        response.headers_mut().insert(key, value.clone());
     }
+    // }
+
+    response
+    // match lua.create_userdata(crate::responses::ResponseLua::new()) {
+    //     Ok(response_details) => {
+    //     }
+    //     Err(e) => {
+    //         eprintln!("Could not craft a response details userdata: {e:#?}");
+    //         response = handle_result(details.function.call_async::<mlua::Value>(request).await);
+    //         response
+    //     }
+    // }
 }
 
-pub fn load_routes() -> Router {
-    let mut router = Router::new();
+async fn handler(request: Request<Body>) {}
+
+pub fn load_routes(lua: &mlua::Lua) -> Router {
     let mut routes = Vec::new();
     #[allow(clippy::unwrap_used)]
-    LUA.globals()
+    lua.globals()
         .get::<mlua::Table>("Astra")
         .unwrap()
         .for_each(|_key: mlua::Value, entry: mlua::Value| {
             if let Some(entry) = entry.as_table() {
                 routes.push(crate::routes::Route {
-                    path: LUA.from_value(entry.get("path")?)?,
-                    static_dir: LUA.from_value(entry.get("static_dir")?)?,
-                    static_file: LUA.from_value(entry.get("static_file")?)?,
-                    method: LUA.from_value(entry.get("method")?)?,
+                    path: lua.from_value(entry.get("path")?)?,
+                    static_dir: lua.from_value(entry.get("static_dir")?)?,
+                    static_file: lua.from_value(entry.get("static_file")?)?,
+                    method: lua.from_value(entry.get("method")?)?,
                     function: entry.get::<mlua::Function>("func")?,
                 });
             }
@@ -117,16 +125,18 @@ pub fn load_routes() -> Router {
         })
         .unwrap();
 
+    let state = InternalState {
+        routes: routes.clone(),
+    };
+
+    let mut router = Router::new();
     for route_values in routes.clone() {
         let path = route_values.path.clone();
         let path = path.as_str();
 
         macro_rules! match_routes {
             ($route_function:expr) => {
-                router.route(
-                    path,
-                    $route_function(|request: Request<Body>| route(route_values, request)),
-                )
+                router.route(path, $route_function(handler))
             };
         }
 
@@ -170,5 +180,5 @@ pub fn load_routes() -> Router {
         }
     };
 
-    router
+    router.with_state(Arc::new(state))
 }

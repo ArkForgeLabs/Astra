@@ -1,7 +1,5 @@
 use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 
-use crate::common::LUA;
-
 #[derive(Debug, Clone)]
 pub struct ResponseLua {
     pub status_code: StatusCode,
@@ -63,8 +61,8 @@ impl mlua::UserData for ResponseLua {
             }
         });
 
-        methods.add_method("get_headers", |_, this, ()| {
-            let header_map = LUA.create_table()?;
+        methods.add_method("get_headers", |lua, this, ()| {
+            let header_map = lua.create_table()?;
 
             for (key, value) in this.headers.iter() {
                 header_map.set(key.as_str(), String::from_utf8_lossy(value.as_bytes()))?;

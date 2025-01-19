@@ -1,9 +1,9 @@
 use mlua::LuaSerdeExt;
-use std::sync::LazyLock;
-pub static LUA: LazyLock<mlua::Lua> = LazyLock::new(mlua::Lua::new);
+// use std::sync::LazyLock;
+// pub static LUA: LazyLock<mlua::Lua> = LazyLock::new(mlua::Lua::new);
 
 pub async fn init() {
-    let lua = &LUA;
+    let lua = &mlua::Lua::new();
     let lib = include_str!("../../lua/astra_bundle.lua");
 
     #[allow(clippy::expect_used)]
@@ -119,9 +119,9 @@ impl mlua::UserData for BodyLua {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("text", |_, this, ()| Ok(this.body_string.clone()));
 
-        methods.add_method("json", |_, this, ()| {
+        methods.add_method("json", |lua, this, ()| {
             match serde_json::from_str::<serde_json::Value>(&this.body_string) {
-                Ok(body_json) => Ok(LUA.to_value(&body_json)?),
+                Ok(body_json) => Ok(lua.to_value(&body_json)?),
                 Err(e) => Err(mlua::Error::runtime(format!(
                     "Could not parse the body as JSON: {e:#?}"
                 ))),

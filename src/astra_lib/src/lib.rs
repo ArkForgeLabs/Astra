@@ -3,6 +3,7 @@
 
 // TODO: support different lua versions
 
+use mlua::UserData;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod common;
@@ -16,7 +17,7 @@ pub struct Astra {
     pub routes: Vec<routes::Route>,
 }
 impl Astra {
-    pub fn run(&self) {
+    pub fn run(&self, lua: &mlua::Lua) {
         #[allow(clippy::expect_used)]
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
@@ -39,13 +40,13 @@ impl Astra {
 
                 let mut listener_address = "127.0.0.1:8080".to_string();
 
-                if let Ok(settings) = common::LUA.globals().get::<mlua::Table>("Astra") {
-                    if let Ok(hostname) = settings.get::<String>("hostname") {
-                        if let Ok(port) = settings.get::<u16>("port") {
-                            listener_address = format!("{hostname}:{port}");
-                        }
-                    }
-                }
+                // if let Ok(settings) = common::LUA.globals().get::<mlua::Table>("Astra") {
+                //     if let Ok(hostname) = settings.get::<String>("hostname") {
+                //         if let Ok(port) = settings.get::<u16>("port") {
+                //             listener_address = format!("{hostname}:{port}");
+                //         }
+                //     }
+                // }
 
                 #[allow(clippy::unwrap_used)]
                 let listener = tokio::net::TcpListener::bind(listener_address.clone())
@@ -55,7 +56,30 @@ impl Astra {
                 println!("🚀 Listening at: http://{listener_address}");
 
                 #[allow(clippy::unwrap_used)]
-                axum::serve(listener, routes::load_routes()).await.unwrap();
+                axum::serve(listener, routes::load_routes(lua))
+                    .await
+                    .unwrap();
             })
     }
+
+    pub fn test(&self) {
+        println!("{:?}", self.routes);
+    }
+}
+
+impl UserData for Astra {
+    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
+        methods.add_method("test", |_, this, ()| {
+            this.test();
+
+            Ok(())
+        });
+    }
+}
+
+#[mlua::lua_module]
+fn new_astra(lua: &mlua::Lua) -> mlua::Result<Astra> {
+    let astra = Astra::default();
+
+    Ok(astra)
 }
