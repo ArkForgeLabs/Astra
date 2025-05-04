@@ -4,7 +4,6 @@
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod cli;
-mod components;
 
 #[tokio::main]
 async fn main() {

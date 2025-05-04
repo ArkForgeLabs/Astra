@@ -275,9 +275,9 @@ fn prepare_prelude(include_utils: bool) -> (String, String) {
     }
 
     let lib = {
-        let lib = include_str!("./lua/astra_bundle.lua").to_string();
+        let lib = include_str!("../../lua/astra_bundle.lua").to_string();
         if include_utils {
-            let utils_lib = include_str!("./lua/astra_utils.lua");
+            let utils_lib = include_str!("../../lua/astra_utils.lua");
             format!("{utils_lib}\n{lib}")
         } else {
             lib

@@ -1,11 +1,10 @@
-[package]
-name = "lua-astra"
+[workspace.package]
+name = "astra"
 version = "0.19.1"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
-description = "🔥 Blazingly Fast 🔥 web server runtime for Lua"
+description = "🔥 Blazingly Fast 🔥 web server runtime for Lua and Python"
 documentation = "https://astra.arkforge.net/docs/latest"
 repository = "https://github.com/ArkForgeLabs/Astra"
-keywords = ["lua", "luau", "server", "webserver", "runtime"]
 categories = [
     "web-programming",
     "web-programming::http-server",
@@ -16,31 +15,10 @@ edition = "2024"
 license = "Apache-2.0"
 exclude = ["examples", "docs"]
 
-[[bin]]
-name = "astra"
-path = "src/main.rs"
+[workspace]
+members = ["src/lua_bin"]
 
-[features]
-default = ["luajit"]
-luajit = ["mlua/luajit"]
-luajit52 = ["mlua/luajit52"]
-luau = ["mlua/luau"]
-lua51 = ["mlua/lua51"]
-lua52 = ["mlua/lua52"]
-lua53 = ["mlua/lua53"]
-lua54 = ["mlua/lua54"]
-
-[dependencies]
-mlua = { version = "0.10.3", features = [
-    "serialize",
-    "vendored",
-    "async",
-    "send",
-    "error-send",
-    "macros",
-    "anyhow",
-] }
-
+[workspace.dependencies]
 # http
 axum = { version = "0.8.3", features = ["macros", "multipart"] }
 axum-extra = { version = "0.10.1", features = ["cookie"] }
