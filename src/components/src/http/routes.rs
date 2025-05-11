@@ -1,11 +1,8 @@
-use crate::{
-    cli::LUA,
-    components::http::{
-        configs::RouteConfiguration,
-        requests::{self, RequestLua},
-        responses::{self, CookieOperation},
-        routes,
-    },
+use crate::http::{
+    configs::RouteConfiguration,
+    requests::{self, RequestLua},
+    responses::{self, CookieOperation},
+    routes,
 };
 use axum::{
     Router,
@@ -106,9 +103,7 @@ pub async fn route(
     }
 }
 
-pub fn load_routes() -> Router {
-    let lua = &LUA;
-
+pub fn load_routes(lua: &mlua::Lua) -> Router {
     let mut router = Router::new();
     let mut routes = Vec::new();
     #[allow(clippy::unwrap_used)]
@@ -141,8 +136,9 @@ pub fn load_routes() -> Router {
 
         macro_rules! match_routes {
             ($route_function:expr) => {{
-                let mut route_function =
-                    $route_function(|request: Request<Body>| route(lua, route_values, request));
+                let mut route_function = $route_function(move |request: Request<Body>| {
+                    route(&lua, route_values, request)
+                });
                 if let Some(body_limit) = body_limit {
                     route_function = route_function.layer(DefaultBodyLimit::max(body_limit))
                 }

@@ -1,5 +1,5 @@
 use mlua::LuaSerdeExt;
-
+use tokio::sync::OnceCell;
 mod crypto;
 mod database;
 mod fileio;
@@ -8,6 +8,9 @@ pub mod http;
 mod http_client_request;
 mod require;
 mod tasks;
+
+/// Global script path.
+pub static SCRIPT_PATH: OnceCell<std::path::PathBuf> = OnceCell::const_new();
 
 pub trait AstraComponent {
     fn register_to_lua(lua: &mlua::Lua) -> impl std::future::Future<Output = mlua::Result<()>>;

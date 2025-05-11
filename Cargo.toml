@@ -16,9 +16,19 @@ license = "Apache-2.0"
 exclude = ["examples", "docs"]
 
 [workspace]
-members = ["src/lua_bin"]
+members = ["src/components", "src/lua_bin"]
 
 [workspace.dependencies]
+mlua = { version = "0.10.3", features = [
+    "serialize",
+    "vendored",
+    "async",
+    "send",
+    "error-send",
+    "macros",
+    "anyhow",
+] }
+
 # http
 axum = { version = "0.8.3", features = ["macros", "multipart"] }
 axum-extra = { version = "0.10.1", features = ["cookie"] }

@@ -1,5 +1,5 @@
 use super::cookie::LuaCookie;
-use crate::components::BodyLua;
+use crate::BodyLua;
 use axum::{
     body::Body,
     extract::{FromRequest, FromRequestParts, Multipart, State},

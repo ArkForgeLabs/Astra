@@ -26,18 +26,11 @@ lua53 = ["mlua/lua53"]
 lua54 = ["mlua/lua54"]
 
 [dependencies]
-mlua = { version = "0.10.3", features = [
-    "serialize",
-    "vendored",
-    "async",
-    "send",
-    "error-send",
-    "macros",
-    "anyhow",
-] }
+mlua = { workspace = true }
 
 reqwest = { workspace = true }
 serde_json = { workspace = true }
+components = { path = "../components" }
 
 # runtime
 tokio = { workspace = true }

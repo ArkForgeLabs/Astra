@@ -1,3 +1,4 @@
+use crate::AstraComponent;
 use mlua::UserData;
 use std::future::Future;
 
@@ -22,7 +23,7 @@ where
 }
 
 pub struct LuaTask {}
-impl crate::components::AstraComponent for LuaTask {
+impl AstraComponent for LuaTask {
     async fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let function = lua.create_async_function(|_, callback: mlua::Function| async move {
             Ok(create_async_function(async move {
@@ -37,7 +38,7 @@ impl crate::components::AstraComponent for LuaTask {
 }
 
 pub struct LuaTimeout {}
-impl crate::components::AstraComponent for LuaTimeout {
+impl AstraComponent for LuaTimeout {
     async fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let function = lua.create_async_function(
             |_, (callback, sleep_length): (mlua::Function, u64)| async move {
@@ -57,7 +58,7 @@ impl crate::components::AstraComponent for LuaTimeout {
 }
 
 pub struct LuaInterval {}
-impl crate::components::AstraComponent for LuaInterval {
+impl AstraComponent for LuaInterval {
     async fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let function = lua.create_async_function(
             |_, (callback, sleep_length): (mlua::Function, u64)| async move {

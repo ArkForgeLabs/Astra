@@ -11,7 +11,7 @@ pub enum DatabaseType {
 pub struct Database {
     pub db: DatabaseType,
 }
-impl crate::components::AstraComponent for Database {
+impl crate::AstraComponent for Database {
     async fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let database_constructor = lua.create_async_function(
             |_, (database_type, url, max_connections): (String, String, Option<u32>)| async move {

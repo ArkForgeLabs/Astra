@@ -1,4 +1,4 @@
-use crate::components::BodyLua;
+use crate::BodyLua;
 use mlua::{LuaSerdeExt, UserData};
 use reqwest::{Client, RequestBuilder};
 use std::collections::HashMap;
@@ -13,7 +13,7 @@ pub struct HTTPClientRequest {
     pub body_file: Option<String>,
     pub form: HashMap<String, String>,
 }
-impl crate::components::AstraComponent for HTTPClientRequest {
+impl crate::AstraComponent for HTTPClientRequest {
     async fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let function = lua.create_function(|_, url: String| {
             Ok(Self {

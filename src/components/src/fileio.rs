@@ -1,8 +1,8 @@
-use crate::cli::SCRIPT_PATH;
+use crate::SCRIPT_PATH;
 use mlua::UserData;
 
 pub struct FileIO {}
-impl crate::components::AstraComponent for FileIO {
+impl crate::AstraComponent for FileIO {
     async fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let astra_io = lua.create_table()?;
 

@@ -1,5 +1,6 @@
 // Cryptography util. Currently supporting only SHA2 and SHA3 (256 and 512 variants)
 
+use crate::AstraComponent;
 use base64::{
     Engine,
     prelude::{BASE64_STANDARD, BASE64_URL_SAFE},
@@ -71,7 +72,7 @@ impl LuaCrypto {
         }
     }
 }
-impl crate::components::AstraComponent for LuaCrypto {
+impl AstraComponent for LuaCrypto {
     async fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let hash_function = lua.create_function(|_, (hash_type, input): (String, String)| {
             Ok(Self::hash(hash_type, input))

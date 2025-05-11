@@ -34,7 +34,7 @@ pub async fn register_run_function(lua: &mlua::Lua) -> mlua::Result<()> {
             println!("🚀 Listening at: http://{listener_address}");
 
             #[allow(clippy::unwrap_used)]
-            axum::serve(listener, crate::components::http::routes::load_routes())
+            axum::serve(listener, crate::http::routes::load_routes(&lua))
                 .await
                 .unwrap();
 

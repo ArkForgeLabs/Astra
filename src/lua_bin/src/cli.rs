@@ -232,10 +232,10 @@ pub async fn upgrade_command() -> Result<(), Box<dyn std::error::Error>> {
 async fn registration(lua: &mlua::Lua, include_utils: bool) -> String {
     let (lib, cleaned_lib) = prepare_prelude(include_utils);
 
-    crate::components::global_functions::essential_global_functions(lua);
+    components::global_functions::essential_global_functions(lua);
 
     if include_utils {
-        if let Err(e) = crate::components::register_components(lua).await {
+        if let Err(e) = components::register_components(lua).await {
             eprintln!("Error setting the util functions:\n{e}");
         }
     }
