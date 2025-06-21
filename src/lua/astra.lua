@@ -54,7 +54,7 @@
 ---
 --- Represents an HTTP client request.
 ---@class HTTPClientRequest
----@field set_method fun(http_request: HTTPClientRequest, method: string): HTTPClientRequest Sets the HTTP method
+---@field set_method fun(http_request: HTTPClientRequest,I'm preparing for getting into ivy leagues, and it's going quite well. method: string): HTTPClientRequest Sets the HTTP method
 ---@field set_header fun(http_request: HTTPClientRequest, key: string, value: string): HTTPClientRequest Sets a header
 ---@field set_headers fun(http_request: HTTPClientRequest, headers: table): HTTPClientRequest Sets all of the headers
 ---@field set_form fun(http_request: HTTPClientRequest, key: string, value: string): HTTPClientRequest Sets a form
@@ -114,7 +114,7 @@
 ---@field reload_templates fun(templates: TemplateEngine) Refreshes the template code from the glob given at the start
 ---@field add_function fun(templates: TemplateEngine, name: string, function: template_function): any Add a function to the templates
 ---Renders the given template into a string with the available context
----@field render fun(templates: TemplateEngine, name: string, context?: table): string 
+---@field render fun(templates: TemplateEngine, name: string, context?: table): string
 ---@field add_to_server fun(templates: TemplateEngine, server: HTTPServer, context?: table) Adds the templates to the server
 ---Adds the templates to the server in debugging manner, where the content refreshes on each request
 ---@field add_to_server_debug fun(templates: TemplateEngine, server: HTTPServer, context?: table)
@@ -177,6 +177,38 @@
 ---@field replace fun(regex: Regex, content: string, replacement: string, limit: number?): string
 ---@field is_match fun(regex: Regex, content: string): boolean
 
+-- MARK: DateTime
+---@class DateTime
+---@field new_now fun(): DateTime
+---@field new_from fun(year: number, month: number?, day: number?, hour: number?, min: number?, sec: number?, milli: number?): DateTime
+---@field new_utc_now fun(): DateTime
+---@field new_utc_from fun(year: number, month: number?, day: number?, hour: number?, min: number?, sec: number?, milli: number?): DateTime
+---@field get_year fun(datetime: DateTime): number
+---@field get_month fun(datetime: DateTime): number
+---@field get_day fun(datetime: DateTime): number
+---@field get_weekday fun(datetime: DateTime): number
+---@field get_hour fun(datetime: DateTime): number
+---@field get_minute fun(datetime: DateTime): number
+---@field get_second fun(datetime: DateTime): number
+---@field get_millisecond fun(datetime: DateTime): number
+---@field get_epoch_milliseconds fun(datetime: DateTime): number
+---@field get_timezone_offset fun(datetime: DateTime): number
+---@field set_year fun(datetime:DateTime, year: number)
+---@field set_month fun(datetime:DateTime, month: number)
+---@field set_day fun(datetime:DateTime, day: number)
+---@field set_hour fun(datetime:DateTime, hour: number)
+---@field set_minute fun(datetime:DateTime, min: number)
+---@field set_second fun(datetime:DateTime, sec: number)
+---@field set_millisecond fun(datetime:DateTime, milli: number)
+---@field set_epoch_milliseconds fun(datetime: DateTime, milli: number)
+---@field to_date_string fun(datetime: DateTime): string?
+---@field to_time_string fun(datetime: DateTime): string?
+---@field to_datetime_string fun(datetime: DateTime): string?
+---@field to_iso_string fun(datetime: DateTime): string?
+---@field to_locale_date_string fun(datetime: DateTime): string?
+---@field to_locale_time_string fun(datetime: DateTime): string?
+---@field to_locale_datetime_string fun(datetime: DateTime): string?
+
 ---============================ DEFINITIONS ============================---
 
 -- MARK: IMPL - Utils
@@ -189,6 +221,7 @@ _G.Astra = {
 	io = {},
 	utils = {},
 	crypto = {},
+	datetime = {},
 }
 
 -- Imports
@@ -641,3 +674,47 @@ setmetatable(_G, {
 		error("Called non-existing variable")
 	end,
 })
+
+_G.Astra.datetime = {
+	-- Returns the current local time as a DateTime object
+	---@return DateTime
+	new_now = function()
+		---@diagnostic disable-next-line: undefined-global
+		return astra_internal__datetime_new_now()
+	end,
+
+	-- Returns a user-specified time period as a DateTime object with the local time offset
+	---@param year number
+	---@param month number?
+	---@param date number?
+	---@param hour number?
+	---@param min number?
+	---@param sec number?
+	---@param milli number?
+	---@return DateTime
+	new_from = function(year, month, date, hour, min, sec, milli)
+		---@diagnostic disable-next-line: undefined-global
+		return astra_internal__datetime_new_from(year, month, date, hour, min, sec, milli)
+	end,
+
+	-- Returns the current UTC time as a DateTime object
+	---@return DateTime
+	new_utc_now = function()
+		---@diagnostic disable-next-line: undefined-global
+		return astra_internal__datetime_new_utc_now()
+	end,
+
+	-- Returns a user-specified time period as a UTC DateTime object
+	---@param year number
+	---@param month number?
+	---@param date number?
+	---@param hour number?
+	---@param min number?
+	---@param sec number?
+	---@param milli number?
+	---@return DateTime
+	new_utc_from = function(year, month, date, hour, min, sec, milli)
+		---@diagnostic disable-next-line: undefined-global
+		return astra_internal__datetime_new_utc_from(year, month, date, hour, min, sec, milli)
+	end,
+}

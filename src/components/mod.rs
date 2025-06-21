@@ -1,5 +1,6 @@
 use mlua::LuaSerdeExt;
 
+mod chrono;
 mod crypto;
 mod database;
 mod fileio;
@@ -22,6 +23,7 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     // tera_templating::TemplatingEngine::register_to_lua(lua)?;
     jinja_templating::TemplatingEngine::register_to_lua(lua)?;
     regex::LuaRegex::register_to_lua(lua)?;
+    chrono::LuaDateTime::register_to_lua(lua)?;
 
     Ok(())
 }
