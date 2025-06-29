@@ -188,9 +188,8 @@ async fn registration(lua: &mlua::Lua) -> String {
 }
 
 fn prepare_prelude() -> (String, String) {
-    //! Make a global hashmap for each Rust native lib to add type definition
-    //! And here add the libs through crabtime comptime lib
-    //! And connect everything to astra.lua so that it can be ran on runtime with customization
+    let lua_libs = include_dir::include_dir!("./src/lua/libs");
+    println!("{lua_libs:#?}");
 
     /// Filters lines between start and end markers.
     fn filter(input: String, start: &str, end: &str) -> String {
@@ -212,7 +211,7 @@ fn prepare_prelude() -> (String, String) {
         new_lines.join("\n")
     }
 
-    let lib = include_str!("./lua/astra_bundle.lua").to_string();
+    let lib = "".to_string();
 
     let lib = filter(lib, "--- @START_REMOVING_PACK", "--- @END_REMOVING_PACK");
     let cleaned_lib = filter(

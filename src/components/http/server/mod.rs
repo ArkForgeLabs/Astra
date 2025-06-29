@@ -4,7 +4,7 @@ mod requests;
 mod responses;
 mod routes;
 
-pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
+pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<&'static str> {
     // Register function for running the server
     lua.globals().set(
         "astra_internal__start_server",
@@ -40,5 +40,5 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         })?,
     )?;
 
-    Ok(())
+    Ok(include_str!("http.lua"))
 }

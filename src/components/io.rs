@@ -1,7 +1,7 @@
 use crate::SCRIPT_PATH;
 use mlua::UserData;
 
-pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
+pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<&'static str> {
     let lua_globals = lua.globals();
 
     lua_globals.set(
@@ -139,7 +139,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.create_function(|_, ()| Ok(SCRIPT_PATH.get().cloned()))?,
     )?;
 
-    Ok(())
+    Ok(include_str!("io.lua"))
 }
 
 struct AstraFileMetadata(std::fs::Metadata);

@@ -3,8 +3,8 @@ use mlua::UserData;
 pub struct LuaRegex {
     re: regex::Regex,
 }
-impl super::AstraComponent for LuaRegex {
-    fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
+impl LuaRegex {
+    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<&'static str> {
         let function = lua.create_function(|_, regex_string: String| {
             match regex::Regex::new(&regex_string) {
                 Ok(re) => Ok(Self { re }),
@@ -15,7 +15,7 @@ impl super::AstraComponent for LuaRegex {
         })?;
         lua.globals().set("astra_internal__regex", function)?;
 
-        Ok(())
+        Ok(include_str!("regex.lua"))
     }
 }
 impl UserData for LuaRegex {

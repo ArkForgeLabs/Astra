@@ -13,8 +13,8 @@ pub struct HTTPClientRequest {
     pub body_file: Option<String>,
     pub form: HashMap<String, String>,
 }
-impl crate::components::AstraComponent for HTTPClientRequest {
-    fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
+impl HTTPClientRequest {
+    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let function = lua.create_function(|_, url: String| {
             Ok(Self {
                 url,
@@ -28,8 +28,7 @@ impl crate::components::AstraComponent for HTTPClientRequest {
         })?;
         lua.globals().set("astra_internal__http_request", function)
     }
-}
-impl HTTPClientRequest {
+
     pub async fn request_builder(&self) -> RequestBuilder {
         let mut client = match self.method.to_uppercase().as_str() {
             "POST" => Client::new().post(&self.url),

@@ -1,6 +1,6 @@
 use mlua::{LuaSerdeExt, UserData};
 
-pub fn register_to_lua(lua: &mlua::Lua) {
+pub fn register_to_lua(lua: &mlua::Lua) -> &'static str {
     dotenv_function(lua);
     pprint(lua);
     import(lua);
@@ -14,6 +14,8 @@ pub fn register_to_lua(lua: &mlua::Lua) {
     spawn_task(lua);
     spawn_interval(lua);
     spawn_timeout(lua);
+
+    include_str!("global.lua")
 }
 
 pub fn dotenv_function(lua: &mlua::Lua) {
@@ -215,7 +217,6 @@ fn import(lua: &mlua::Lua) {
             return Ok(mlua::Value::Nil);
         }
 
-        // TODO: check if this fixes imports
         let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
         let key_id = key_id.as_str();
 
