@@ -25,17 +25,17 @@ pub async fn run_command(file_path: String, extra_args: Option<Vec<String>>) {
     if let Some(extra_args) = extra_args {
         if let Ok(args) = lua.create_table() {
             if let Err(e) = args.set(0, file_path.clone()) {
-                eprintln!("Error adding arg to the args list: {e:?}");
+                tracing::error!("Error adding arg to the args list: {e:?}");
             }
 
             for (index, value) in extra_args.into_iter().enumerate() {
                 if let Err(e) = args.set((index + 1) as i32, value) {
-                    eprintln!("Error adding arg to the args list: {e:?}");
+                    tracing::error!("Error adding arg to the args list: {e:?}");
                 }
             }
 
             if let Err(e) = lua.globals().set("arg", args) {
-                eprintln!("Error setting the global variable ARGS: {e:?}");
+                tracing::error!("Error setting the global variable ARGS: {e:?}");
             }
         }
     }
@@ -44,7 +44,7 @@ pub async fn run_command(file_path: String, extra_args: Option<Vec<String>>) {
     #[allow(clippy::expect_used)]
     let user_file = std::fs::read_to_string(&file_path).expect("Couldn't read file");
     if let Err(e) = lua.load(user_file).set_name(file_path).exec_async().await {
-        eprintln!("{e}");
+        tracing::error!("{e}");
     }
 
     // Wait for all Tokio tasks to finish.
@@ -197,22 +197,21 @@ pub async fn upgrade_command(user_agent: Option<String>) -> Result<(), Box<dyn s
 
 /// Registers Lua components.
 async fn registration(lua: &mlua::Lua) {
-    let mut lua_lib = prepare_prelude();
+    let mut lua_lib: Vec<(String, String)> = Vec::new();
 
-    #[allow(clippy::expect_used)]
-    let std_lib = crate::components::register_components(lua)
-        .await
-        .expect("Error setting up the standard library");
-
-    // Set Astra version in Lua globals.
-    if let Err(e) = lua
-        .globals()
-        .set("astra_internal__version", crate_version!())
+    let folder_path = if let Ok(file) = tokio::fs::read_to_string(".luarc.json").await
+        && let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&file)
+        && let Some(parsed) = parsed.as_object()
+        && let Some(parsed) = parsed.get("workspace.library")
+        && let Some(parsed) = parsed.as_array()
+        && let Some(folder_path) = parsed.first()
+        && let Some(folder_path) = folder_path.as_str()
     {
-        eprintln!("Error adding version to Astra: {e:#?}");
-    }
-
-    lua_lib.extend(std_lib);
+        folder_path.to_string()
+    } else {
+        ".astra".to_string()
+    };
+    if let Ok(files) = tokio::fs::read_dir(folder_path).await {}
 
     for (file_name, content) in lua_lib {
         if let Err(e) = lua
@@ -221,7 +220,7 @@ async fn registration(lua: &mlua::Lua) {
             .exec_async()
             .await
         {
-            eprintln!("Couldn't add prelude:\n{e}");
+            tracing::error!("Couldn't add prelude:\n{e}");
         }
     }
 }
