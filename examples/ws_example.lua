@@ -2,11 +2,16 @@ local server = Astra.http.server:new()
 
 ---@param socket WebSocket
 local function handle_socket(socket)
+    print("Connection opened!")
     while true do
         local message, err = socket:recv()
 
         if not message then
             print("failed to receive a frame: ", err)
+            break
+        end
+        if message.type == "close" then
+            print("Connection closed")
             break
         end
         if message.type == "text" then
