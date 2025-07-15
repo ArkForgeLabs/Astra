@@ -52,6 +52,46 @@ Astra.http.server = {}
 ---@field get_http_only fun(cookie: Cookie): boolean?
 ---@field get_max_age fun(cookie: Cookie): number?
 
+---@class CloseFrame
+---@field code integer
+---@field reason string
+
+---@class WebSocketMessage
+---@field type "text" | "binary" | "ping" | "pong" | "close"
+---@field data string
+
+---@class WebSocket
+---Receive another message. Returns `nil` if the stream has closed.
+---@field recv fun(socket: WebSocket): WebSocketMessage|nil, nil|string
+---
+---A text WebSocket message
+---@field send_text fun(socket: WebSocket, message: string): boolean|nil, nil|string
+---
+---A binary WebSocket message
+---@field send_binary fun(socket: WebSocket, bytes: string): boolean|nil, nil|string
+---
+---A ping message with the specified payload
+---
+---The payload here must have a length less than 125 bytes.
+---
+---Ping messages will be automatically responded to by the server,
+---so you do not have to worry about dealing with them yourself.
+---@field send_ping fun(socket: WebSocket, bytes: string): boolean|nil, nil|string
+---
+---A pong message with the specified payload
+---
+---The payload here must have a length less than 125 bytes.
+---
+---Pong messages will be automatically sent to the client if a ping message is received,
+---so you do not have to worry about constructing them yourself unless you want to implement a unidirectional heartbeat.
+---@field send_pong fun(socket: WebSocket, bytes: string): boolean|nil, nil|string
+---
+---@field send_close fun(socket: WebSocket, close_frame: CloseFrame?): boolean|nil, nil|string
+
+
+---@alias wscallback fun(socket: WebSocket): any
+
+
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
@@ -169,6 +209,18 @@ function HTTPServer:static_file(path, serve_path, config)
 		method = "static_file",
 		func = function() end,
 		static_file = serve_path,
+		config = config or {},
+	})
+end
+
+---@param path string
+---@param wscallback wscallback
+---@param config table?	// TODO: make a type for websocket config
+function HTTPServer:ws(path, wscallback, config)
+	table.insert(self.routes, {
+		path = path,
+		method = "websocket",
+		func = wscallback,
 		config = config or {},
 	})
 end
