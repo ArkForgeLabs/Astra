@@ -6,7 +6,7 @@ The the middleware pattern was inspired by Clojure community.
 
 ```lua
 local server = Astra.http.server:new()
-local middleware = Astra.http.middleware
+local middleware = Astra.middleware
 local chain = middleware.chain
 
 local function sunny_day(_request, _response)

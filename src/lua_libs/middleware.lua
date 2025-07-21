@@ -1,6 +1,6 @@
 ---@meta
 
-Astra.http.middleware = {}
+Astra.middleware = {}
 
 --- `on Entry:`
 --- Include *on Entry* description if the middleware does something before calling *next_handler*
@@ -63,7 +63,7 @@ end
 ---     end
 --- end
 --- ```
-function Astra.http.middleware.chain(chain)
+function Astra.middleware.chain(chain)
     return function(handler)
         assert(type(handler) == "function",
             "Handler must be a function, got " .. type(handler))
@@ -84,7 +84,7 @@ end
 
 --- `on Entry:`
 --- Creates a new `ctx` table and passes it as a third argument into the `next_handler`
-function Astra.http.middleware.context(next_handler)
+function Astra.middleware.context(next_handler)
     ---@param request HTTPServerRequest
     ---@param response HTTPServerResponse
     return function(request, response)
@@ -99,7 +99,7 @@ end
 
 --- `on Entry:`
 --- Logs request method and uri into the console via `print()`
-function Astra.http.middleware.console_logger(next_handler)
+function Astra.middleware.console_logger(next_handler)
     ---@param request HTTPServerRequest
     ---@param response HTTPServerResponse
     ---@param ctx table
@@ -113,7 +113,7 @@ end
 --- Logs request method and uri into the file
 ---@param file_handler file* A file handler opened with an append mode `io.open("filepath", "a")`
 ---@param flush_interval number? The number of log entries after which the file handler will be flushed
-function Astra.http.middleware.file_logger(file_handler, flush_interval)
+function Astra.middleware.file_logger(file_handler, flush_interval)
     local flush_interval = flush_interval or 1
     local flush_countdown = flush_interval
     return function(next_handler)
@@ -140,7 +140,7 @@ end
 
 --- `on Leave:`
 --- sets `"Content-Type": "text/html"` response header
-function Astra.http.middleware.html(next_handler)
+function Astra.middleware.html(next_handler)
     ---@param request HTTPServerRequest
     ---@param response HTTPServerResponse
     return function(request, response, ctx)
