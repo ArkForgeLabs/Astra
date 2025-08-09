@@ -263,14 +263,43 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
         final_lib.insert(0, value);
     }
 
+    let mut failed_to_load_modules: Vec<(String, String)> = Vec::new();
     for (file_name, content) in final_lib {
-        if let Err(e) = lua
+        match lua
             .load(content.as_str())
-            .set_name(file_name)
+            .set_name(&file_name)
             .exec_async()
             .await
         {
-            tracing::error!("Couldn't add prelude:\n{e}");
+            Err(e) => {
+                if e.to_string().contains("attempt to index a nil value") {
+                    // If the error contains this substring, it most likely means that
+                    // the current module depends on some module that has not yet been loaded.
+
+                    // Let's give such modules a second chance to be loaded later.
+                    failed_to_load_modules.insert(0, (file_name, content));
+                    //println!("{}", e);
+                } else {
+                    tracing::error!("Couldn't add prelude :\n{e}")
+                }
+            }
+            Ok(_result) => (), //println!("{:?} {}", _result, file_name),
+        }
+    }
+
+    // Try to load those modules again.
+    for (file_name, content) in failed_to_load_modules {
+        //println!("second try {}", file_name);
+        match lua
+            .load(content.as_str())
+            .set_name(&file_name)
+            .exec_async()
+            .await
+        {
+            Err(e) => {
+                tracing::error!("Couldn't add prelude:\n{e}");
+            }
+            Ok(_result) => (), //println!("{:?} {}", _result, file_name),
         }
     }
 }
