@@ -1209,7 +1209,7 @@ print(decoded)
 <h1 id="sql-driver"><a class="header" href="#sql-driver">SQL Driver</a></h1>
 <p>If your server requires access to an SQL database such as PostgreSQL and SQLite, Astra provides utilities for basic connection and querying.</p>
 <pre><code class="language-lua">-- connect to your db
-local db = database_connect("postgres", "postgres://astra_postgres:password@localhost/astr_database")
+local db = Astra.database_connect("postgres", "postgres://astra_postgres:password@localhost/astr_database")
 
 -- You can execute queries to the database along with optional parameters
 db:execute([[
@@ -1511,8 +1511,150 @@ local dt = Astra.datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
 
 </style>
 <h1 id="middleware"><a class="header" href="#middleware">Middleware</a></h1>
-<p><em>TL;DR</em></p>
-<p>The the middleware pattern was inspired by Clojure community.</p>
+<p>Middleware modifies the way a request is processed.</p>
+<p>Since Lua is a very flexible language, there are lots of ways to implement middlewares.</p>
+<p>We decided to take an advantage of Lua functions being a <a href="https://www.lua.org/pil/6.html">first-class values</a>.</p>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>If you are familiar with this concept, feel free to go to the <strong>Full example</strong> at the bottom of the page.</p>
+</div>
+<p>Astra has several built-in middlewares. You can modify or extend middlewares directly in <code>.astra/middleware.lua</code> (after running <code>astra export</code>) or in your own files. We are opened to PRs.</p>
+<p>For more details, see the <a href="https://github.com/ArkForgeLabs/Astra/blob/main/src/components/http/middleware.lua">middleware.lua</a> and the <a href="https://github.com/ArkForgeLabs/Astra/tree/main/examples/middleware.lua">middleware_example.lua</a>.</p>
+<h2 id="basic-middleware"><a class="header" href="#basic-middleware">Basic middleware</a></h2>
+<p>The following example shows the most basic middleware that changes the response headers.</p>
+<pre><code class="language-lua">local server = Astra.http.server:new()
+
+local function sunny_day(request, response)
+    return "What a great sunny day!"
+end
+
+--- `on Leave:`
+--- sets `"Content-Type": "text/html"` response header
+local function html(next_handler)
+    return function(request, response, ctx)
+        result = next_handler(request, response, ctx)
+        response:set_header("Content-Type", "text/html")
+        return result
+    end
+end
+
+server:get("/sunny-day-plain-text", sunny_day)
+server:get("/sunny-day-html", html(sunny_day))
+
+server:run()
+</code></pre>
+<h2 id="context"><a class="header" href="#context">Context</a></h2>
+<p>When we want to pass data through middleware, we can use the third argument and treat it as a context table.</p>
+<pre><code class="language-lua">local server = Astra.http.server:new()
+
+---@param ctx { datetime: DateTime }
+local function favourite_day(_request, _response, ctx)
+    local today = string.format(
+        "%d/%d/%d",
+        ctx.datetime:get_day(),
+        ctx.datetime:get_month(),
+        ctx.datetime:get_year()
+    )
+    return "My favourite day is " .. today
+end
+
+--- `on Entry:`
+--- Inserts `Astra.datetime.new()` into `ctx.datetime`
+---
+--- `Depends on:`
+--- `ctx`
+local function insert_datetime(next_handler)
+    return function(request, response, ctx)
+        ctx.datetime = Astra.datetime.new()
+        return next_handler(request, response, ctx)
+    end
+end
+
+--- `on Entry:`
+--- Creates a new `ctx` table and passes it as a third argument into the `next_handler`
+local function ctx(next_handler)
+    return function(request, response)
+        local ctx = {}
+        return next_handler(request, response, ctx)
+    end
+end
+
+--- `on Leave:`
+--- sets `"Content-Type": "text/html"` response header
+local function html(next_handler)
+    return function(request, response, ctx)
+        result = next_handler(request, response, ctx)
+        response:set_header("Content-Type", "text/html")
+        return result
+    end
+end
+
+server:get("/favourite-day", ctx(insert_datetime(html(favourite_day))))
+
+server:run()
+</code></pre>
+<h2 id="chaining-middlewares"><a class="header" href="#chaining-middlewares">Chaining middlewares</a></h2>
+<p>To make it less tedious to compose middleware, we introduced the <code>chain</code> function, which combines all provided middleware into a single middleware.</p>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>Read more about why we can drop parenthesis while calling <code>chain</code> function here: <a href="https://leafo.net/guides/dsl-in-lua.html">Writing a DSL in Lua</a></p>
+</div>
+<pre><code class="language-lua">local middleware = Astra.http.middleware
+local chain = middleware.chain
+
+-- This will behave exactly the same as ctx(insert_datetime(html(favourite_day)))
+server:get("/favourite-day", chain {ctx, insert_datetime, html} (favourite_day) )
+
+-- We can create a common middlewares and reuse them
+local composed_middleware = chain {ctx, insert_datetime, html}
+server:get("/favourite-day-again", composed_middleware(favourite_day))
+
+server:run()
+</code></pre>
+<h2 id="complex-middleware"><a class="header" href="#complex-middleware">Complex middleware</a></h2>
+<p>We can use Lua <a href="https://www.lua.org/pil/6.1.html">closures</a> to create more complex middlewares.</p>
+<p>This example shows how to create a file logger:</p>
+<pre><code class="language-lua">--- `on Entry:`
+--- Logs request method and uri into the file
+---@param file_handler file* A file handler opened with an append mode `io.open("filepath", "a")`
+---@param flush_interval number? The number of log entries after which the file handler will be flushed
+local function file_logger(file_handler, flush_interval)
+    local flush_interval = flush_interval or 1
+    local flush_countdown = flush_interval
+    return function(next_handler)
+        return function(request, response, ctx)
+            local str = string.format("[New Request %s] %s %s\n", os.date(), request:method(), request:uri())
+            file_handler:write(str)
+
+            flush_countdown = flush_countdown - 1
+            if flush_countdown == 0 then
+                file_handler:flush()
+                flush_countdown = flush_interval
+            end
+            return next_handler(request, response, ctx)
+        end
+    end
+end
+local file_handler, err = io.open("logs.txt", "a")
+if not file_handler then error(err) end
+local logger = file_logger(file_handler)
+
+local common = chain { ctx, logger, html }
+
+server:get("/sunny-day", common(sunny_day))
+server:get("/normal-day", common(normal_day))
+server:get("/favourite-day", chain { common, insert_datetime } (favourite_day))
+
+server:run()
+</code></pre>
+<p>The <code>logger</code> we got from the <code>file_logger</code> is gonna be used in all routes we pass it as a middleware.</p>
+<h2 id="full-example"><a class="header" href="#full-example">Full example</a></h2>
 <pre><code class="language-lua">local server = Astra.http.server:new()
 local middleware = Astra.http.middleware
 local chain = middleware.chain
@@ -1599,12 +1741,6 @@ server:get("/favourite-day", chain { ctx, logger, insert_datetime, html } (favou
 server:run()
 
 </code></pre>
-<h2 id="handler-wrappers"><a class="header" href="#handler-wrappers">Handler wrappers</a></h2>
-<p>Middleware in Astra is usually built using functions. Middleware wraps the handler in a function that can modify the way a request is processed.</p>
-<p>To make composing middlewares less tedious, we introduce a <code>chain</code> function that combines all provided handlers into a single handler.</p>
-<p>We use a context table to pass data through the handlers.</p>
-<p>Astra has several built-in middlewares. You can modify or extend middlewares directly in <code>.astra/middleware.lua</code> (after running <code>astra export</code>) or in your own files. We are opened to PRs.</p>
-<p>For more details, see the <a href="https://github.com/ArkForgeLabs/Astra/tree/main/src/lua_libs/middleware.lua">middleware.lua</a> and the <a href="https://github.com/ArkForgeLabs/Astra/tree/main/examples/middleware.lua">middleware_example.lua</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
