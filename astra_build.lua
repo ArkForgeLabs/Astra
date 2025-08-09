@@ -90,7 +90,7 @@ local function execute_build_docs()
 end
 
 local function main(args)
-    if #args <= 0 then
+    if args == nil or #args <= 0 then
         print_usage()
         return
     end
