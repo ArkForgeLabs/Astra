@@ -263,14 +263,63 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
         final_lib.insert(0, value);
     }
 
+    let rerun_limit = 100;
+    let mut failed_to_load_modules: Vec<(String, String)> = Vec::new();
+
+    // First attempt to load all modules
     for (file_name, content) in final_lib {
-        if let Err(e) = lua
+        match lua
             .load(content.as_str())
-            .set_name(file_name)
+            .set_name(&file_name)
             .exec_async()
             .await
         {
-            tracing::error!("Couldn't add prelude:\n{e}");
+            Err(e) => {
+                if e.to_string().contains("attempt to index a nil value") {
+                    failed_to_load_modules.insert(0, (file_name, content));
+                } else {
+                    tracing::error!("Couldn't add prelude:\n{e}");
+                }
+            }
+            Ok(_result) => (),
+        }
+    }
+
+    for _ in 0..rerun_limit {
+        if failed_to_load_modules.is_empty() {
+            break; // All modules have been loaded successfully
+        }
+
+        let mut new_failed_modules: Vec<(String, String)> = Vec::new();
+
+        for (file_name, content) in failed_to_load_modules {
+            match lua
+                .load(content.as_str())
+                .set_name(&file_name)
+                .exec_async()
+                .await
+            {
+                Err(e) => {
+                    if e.to_string().contains("attempt to index a nil value") {
+                        new_failed_modules.insert(0, (file_name, content));
+                    } else {
+                        tracing::error!("Couldn't add prelude:\n{e}");
+                    }
+                }
+                Ok(_result) => (),
+            }
+        }
+
+        failed_to_load_modules = new_failed_modules;
+    }
+
+    if !failed_to_load_modules.is_empty() {
+        for (file_name, _) in failed_to_load_modules {
+            tracing::error!(
+                "Failed to load module '{}' after {} retries",
+                file_name,
+                rerun_limit
+            );
         }
     }
 }
