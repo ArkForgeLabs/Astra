@@ -77,6 +77,7 @@ Requests are provided as the first argument of the route callbacks as a table (n
 
 - body: `Body`
 - headers: `table<string, string>`
+- params: `table<string, string | number>`
 - uri: `string`
 - queries: `table<any, any>`
 - method: `string`

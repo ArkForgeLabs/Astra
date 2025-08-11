@@ -19,21 +19,24 @@ Astra.http.server = {}
 
 ---@class HTTPServerRequest
 ---@field method fun(request: HTTPServerRequest): string Returns the HTTP method (e.g., "GET", "POST").
----@field uri fun(request: HTTPServerRequest): string Returns the URI of the request.
----@field queries fun(request: HTTPServerRequest): table Returns the query list.
----@field headers fun(request: HTTPServerRequest): table Returns a table containing the headers of the request.
+---@field uri fun(request: HTTPServerRequest): string
+---@field queries fun(request: HTTPServerRequest): table
+---@field params fun(request: HTTPServerRequest): table
+---@field headers fun(request: HTTPServerRequest): table
 ---@field body fun(request: HTTPServerRequest): HTTPBody|nil Returns the body of the request, which can be a table or a string.
----@field multipart fun(request: HTTPServerRequest): HTTPMultipart|nil Returns a multipart if available.
----@field get_cookie fun(request: HTTPServerRequest, name: string): Cookie Returns a cookie
----@field new_cookie fun(request: HTTPServerRequest, name: string, value: string): Cookie Returns a cookie
+---@field multipart fun(request: HTTPServerRequest): HTTPMultipart|nil
+---@field get_cookie fun(request: HTTPServerRequest, name: string): Cookie
+---@field new_cookie fun(request: HTTPServerRequest, name: string, value: string): Cookie
 
 ---@class HTTPServerResponse
----@field set_status_code fun(response: HTTPServerResponse, new_status_code: number) Sets the HTTP status code of the response
----@field set_header fun(response: HTTPServerResponse, key: string, value: string) Sets a header
----@field get_headers fun(response: HTTPServerResponse): table|nil Returns the entire headers list that so far has been set for the response
----@field remove_header fun(response: HTTPServerResponse, key: string) Removes a header from the headers list
----@field set_cookie fun(response: HTTPServerResponse, cookie: Cookie) Sets a cookie
----@field remove_cookie fun(response: HTTPServerResponse, cookie: Cookie) Removes a cookie from the list
+---Sets the HTTP status code of the response
+---@field set_status_code fun(response: HTTPServerResponse, new_status_code: number)
+---@field set_header fun(response: HTTPServerResponse, key: string, value: string)
+---Returns the entire headers list that so far has been set for the response
+---@field get_headers fun(response: HTTPServerResponse): table|nil
+---@field remove_header fun(response: HTTPServerResponse, key: string)
+---@field set_cookie fun(response: HTTPServerResponse, cookie: Cookie)
+---@field remove_cookie fun(response: HTTPServerResponse, cookie: Cookie)
 
 ---@class Cookie
 ---@field set_name fun(cookie: Cookie, name: string)

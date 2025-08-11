@@ -2,7 +2,7 @@ use super::cookie::LuaCookie;
 use crate::components::BodyLua;
 use axum::{
     body::Body,
-    extract::{FromRequest, FromRequestParts, Multipart, State},
+    extract::{FromRequest, FromRequestParts, Multipart, RawPathParams, State},
     http::{Request, request::Parts},
 };
 use axum_extra::extract::{CookieJar, cookie::Cookie};
@@ -58,6 +58,25 @@ impl UserData for RequestLua {
                     "Could not parse queries: {e:?}"
                 ))),
             }
+        });
+        methods.add_async_method("params", |lua, this, ()| async move {
+            let raw_path_params = RawPathParams::from_request_parts(&mut this.parts.clone(), &())
+                .await
+                .map_err(|e| mlua::Error::runtime(format!("Failed to extract path params: {e}")))?;
+
+            let params_table = lua.create_table()?;
+
+            for (key, value) in &raw_path_params {
+                if let Ok(value) = value.parse::<i32>() {
+                    params_table.set(key, value)?;
+                } else if let Ok(value) = value.parse::<f32>() {
+                    params_table.set(key, value)?;
+                } else {
+                    params_table.set(key, value)?;
+                }
+            }
+
+            Ok(params_table)
         });
         methods.add_async_method("multipart", |_, this, ()| async move {
             // TODO remove the cloning usage

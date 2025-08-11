@@ -2,6 +2,68 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.27.0](https://github.com/ArkForgeLabs/Astra/compare/v0.26.0..v0.27.0) - 2025-07-18
+
+### Features
+
+- [**breaking**] multiple of datetime creation methods was replaced by `Astra.datetime.new` - ([25e9c21](https://github.com/ArkForgeLabs/Astra/commit/25e9c21e86d5cdc8aa2bdfaa4e86aa7485b32a15))
+
+## [0.26.0](https://github.com/ArkForgeLabs/Astra/compare/v0.25.1..v0.26.0) - 2025-07-17
+
+### Bug Fixes
+
+- delegate subcounter and enforce type preference - ([6b98b67](https://github.com/ArkForgeLabs/Astra/commit/6b98b678d4752378603ae309626102cfe39f2e82))
+
+### Documentation
+
+- data stores - ([a9f36c7](https://github.com/ArkForgeLabs/Astra/commit/a9f36c7286c9654aff1fcadbea1269bf0aa2b7c4))
+- finished `data-stores` docs - ([d9c57a2](https://github.com/ArkForgeLabs/Astra/commit/d9c57a24906ce5a4e0f7246b7b81fc6017bb2a34))
+
+### Features
+
+- implement observer pattern - ([14141a4](https://github.com/ArkForgeLabs/Astra/commit/14141a485910c72f89682ba13f2cd63d45d5566e))
+
+### Miscellaneous Chores
+
+- prefer function type for publish - ([ad6e812](https://github.com/ArkForgeLabs/Astra/commit/ad6e8124076c62babbeffb4a7f74b4c9d89a75a2))
+
+### Performance
+
+- hashed tables for observee-subscriber sets #26 - ([3a7ae14](https://github.com/ArkForgeLabs/Astra/commit/3a7ae14fbfdbd80bd3edd86527fe80ddc50c06df))
+- use a hash table to store subscribers - ([75f10be](https://github.com/ArkForgeLabs/Astra/commit/75f10be1db022c8df8db60ce07b4f30fae3d4a11))
+
+### Refactoring
+
+- add type hints - ([d165b53](https://github.com/ArkForgeLabs/Astra/commit/d165b53c0435b04a4ff223d0b5f01afc6b2b6657))
+- moved observable under `Astra` - ([e7c86ff](https://github.com/ArkForgeLabs/Astra/commit/e7c86ff1063d3eb1ba808a211707df34a16b8220))
+
+## [0.25.1](https://github.com/ArkForgeLabs/Astra/compare/v0.25.0..v0.25.1) - 2025-07-16
+
+### Bug Fixes
+
+- exported modules aren't interpreted - ([4c052d8](https://github.com/ArkForgeLabs/Astra/commit/4c052d8a8e56f2f4f8777688a68fe67c874d4aa1))
+
+### Refactoring
+
+- always checks for .astra folder first - ([756d768](https://github.com/ArkForgeLabs/Astra/commit/756d7681abcbe457476567b8ca67dd2b4a1a5a7f))
+
+## [0.25.0](https://github.com/ArkForgeLabs/Astra/compare/v0.24.1..v0.24.2) - 2025-07-16
+
+### Features
+
+- implement pubsub stores #26 - ([ec958c9](https://github.com/ArkForgeLabs/Astra/commit/ec958c9fce8514e60b4c6fcb3f0980b1f7d78b0a))
+- implement pubsub stores (#75) - ([cf1089b](https://github.com/ArkForgeLabs/Astra/commit/cf1089b827bad1c9f7a6bca5073ec5ffa8af1ba5))
+- the runtime now prioritizes loading the locally exported modules instead of bundled modules - ([64b0869](https://github.com/ArkForgeLabs/Astra/commit/64b0869258933d95c1bca3d8f579dde09c6cda58))
+
+### Miscellaneous Chores
+
+- read the default folder or loaded folder from .luarc.json - ([6761d5b](https://github.com/ArkForgeLabs/Astra/commit/6761d5b26d9aa80b04b14b31c55ee414742ffe5a))
+
+### Refactoring
+
+- move pubsub under `Astra` - ([7901c39](https://github.com/ArkForgeLabs/Astra/commit/7901c39c120d647f52f3b9d739f164e8f79e38da))
+- #26 - ([7901c39](https://github.com/ArkForgeLabs/Astra/commit/7901c39c120d647f52f3b9d739f164e8f79e38da))
+
 ## [0.24.1](https://github.com/ArkForgeLabs/Astra/compare/v0.24.0..0.24.1) - 2025-07-10
 
 ### Bug Fixes

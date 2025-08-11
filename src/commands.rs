@@ -51,6 +51,8 @@ pub async fn run_command(
         tracing::error!("{e}");
     }
 
+    // TODO: JOIN ALL TASKS HERE, AND EXIT IN CASE OF ERROR
+
     // Wait for all Tokio tasks to finish.
     let metrics = tokio::runtime::Handle::current().metrics();
     loop {
@@ -63,7 +65,7 @@ pub async fn run_command(
 
 /// Exports the Lua bundle.
 pub async fn export_bundle_command(folder_path: Option<String>) {
-    let mut lua_lib = prepare_prelude();
+    let mut lua_lib = pure_lua_libs();
     #[allow(clippy::expect_used)]
     let std_lib = crate::components::register_components(&LUA)
         .await
@@ -72,6 +74,7 @@ pub async fn export_bundle_command(folder_path: Option<String>) {
 
     let folder_path = std::path::Path::new(&folder_path.unwrap_or(".".to_string())).join(".astra");
 
+    let _ = std::fs::remove_dir_all(&folder_path);
     let _ = std::fs::create_dir_all(&folder_path);
     for (file_path, content) in lua_lib {
         // Write the bundled library to the file.
@@ -191,7 +194,13 @@ pub async fn upgrade_command(user_agent: Option<String>) -> Result<(), Box<dyn s
                 .spawn();
         }
 
-        println!("Done! Enjoy!");
+        println!(
+            r#"🚀 Update complete!
+
+Some of the next steps could be updating the exported type definitions:
+
+astra export"#
+        );
     } else {
         println!("Already up to date!");
     }
@@ -206,7 +215,11 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
     let folder_path = stdlib_path.unwrap_or(
         // get the folder path from .luarc.json
         // { "workspace.library": ["./folder_path"] }
-        if let Ok(file) = tokio::fs::read_to_string(".luarc.json").await
+        if let Ok(exists) = tokio::fs::try_exists(".astra").await
+            && exists
+        {
+            ".astra".to_string()
+        } else if let Ok(file) = tokio::fs::read_to_string(".luarc.json").await
             && let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&file)
             && let Some(parsed) = parsed.as_object()
             && let Some(parsed) = parsed.get("workspace.library")
@@ -216,46 +229,102 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
         {
             folder_path.to_string()
         } else {
-            ".astra".to_string()
+            "".to_string()
         },
     );
     if let Ok(mut files) = tokio::fs::read_dir(folder_path).await {
         // add them to the lua_lib for being sent to interpretation
-        #[allow(for_loops_over_fallibles)]
-        for file in files.next_entry().await {
-            if let Some(file) = file
+        while let Ok(Some(file)) = files.next_entry().await {
+            if (file.path().ends_with("lua") || file.path().ends_with("luau")) // make sure only lua files are loaded
                 && let Ok(content) = tokio::fs::read_to_string(file.path()).await
             {
                 lua_lib.push((file.path().to_string_lossy().to_string(), content));
             }
         }
-    } else {
-        // if the folder couldn't be opened or issues existed
-        lua_lib = prepare_prelude()
     }
+    if lua_lib.is_empty() {
+        // if the folder couldn't be opened or issues existed
+        #[allow(clippy::expect_used)]
+        let registration = crate::components::register_components(lua)
+            .await
+            .expect("Error setting up the standard library");
+
+        lua_lib = registration;
+    }
+    let mut final_lib = pure_lua_libs();
+    final_lib.extend(lua_lib);
 
     // Try to make astra.lua the first to get interpreted
-    if let Some(index) = lua_lib.iter().position(|entry| {
+    if let Some(index) = final_lib.iter().position(|entry| {
         let name = entry.0.to_ascii_lowercase();
         name == "astra.lua"
     }) {
-        let value = lua_lib.remove(index);
-        lua_lib.insert(0, value);
+        let value = final_lib.remove(index);
+        final_lib.insert(0, value);
     }
 
-    for (file_name, content) in lua_lib {
-        if let Err(e) = lua
+    let rerun_limit = 100;
+    let mut failed_to_load_modules: Vec<(String, String)> = Vec::new();
+
+    // First attempt to load all modules
+    for (file_name, content) in final_lib {
+        match lua
             .load(content.as_str())
-            .set_name(file_name)
+            .set_name(&file_name)
             .exec_async()
             .await
         {
-            tracing::error!("Couldn't add prelude:\n{e}");
+            Err(e) => {
+                if e.to_string().contains("attempt to index a nil value") {
+                    failed_to_load_modules.insert(0, (file_name, content));
+                } else {
+                    tracing::error!("Couldn't add prelude:\n{e}");
+                }
+            }
+            Ok(_result) => (),
+        }
+    }
+
+    for _ in 0..rerun_limit {
+        if failed_to_load_modules.is_empty() {
+            break; // All modules have been loaded successfully
+        }
+
+        let mut new_failed_modules: Vec<(String, String)> = Vec::new();
+
+        for (file_name, content) in failed_to_load_modules {
+            match lua
+                .load(content.as_str())
+                .set_name(&file_name)
+                .exec_async()
+                .await
+            {
+                Err(e) => {
+                    if e.to_string().contains("attempt to index a nil value") {
+                        new_failed_modules.insert(0, (file_name, content));
+                    } else {
+                        tracing::error!("Couldn't add prelude:\n{e}");
+                    }
+                }
+                Ok(_result) => (),
+            }
+        }
+
+        failed_to_load_modules = new_failed_modules;
+    }
+
+    if !failed_to_load_modules.is_empty() {
+        for (file_name, _) in failed_to_load_modules {
+            tracing::error!(
+                "Failed to load module '{}' after {} retries",
+                file_name,
+                rerun_limit
+            );
         }
     }
 }
 
-fn prepare_prelude() -> Vec<(String, String)> {
+fn pure_lua_libs() -> Vec<(String, String)> {
     let mut lua_lib = include_dir::include_dir!("./src/lua_libs")
         .files()
         .filter_map(|file| {

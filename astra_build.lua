@@ -37,11 +37,7 @@ local function execute_command_in_subdirectories(directory, ignore, command)
             local full_path = directory .. "/" .. file
 
             -- Check if the entry is a directory
-            local is_dir = os.execute("test -d " .. full_path) == 0
-            if runtime == "lua" then
-                ---@diagnostic disable-next-line: cast-local-type
-                is_dir = os.execute("test -d " .. full_path)
-            end
+            local is_dir = Astra.io.get_metadata(full_path):file_type():is_dir()
 
             if is_dir then
                 print("Executing command in directory: " .. full_path)
@@ -90,7 +86,7 @@ local function execute_build_docs()
 end
 
 local function main(args)
-    if #args <= 0 then
+    if args == nil or #args <= 0 then
         print_usage()
         return
     end

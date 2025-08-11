@@ -5,6 +5,11 @@ server:get("/", function()
 	return "hello from default Astra instance! " .. Astra.version
 end)
 
+-- The path parameters also works
+server:get("/{id}", function (request)
+	return "The value of id is: " .. request:params().id
+end)
+
 -- You can also use the local variables within routes
 local counter = 0
 server:get("/count", function()
@@ -14,8 +19,8 @@ server:get("/count", function()
 end)
 
 -- The request parameter is optional but contains useful information
-server:get("/headers", function(req)
-	return req:headers()
+server:get("/headers", function(request)
+	return request:headers()
 end)
 
 -- Run the server

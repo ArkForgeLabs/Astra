@@ -3,5 +3,8 @@
     "workspace.library": [
         "src"
     ],
+    "runtime.special": {
+        "import": "require"
+    },
     "runtime.version": "LuaJIT"
 }

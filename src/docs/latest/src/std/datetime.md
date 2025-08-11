@@ -4,9 +4,7 @@ Astra provides date & time functionality as an extension to the standard library
 
 ```lua
 -- Returns a DateTime object which corresponds to the current date, time & local offset from UTC.
-local dt = Astra.datetime.new_now()
--- or for UTC
-local dt = Astra.datetime.new_utc_now()
+local dt = Astra.datetime.new()
 
 -- Returns a DateTime object which corresponds to the provided date and/or time arguments & local offset from UTC.
 -- You can provide the following arguments:
@@ -20,9 +18,10 @@ local dt = Astra.datetime.new_utc_now()
 --
 -- Providing the year is mandatory.
 -- The other values, if not provided, will default to the following in respective order: 1, 1, 0, 0, 0, 0
-local dt = Astra.datetime.new_from(2001, 7, 8, 0, 24, 48, 241)
--- or for UTC
-local dt = Astra.datetime.new_utc_from(2001, 7, 8, 0, 24, 48, 241)
+local dt = Astra.datetime.new(2001, 7, 8, 0, 24, 48, 241)
+
+-- Or parse a string
+local dt = Astra.datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
 ```
 
 Available methods:

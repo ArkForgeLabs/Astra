@@ -32,7 +32,11 @@ pub fn dotenv_function(lua: &mlua::Lua) {
 
 pub fn pprint(lua: &mlua::Lua) {
     if let Ok(function) = lua.create_function(|_, input: mlua::Value| {
-        println!("{input:#?}");
+        if input.is_userdata() {
+            println!("{input:?}");
+        } else {
+            println!("{input:#?}");
+        }
 
         Ok(())
     }) {

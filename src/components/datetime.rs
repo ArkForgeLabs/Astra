@@ -1,10 +1,10 @@
 use chrono::{offset::LocalResult, prelude::*};
-use mlua::UserData;
+use mlua::{FromLua, UserData};
 
+#[derive(Debug, Clone, FromLua)]
 pub struct LuaDateTime {
     dt: DateTime<FixedOffset>,
 }
-
 impl LuaDateTime {
     pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<&'static str> {
         lua.globals().set(
@@ -16,6 +16,23 @@ impl LuaDateTime {
                     Local::now().fixed_offset()
                 };
                 Ok(Self { dt })
+            })?,
+        )?;
+
+        lua.globals().set(
+            "astra_internal__datetime_new_parse",
+            lua.create_function(|_, date_str: String| {
+                match DateTime::parse_from_rfc2822(&date_str) {
+                    Ok(dt) => Ok(Self { dt }),
+                    Err(err1) => match DateTime::parse_from_rfc3339(&date_str) {
+                        Ok(dt) => Ok(Self { dt }),
+                        Err(err2) => Err(mlua::Error::runtime(format!(
+                            "\nRFC 2822 ERR: {:?}\nRFC 3339 ERR: {:?}",
+                            err1.to_string(),
+                            err2.to_string()
+                        ))),
+                    },
+                }
             })?,
         )?;
 
@@ -148,14 +165,30 @@ impl UserData for LuaDateTime {
             }
         });
 
+        methods.add_method("to_utc", |_, this, _: ()| {
+            Ok(Self {
+                dt: this.dt.to_utc().fixed_offset(),
+            })
+        });
+        methods.add_method("to_local", |_, this, _: ()| {
+            let dt: DateTime<chrono::Local> = chrono::DateTime::from(this.dt);
+            Ok(Self {
+                dt: dt.fixed_offset(),
+            })
+        });
+        add_getter_method!("to_rfc2822", to_rfc2822);
+        add_getter_method!("to_rfc3339", to_rfc3339);
         add_formatted_method!("to_date_string", "%a %b %d %Y");
         add_formatted_method!("to_time_string", "%T %Z%z");
         add_formatted_method!("to_datetime_string", "%a %b %d %Y %T %Z%z");
-        methods.add_method("to_iso_string", |_, this, ()| {
-            Ok(this.dt.to_rfc3339_opts(SecondsFormat::Millis, false))
-        });
         add_formatted_method!("to_locale_date_string", "%x");
         add_formatted_method!("to_locale_time_string", "%X");
         add_formatted_method!("to_locale_datetime_string", "%c");
+        methods.add_method("to_iso_string", |_, this, ()| {
+            Ok(this.dt.to_rfc3339_opts(SecondsFormat::Millis, false))
+        });
+        methods.add_method("to_format", |_, this, format: String| {
+            Ok(this.dt.format(&format).to_string())
+        });
     }
 }
