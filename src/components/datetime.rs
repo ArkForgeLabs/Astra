@@ -178,9 +178,9 @@ impl UserData for LuaDateTime {
         });
         add_getter_method!("to_rfc2822", to_rfc2822);
         add_getter_method!("to_rfc3339", to_rfc3339);
-        add_formatted_method!("to_date_string", "%a %b %d %Y");
-        add_formatted_method!("to_time_string", "%T %Z%z");
-        add_formatted_method!("to_datetime_string", "%a %b %d %Y %T %Z%z");
+        add_formatted_method!("to_date_string", "%Y-%m-%d");
+        add_formatted_method!("to_time_string", "%H:%M:%S%.3f%:z");
+        add_formatted_method!("to_datetime_string", "%Y-%m-%dT%H:%M:%S%.3f%:z");
         add_formatted_method!("to_locale_date_string", "%x");
         add_formatted_method!("to_locale_time_string", "%X");
         add_formatted_method!("to_locale_datetime_string", "%c");
