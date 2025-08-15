@@ -10,10 +10,14 @@ use crate::{
 use axum::{
     Router,
     body::Body,
-    extract::DefaultBodyLimit,
+    extract::{
+        DefaultBodyLimit, WebSocketUpgrade,
+        ws::{Message, Utf8Bytes},
+    },
     http::Request,
+    middleware::MapResponseLayer,
     response::IntoResponse,
-    routing::{delete, get, options, patch, post, put, trace},
+    routing::{any, delete, get, options, patch, post, put, trace},
 };
 use axum_extra::extract::{CookieJar, cookie::Cookie};
 use mlua::LuaSerdeExt;
@@ -30,6 +34,7 @@ pub enum Method {
     Trace,
     StaticDir,
     StaticFile,
+    WebSocket,
 }
 #[derive(Debug, Clone, mlua::FromLua)]
 pub struct Route {
@@ -190,6 +195,30 @@ pub fn load_routes(server: mlua::Table) -> Router {
                         router
                     }
                 }
+                Method::WebSocket => router.route(
+                    &route_values.path,
+                    any(|ws: WebSocketUpgrade| async {
+                        #[allow(unused_must_use)]
+                        ws.on_upgrade(|mut socket| async move {
+                            socket.send(Message::Text(Utf8Bytes::from_static(
+                                "hello from websocket ",
+                            )));
+
+                            while let Some(msg) = socket.recv().await {
+                                let msg = if let Ok(msg) = msg {
+                                    println!("{}", msg.to_text().unwrap());
+                                    msg
+                                } else {
+                                    return;
+                                };
+
+                                if socket.send(msg).await.is_err() {
+                                    return;
+                                }
+                            }
+                        });
+                    }),
+                ),
             }
         }
 

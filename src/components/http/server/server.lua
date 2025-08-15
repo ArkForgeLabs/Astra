@@ -91,9 +91,7 @@ Astra.http.server = {}
 ---
 ---@field send_close fun(socket: WebSocket, close_frame: CloseFrame?): boolean|nil, nil|string
 
-
 ---@alias wscallback fun(socket: WebSocket): any
-
 
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
@@ -218,14 +216,9 @@ end
 
 ---@param path string
 ---@param wscallback wscallback
----@param config table?	// TODO: make a type for websocket config
-function HTTPServer:ws(path, wscallback, config)
-	table.insert(self.routes, {
-		path = path,
-		method = "websocket",
-		func = wscallback,
-		config = config or {},
-	})
+---@param config HTTPRouteConfiguration?
+function HTTPServer:websocket(path, wscallback, config)
+	add_to_routes(self, "websocket", path, wscallback, config)
 end
 
 ---Runs the server
