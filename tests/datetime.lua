@@ -178,15 +178,15 @@ end)
 describe('ToString', function()
     local dt = Astra.datetime.new(2020, 12, 25, 10, 30, 45, 500)
     it('to_date_string()', function()
-        expect(dt:to_date_string()).to.equal('Fri Dec 25 2020')
+        expect(dt:to_date_string()).to.equal('2020-12-25')
     end)
 
     it('to_time_string()', function()
-        expect(dt:to_time_string()).to.equal('10:30:45 -06:00-0600')
+        expect(dt:to_time_string()).to.equal('10:30:45.500-06:00')
     end)
 
     it('to_datetime_string()', function()
-        expect(dt:to_datetime_string()).to.equal('Fri Dec 25 2020 10:30:45 -06:00-0600')
+        expect(dt:to_datetime_string()).to.equal('2020-12-25T10:30:45.500-06:00')
     end)
 
     it('to_iso_string()', function()
