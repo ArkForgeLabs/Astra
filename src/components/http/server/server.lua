@@ -218,7 +218,7 @@ end
 ---@param wscallback wscallback
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:websocket(path, wscallback, config)
-	add_to_routes(self, "websocket", path, wscallback, config)
+	add_to_routes(self, "web_socket", path, wscallback, config)
 end
 
 ---Runs the server

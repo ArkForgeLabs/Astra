@@ -10,12 +10,8 @@ use crate::{
 use axum::{
     Router,
     body::Body,
-    extract::{
-        DefaultBodyLimit, WebSocketUpgrade,
-        ws::{Message, Utf8Bytes},
-    },
+    extract::{DefaultBodyLimit, WebSocketUpgrade},
     http::Request,
-    middleware::MapResponseLayer,
     response::IntoResponse,
     routing::{any, delete, get, options, patch, post, put, trace},
 };
@@ -198,25 +194,12 @@ pub fn load_routes(server: mlua::Table) -> Router {
                 Method::WebSocket => router.route(
                     &route_values.path,
                     any(|ws: WebSocketUpgrade| async {
-                        #[allow(unused_must_use)]
                         ws.on_upgrade(|mut socket| async move {
-                            socket.send(Message::Text(Utf8Bytes::from_static(
-                                "hello from websocket ",
-                            )));
-
                             while let Some(msg) = socket.recv().await {
-                                let msg = if let Ok(msg) = msg {
-                                    println!("{}", msg.to_text().unwrap());
-                                    msg
-                                } else {
-                                    return;
-                                };
-
-                                if socket.send(msg).await.is_err() {
-                                    return;
-                                }
+                                //route_values.function.call_async(args).await;
+                                println!("{msg:?}");
                             }
-                        });
+                        })
                     }),
                 ),
             }
