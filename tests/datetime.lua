@@ -1,7 +1,7 @@
 local lust = require 'tests.lust'
 local describe, it, expect = lust.describe, lust.it, lust.expect
 
--- helper function
+-- helper functions
 local function expect_invalid_datetime(args)
     expect(function()
         Astra.datetime.new(unpack(args))
@@ -16,6 +16,7 @@ local function expect_invalid_setter(method_name, values)
     end
 end
 
+-- test cases
 describe('NewDatetimeFullArgs', function()
     local dt = Astra.datetime.new(2025, 7, 8, 0, 24, 48, 241)
     it('get_year()', function()
