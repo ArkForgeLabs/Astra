@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use crate::{
     LUA,
     components::http::server::{
@@ -5,6 +7,7 @@ use crate::{
         requests::{self, RequestLua},
         responses::{self, CookieOperation},
         routes,
+        websocket::AstraWebSocket,
     },
 };
 use axum::{
@@ -12,10 +15,14 @@ use axum::{
     body::Body,
     extract::{DefaultBodyLimit, WebSocketUpgrade},
     http::Request,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     routing::{any, delete, get, options, patch, post, put, trace},
 };
 use axum_extra::extract::{CookieJar, cookie::Cookie};
+use futures_util::{
+    SinkExt, StreamExt,
+    stream::{SplitSink, SplitStream},
+};
 use mlua::LuaSerdeExt;
 
 #[derive(Debug, Clone, Copy, mlua::FromLua, serde::Serialize, serde::Deserialize, PartialEq)]
@@ -194,11 +201,12 @@ pub fn load_routes(server: mlua::Table) -> Router {
                 Method::WebSocket => router.route(
                     &route_values.path,
                     any(|ws: WebSocketUpgrade| async {
-                        ws.on_upgrade(|mut socket| async move {
-                            while let Some(msg) = socket.recv().await {
-                                //route_values.function.call_async(args).await;
-                                println!("{msg:?}");
-                            }
+                        ws.on_failed_upgrade(|err| {
+                            mlua::Error::runtime(format!("failed to upgrade connection: {err}"));
+                        })
+                        .on_upgrade(|socket| async move {
+                            let astra_socket = AstraWebSocket::new(Arc::new(Mutex::new(socket)));
+                            route_values.function.call_async::<()>(astra_socket);
                         })
                     }),
                 ),
