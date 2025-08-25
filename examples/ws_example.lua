@@ -4,7 +4,7 @@ local server = Astra.http.server:new()
 local function handle_socket(socket)
 	print("Connection opened!")
 	while true do
-	    local message, err = socket:recv()
+	    local message = socket:recv()
 end
 
 server:get("/", function()
