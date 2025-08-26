@@ -199,8 +199,8 @@ pub fn load_routes(server: mlua::Table) -> Router {
                             mlua::Error::runtime(format!("failed to upgrade connection: {err}"));
                         })
                         .on_upgrade(|socket| async move {
-                            let lua_socket = LuaWebSocket::new(socket);
-                            route_values.function.call_async::<()>(lua_socket);
+                            let lua_socket = LuaWebSocket(socket);
+                            let _ = route_values.function.call_async::<()>(lua_socket).await;
                         })
                     }),
                 ),
