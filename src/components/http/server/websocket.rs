@@ -134,7 +134,7 @@ impl UserData for LuaWebSocket {
         });
 
         methods.add_async_method_mut(
-            "send_binary",
+            "send_bytes",
             |_, mut this, bytes: mlua::String| async move {
                 match this
                     .0

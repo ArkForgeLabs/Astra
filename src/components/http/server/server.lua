@@ -74,7 +74,7 @@ Astra.http.server = {}
 ---@field send_text fun(socket: WebSocket, message: string)
 ---
 ---A binary WebSocket message
----@field send_binary fun(socket: WebSocket, bytes: string): boolean|nil, nil|string
+---@field send_bytes fun(socket: WebSocket, bytes: string): boolean|nil, nil|string
 ---
 ---A ping message with the specified payload
 ---
