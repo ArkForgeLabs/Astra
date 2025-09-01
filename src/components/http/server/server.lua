@@ -67,8 +67,11 @@ Astra.http.server = {}
 ---Receive another message. Returns `nil` if the stream has closed.
 ---@field recv fun(socket: WebSocket): WebSocketMessage|nil, nil|string
 ---
+---A flexible WebSocket message
+---@field send fun(socket: WebSocket, message: table)
+---
 ---A text WebSocket message
----@field send_text fun(socket: WebSocket, message: string): boolean|nil, nil|string
+---@field send_text fun(socket: WebSocket, message: string)
 ---
 ---A binary WebSocket message
 ---@field send_binary fun(socket: WebSocket, bytes: string): boolean|nil, nil|string

@@ -53,96 +53,145 @@ impl UserData for LuaWebSocket {
         });
 
         methods.add_async_method_mut("send", |_, mut this, message: mlua::Table| async move {
-            let key = message.get::<String>("type").unwrap();
-            let value = message.get::<mlua::Value>("message").unwrap();
+            let msg_type = match message.get::<String>(1) {
+                Ok(val) => val,
+                Err(e) => {
+                    return Err(mlua::Error::runtime(format!(
+                        "message type is not a string: {e}"
+                    )));
+                }
+            };
 
-            let msg = match key.to_lowercase().as_str() {
-                "text" => Ok(Message::Text(Utf8Bytes::from(value.to_string().unwrap()))),
-                "bytes" => Ok(Message::Binary(value_to_bytes(&value).unwrap())),
-                "ping" => Ok(Message::Pong(value_to_bytes(&value).unwrap())),
-                "pong" => Ok(Message::Ping(value_to_bytes(&value).unwrap())),
-                "close" => match value.as_table() {
+            let msg_value = match message.get::<mlua::Value>(2) {
+                Ok(val) => val,
+                Err(e) => {
+                    return Err(mlua::Error::runtime(format!(
+                        "message is not a valid lua value: {e}"
+                    )));
+                }
+            };
+
+            let msg = match msg_type.to_lowercase().as_str() {
+                "text" => match msg_value.to_string() {
+                    Ok(val) => Ok(Message::Text(Utf8Bytes::from(val))),
+                    Err(e) => Err(mlua::Error::runtime(format!(
+                        "could not convert the value to a string: {e}"
+                    ))),
+                },
+                "bytes" => match msg_value.to_string() {
+                    Ok(val) => Ok(Message::Binary(Bytes::from(val))),
+                    Err(e) => Err(mlua::Error::runtime(format!(
+                        "could not convert the value to a string: {e}"
+                    ))),
+                },
+                "ping" => match msg_value.to_string() {
+                    Ok(val) => Ok(Message::Ping(Bytes::from(val))),
+                    Err(e) => Err(mlua::Error::runtime(format!(
+                        "could not convert the value to a string: {e}"
+                    ))),
+                },
+                "pong" => match msg_value.to_string() {
+                    Ok(val) => Ok(Message::Ping(Bytes::from(val))),
+                    Err(e) => Err(mlua::Error::runtime(format!(
+                        "could not convert the value to a string: {e}"
+                    ))),
+                },
+                "close" => match msg_value.as_table() {
                     Some(frame) => Ok(Message::Close(Some(CloseFrame {
-                        code: frame.get::<u16>("code").unwrap(),
-                        reason: Utf8Bytes::from(frame.get::<String>("reason").unwrap()),
+                        code: match frame.get::<u16>(1) {
+                            Ok(code) => code,
+                            Err(_) => 1005,
+                        },
+                        reason: match frame.get::<String>(2) {
+                            Ok(reason) => Utf8Bytes::from(reason),
+                            Err(_) => Utf8Bytes::from_static(""),
+                        },
                     }))),
                     None => Ok(Message::Close(None)),
                 },
                 _ => Err(mlua::Error::runtime("invalid message type")),
-            }
-            .unwrap();
+            };
 
-            Ok(this.0.send(msg).await.unwrap())
+            match msg {
+                Ok(msg) => match this.0.send(msg).await {
+                    Ok(passed) => Ok(passed),
+                    Err(e) => Err(mlua::Error::runtime(format!(
+                        "message could not be sent: {e}"
+                    ))),
+                },
+                Err(e) => Err(mlua::Error::runtime(e)),
+            }
         });
 
         methods.add_async_method_mut("send_text", |_, mut this, message: String| async move {
-            Ok(this
-                .0
-                .send(Message::Text(Utf8Bytes::from(message)))
-                .await
-                .unwrap())
+            match this.0.send(Message::Text(Utf8Bytes::from(message))).await {
+                Ok(passed) => Ok(passed),
+                Err(e) => Err(mlua::Error::runtime(format!(
+                    "message could not be sent: {e}"
+                ))),
+            }
         });
 
         methods.add_async_method_mut(
             "send_binary",
-            |_, mut this, bytes: mlua::Value| async move {
-                Ok(this
+            |_, mut this, bytes: mlua::String| async move {
+                match this
                     .0
-                    .send(Message::Binary(value_to_bytes(&bytes).unwrap()))
+                    .send(Message::Binary(Bytes::from(bytes.to_string_lossy())))
                     .await
-                    .unwrap())
+                {
+                    Ok(passed) => Ok(passed),
+                    Err(e) => Err(mlua::Error::runtime(e)),
+                }
             },
         );
 
-        methods.add_async_method_mut("send_ping", |_, mut this, bytes: mlua::Value| async move {
-            Ok(this
+        methods.add_async_method_mut("send_ping", |_, mut this, bytes: mlua::String| async move {
+            match this
                 .0
-                .send(Message::Ping(value_to_bytes(&bytes).unwrap()))
+                .send(Message::Ping(Bytes::from(bytes.to_string_lossy())))
                 .await
-                .unwrap())
+            {
+                Ok(passed) => Ok(passed),
+                Err(e) => Err(mlua::Error::runtime(e)),
+            }
         });
 
-        methods.add_async_method_mut("send_pong", |_, mut this, bytes: mlua::Value| async move {
-            Ok(this
+        methods.add_async_method_mut("send_pong", |_, mut this, bytes: mlua::String| async move {
+            match this
                 .0
-                .send(Message::Pong(value_to_bytes(&bytes).unwrap()))
+                .send(Message::Pong(Bytes::from(bytes.to_string_lossy())))
                 .await
-                .unwrap())
+            {
+                Ok(passed) => Ok(passed),
+                Err(e) => Err(mlua::Error::runtime(e)),
+            }
         });
 
         methods.add_async_method_mut(
             "send_close",
             |_, mut this, close_frame: Option<mlua::Table>| async move {
-                let close_frame = match close_frame {
-                    Some(frame) => Some(CloseFrame {
-                        code: frame.get::<u16>("code").unwrap(),
-                        reason: Utf8Bytes::from(frame.get::<String>("reason").unwrap()),
-                    }),
-                    None => None,
+                let close_frame: Message = match close_frame {
+                    Some(frame) => Message::Close(Some(CloseFrame {
+                        code: match frame.get::<u16>(1) {
+                            Ok(code) => code,
+                            Err(_) => 1005,
+                        },
+                        reason: match frame.get::<String>(2) {
+                            Ok(reason) => Utf8Bytes::from(reason),
+                            Err(_) => Utf8Bytes::from_static(""),
+                        },
+                    })),
+                    None => Message::Close(None),
                 };
 
-                Ok(this.0.send(Message::Close(close_frame)).await.unwrap())
+                match this.0.send(close_frame).await {
+                    Ok(passed) => Ok(passed),
+                    Err(e) => Err(mlua::Error::runtime(format!(
+                        "message could not be sent: {e}"
+                    ))),
+                }
             },
         );
-    }
-}
-
-fn value_to_bytes(value: &mlua::Value) -> Result<Bytes, mlua::Error> {
-    if value.is_table() {
-        Ok(Bytes::from_iter(
-            value
-                .as_table()
-                .unwrap()
-                .sequence_values::<u8>()
-                .map(|x| x.expect("expected bytes")),
-        ))
-    } else if value.is_string() {
-        Ok(Bytes::from(
-            value
-                .to_string()
-                .expect("cannot convert given string to bytes"),
-        ))
-    } else {
-        Err(mlua::Error::runtime("type cannot be accepted as bytes"))
     }
 }
