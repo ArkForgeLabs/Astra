@@ -4,9 +4,8 @@ local server = Astra.http.server:new()
 local function handle_socket(socket)
 	print("Connection opened!")
 	while true do
-		local message = socket:recv()
-		pprint(message)
-		socket:send_text("hello can this be seen")
+		pprint(socket:recv())
+		socket:send("text", { message = "Hello from the server" })
 	end
 end
 
