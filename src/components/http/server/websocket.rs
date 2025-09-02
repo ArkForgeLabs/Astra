@@ -150,7 +150,7 @@ impl UserData for LuaWebSocket {
                 let close_frame: Message = match close_frame {
                     Some(frame) => Message::Close(Some(CloseFrame {
                         code: frame.get::<u16>(1).unwrap_or(1005),
-                        reason: Utf8Bytes::from(frame.get::<String>(2)?),
+                        reason: Utf8Bytes::from(frame.get::<String>(2).unwrap_or("".to_string())),
                     })),
                     None => Message::Close(None),
                 };
