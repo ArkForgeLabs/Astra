@@ -3,6 +3,7 @@ mod cookie;
 mod requests;
 mod responses;
 mod routes;
+mod websocket;
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     // Register function for running the server
