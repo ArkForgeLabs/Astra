@@ -6,7 +6,7 @@ pub struct LuaDateTime {
     dt: DateTime<FixedOffset>,
 }
 impl LuaDateTime {
-    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<&'static str> {
+    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.globals().set(
             "astra_internal__datetime_new_now",
             lua.create_function(|_, is_utc: bool| {
@@ -85,7 +85,7 @@ impl LuaDateTime {
             )?,
         )?;
 
-        Ok(include_str!("datetime.lua"))
+        Ok(())
     }
 }
 

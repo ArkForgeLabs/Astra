@@ -2,17 +2,48 @@
 #![deny(clippy::expect_used)]
 
 use clap::{Parser, command, crate_authors, crate_version};
-use std::sync::LazyLock;
-use tokio::sync::OnceCell;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod commands;
 mod components;
 
 /// Global Lua instance.
-pub static LUA: LazyLock<mlua::Lua> = LazyLock::new(mlua::Lua::new);
+pub static LUA: std::sync::LazyLock<mlua::Lua> = std::sync::LazyLock::new(mlua::Lua::new);
 /// Global script path.
-pub static SCRIPT_PATH: OnceCell<std::path::PathBuf> = OnceCell::const_new();
+pub static SCRIPT_PATH: tokio::sync::OnceCell<std::path::PathBuf> =
+    tokio::sync::OnceCell::const_new();
+
+pub struct AstraSTDLib {
+    lua_libs: Vec<(String, String)>,
+    teal: String,
+}
+/// Global standard libraries and type definitions from Astra
+pub static ASTRA_STD_LIBS: std::sync::LazyLock<AstraSTDLib> = std::sync::LazyLock::new(|| {
+    let folders = include_dir::include_dir!("language_specific_definitions");
+
+    #[allow(clippy::unwrap_used)]
+    let lua_libs = folders
+        .get_dir("lua")
+        .unwrap()
+        .files()
+        .filter_map(|file| {
+            if let Some(name) = file.path().file_name()
+                && let Some(name) = name.to_str().map(|name| name.to_string())
+                && let Some(content) = file.contents_utf8()
+            {
+                Some((name, content.replace("@ASTRA_VERSION", crate_version!())))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+    // lua_libs.sort_by(|itema, itemb| itema.0.cmp(&itemb.0));
+
+    AstraSTDLib {
+        lua_libs,
+        teal: include_str!("teal.lua").to_string(),
+    }
+});
 
 /// Command-line interface for Astra.
 #[derive(Parser)]

@@ -12,7 +12,7 @@ pub struct Database {
     pub db: Option<DatabaseType>,
 }
 impl Database {
-    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<&'static str> {
+    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let database_constructor = lua.create_async_function(
             |_, (database_type, url, max_connections): (String, String, Option<u32>)| async move {
                 let max_connections = max_connections.unwrap_or(10);
@@ -68,7 +68,7 @@ impl Database {
         lua.globals()
             .set("astra_internal__database_connect", database_constructor)?;
 
-        Ok(include_str!("database.lua"))
+        Ok(())
     }
 }
 impl UserData for Database {

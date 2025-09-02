@@ -1,6 +1,6 @@
 use mlua::{LuaSerdeExt, UserData};
 
-pub fn register_to_lua(lua: &mlua::Lua) -> &'static str {
+pub fn register_to_lua(lua: &mlua::Lua) {
     dotenv_function(lua);
     pprint(lua);
     import(lua);
@@ -14,8 +14,6 @@ pub fn register_to_lua(lua: &mlua::Lua) -> &'static str {
     spawn_task(lua);
     spawn_interval(lua);
     spawn_timeout(lua);
-
-    include_str!("global.lua")
 }
 
 pub fn dotenv_function(lua: &mlua::Lua) {

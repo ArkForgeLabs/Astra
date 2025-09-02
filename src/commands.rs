@@ -1,4 +1,4 @@
-use crate::{LUA, SCRIPT_PATH};
+use crate::{ASTRA_STD_LIBS, LUA, SCRIPT_PATH};
 use clap::crate_version;
 use std::str::FromStr;
 
@@ -65,18 +65,16 @@ pub async fn run_command(
 
 /// Exports the Lua bundle.
 pub async fn export_bundle_command(folder_path: Option<String>) {
-    let mut lua_lib = pure_lua_libs();
     #[allow(clippy::expect_used)]
-    let std_lib = crate::components::register_components(&LUA)
+    crate::components::register_components(&LUA)
         .await
         .expect("Error setting up the standard library");
-    lua_lib.extend(std_lib);
 
     let folder_path = std::path::Path::new(&folder_path.unwrap_or(".".to_string())).join(".astra");
 
     let _ = std::fs::remove_dir_all(&folder_path);
     let _ = std::fs::create_dir_all(&folder_path);
-    for (file_path, content) in lua_lib {
+    for (file_path, content) in ASTRA_STD_LIBS.lua_libs.clone() {
         // Write the bundled library to the file.
         std::fs::write(folder_path.join(&file_path), content)
             .unwrap_or_else(|e| panic!("Could not export the {file_path}: {e}"));
@@ -96,7 +94,7 @@ pub async fn export_bundle_command(folder_path: Option<String>) {
         "LuaJIT"
     };
     let luarc_file = include_str!("../.luarc.json")
-        .replace("src", ".astra")
+        .replace("language_specific_definitions", ".astra")
         .replace("LuaJIT", runtime);
     if let Ok(does_luarc_exist) = std::fs::exists(".luarc.json") {
         if !does_luarc_exist {
@@ -245,29 +243,27 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
     if lua_lib.is_empty() {
         // if the folder couldn't be opened or issues existed
         #[allow(clippy::expect_used)]
-        let registration = crate::components::register_components(lua)
+        crate::components::register_components(lua)
             .await
             .expect("Error setting up the standard library");
 
-        lua_lib = registration;
+        lua_lib = ASTRA_STD_LIBS.lua_libs.clone();
     }
-    let mut final_lib = pure_lua_libs();
-    final_lib.extend(lua_lib);
 
     // Try to make astra.lua the first to get interpreted
-    if let Some(index) = final_lib.iter().position(|entry| {
+    if let Some(index) = lua_lib.iter().position(|entry| {
         let name = entry.0.to_ascii_lowercase();
         name == "astra.lua"
     }) {
-        let value = final_lib.remove(index);
-        final_lib.insert(0, value);
+        let value = lua_lib.remove(index);
+        lua_lib.insert(0, value);
     }
 
     let rerun_limit = 100;
     let mut failed_to_load_modules: Vec<(String, String)> = Vec::new();
 
     // First attempt to load all modules
-    for (file_name, content) in final_lib {
+    for (file_name, content) in lua_lib {
         match lua
             .load(content.as_str())
             .set_name(&file_name)
@@ -300,7 +296,7 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
                 .await
             {
                 Err(e) => {
-                    if e.to_string().contains("attempt to index a nil value") {
+                    if e.to_string().contains("attempt to index") {
                         new_failed_modules.insert(0, (file_name, content));
                     } else {
                         tracing::error!("Couldn't add prelude:\n{e}");
@@ -322,23 +318,4 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
             );
         }
     }
-}
-
-fn pure_lua_libs() -> Vec<(String, String)> {
-    let mut lua_lib = include_dir::include_dir!("./src/lua_libs")
-        .files()
-        .filter_map(|file| {
-            if let Some(name) = file.path().file_name()
-                && let Some(name) = name.to_str().map(|name| name.to_string())
-                && let Some(content) = file.contents_utf8()
-            {
-                Some((name, content.replace("@ASTRA_VERSION", crate_version!())))
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<_>>();
-    lua_lib.sort_by(|itema, itemb| itema.0.cmp(&itemb.0));
-
-    lua_lib
 }
