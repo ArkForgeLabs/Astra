@@ -7,10 +7,10 @@ documentation = "https://astra.arkforge.net/docs/latest"
 repository = "https://github.com/ArkForgeLabs/Astra"
 keywords = ["lua", "luau", "server", "webserver", "runtime"]
 categories = [
-  "web-programming",
-  "web-programming::http-server",
-  "web-programming::http-client",
-  "network-programming",
+    "web-programming",
+    "web-programming::http-server",
+    "web-programming::http-client",
+    "network-programming",
 ]
 edition = "2024"
 license = "Apache-2.0"
@@ -32,43 +32,43 @@ lua54 = ["mlua/lua54"]
 
 [dependencies]
 mlua = { version = "0.10.3", features = [
-  "serialize",
-  "vendored",
-  "async",
-  "send",
-  "error-send",
-  "macros",
-  "anyhow",
+    "serialize",
+    "vendored",
+    "async",
+    "send",
+    "error-send",
+    "macros",
+    "anyhow",
 ] }
 
 # http
-axum = { version = "0.8.3", features = ["macros", "multipart", "http2", "ws"] }
+axum = { version = "0.8.3", features = ["macros", "multipart", "http2"] }
 axum-extra = { version = "0.10.1", features = ["cookie"] }
 reqwest = { version = "0.12.15", features = [
-  "json",
-  "rustls-tls",
-  "charset",
-  "multipart",
-  "http2",
-  "stream",
-  "macos-system-configuration",
+    "json",
+    "rustls-tls",
+    "charset",
+    "multipart",
+    "http2",
+    "stream",
+    "macos-system-configuration",
 ], default-features = false }
 tower = { version = "0.5.2" }
 tower-http = { version = "0.6.2", features = [
-  "fs",
-  "trace",
-  "compression-full",
-  "decompression-full",
+    "fs",
+    "trace",
+    "compression-full",
+    "decompression-full",
 ] }
 time = "0.3.41"
 
 # templating
 tera = { version = "1.20.0" }
 minijinja = { version = "2.10.2", features = [
-  "loader",
-  "urlencode",
-  "loop_controls",
-  "speedups",
+    "loader",
+    "urlencode",
+    "loop_controls",
+    "speedups",
 ] }
 glob = "0.3.2"
 
@@ -94,13 +94,13 @@ regex = "1.11.1"
 
 # database
 sqlx = { version = "0.8.3", features = [
-  "runtime-tokio",
-  "tls-rustls",
-  "postgres",
-  "sqlite",
-  "json",
-  "chrono",
-  "uuid",
+    "runtime-tokio",
+    "tls-rustls",
+    "postgres",
+    "sqlite",
+    "json",
+    "chrono",
+    "uuid",
 ] }
 include_dir = "0.7.4"
 

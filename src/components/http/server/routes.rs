@@ -5,16 +5,15 @@ use crate::{
         requests::{self, RequestLua},
         responses::{self, CookieOperation},
         routes,
-        websocket::LuaWebSocket,
     },
 };
 use axum::{
     Router,
     body::Body,
-    extract::{DefaultBodyLimit, WebSocketUpgrade},
+    extract::DefaultBodyLimit,
     http::Request,
     response::IntoResponse,
-    routing::{any, delete, get, options, patch, post, put, trace},
+    routing::{delete, get, options, patch, post, put, trace},
 };
 use axum_extra::extract::{CookieJar, cookie::Cookie};
 use mlua::LuaSerdeExt;
@@ -31,7 +30,6 @@ pub enum Method {
     Trace,
     StaticDir,
     StaticFile,
-    WebSocket,
 }
 #[derive(Debug, Clone, mlua::FromLua)]
 pub struct Route {
@@ -192,18 +190,6 @@ pub fn load_routes(server: mlua::Table) -> Router {
                         router
                     }
                 }
-                Method::WebSocket => router.route(
-                    &route_values.path,
-                    any(|ws: WebSocketUpgrade| async {
-                        ws.on_failed_upgrade(|err| {
-                            mlua::Error::runtime(format!("failed to upgrade connection: {err}"));
-                        })
-                        .on_upgrade(|socket| async move {
-                            let lua_socket = LuaWebSocket(socket);
-                            let _ = route_values.function.call_async::<()>(lua_socket).await;
-                        })
-                    }),
-                ),
             }
         }
 
