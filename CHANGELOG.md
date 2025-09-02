@@ -2,6 +2,55 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.28.0](https://github.com/ArkForgeLabs/Astra/compare/v0.27.0..0.28.0) - 2025-09-02
+
+### Bug Fixes
+
+- link to middleware.lua in middleware.md (#87) - ([2a70d97](https://github.com/ArkForgeLabs/Astra/commit/2a70d9765f5277fbe30ce566007c5eaab111abb9))
+- prelude registeration not loading the packed libs correctly - ([6145502](https://github.com/ArkForgeLabs/Astra/commit/614550209e0bf32bc3270a63132961293ccc05df))
+- prelude error when the dependency for the module has not yet been loaded - ([a5df91f](https://github.com/ArkForgeLabs/Astra/commit/a5df91faaccd76b3b66bae1541b53cd594d59fbb))
+- websocket route not being recognized - ([ebe4074](https://github.com/ArkForgeLabs/Astra/commit/ebe4074dc3bcba69f196f46f074d0715bf5861cf))
+- barebones websocket lua api (needs more fixing) - ([3f28d3b](https://github.com/ArkForgeLabs/Astra/commit/3f28d3b67748c5e32bb3cff4f13d3546eefa8e45))
+- #13, #98 - ([3f28d3b](https://github.com/ArkForgeLabs/Astra/commit/3f28d3b67748c5e32bb3cff4f13d3546eefa8e45))
+- get rid of all unwrap and extracts - ([6519e66](https://github.com/ArkForgeLabs/Astra/commit/6519e660282adae1f3916d7c2462956bba8e2779))
+- #13, #98 - ([6519e66](https://github.com/ArkForgeLabs/Astra/commit/6519e660282adae1f3916d7c2462956bba8e2779))
+- issues fixed with bytes and normal send structure - ([5ac6273](https://github.com/ArkForgeLabs/Astra/commit/5ac627336a3f4b21e60ecb5d7764efca054f1e74))
+- returns an empty string when reason not given - ([146b454](https://github.com/ArkForgeLabs/Astra/commit/146b454edbc5245e21bc4dde4da41e34a2af0d6a))
+- #13, #98 - ([146b454](https://github.com/ArkForgeLabs/Astra/commit/146b454edbc5245e21bc4dde4da41e34a2af0d6a))
+
+### Documentation
+
+- updated middleware and sql driver - ([8cf1f5a](https://github.com/ArkForgeLabs/Astra/commit/8cf1f5a357b7a3ee2a21b8607205429ba210ae6e))
+
+### Features
+
+- Middleware system documentation - ([258b332](https://github.com/ArkForgeLabs/Astra/commit/258b3324550b00fa168c61ba4d07074c11f424cd))
+- type detection and definition for HTTP Request params - ([4d9c6e8](https://github.com/ArkForgeLabs/Astra/commit/4d9c6e8a5694cff40010fbed01a90f0362e2ac8f))
+- URL parameters parsing (#85) - ([04be222](https://github.com/ArkForgeLabs/Astra/commit/04be2229febd37b340877bbebb9539d9817c545c))
+- datetime format function for custom formatting - ([b9d154e](https://github.com/ArkForgeLabs/Astra/commit/b9d154e454c45314fc41d3c5b874ecabf9e7bf06))
+- websocket implementation (doesn't work) - ([f96893d](https://github.com/ArkForgeLabs/Astra/commit/f96893dadeebd5800b34883055b15b715e45edae))
+- #13 - ([f96893d](https://github.com/ArkForgeLabs/Astra/commit/f96893dadeebd5800b34883055b15b715e45edae))
+- broken websocket api - ([e04ca74](https://github.com/ArkForgeLabs/Astra/commit/e04ca745d5994b9ae5ce714a3ce752b8a276bfa8))
+- #13 #98 - ([e04ca74](https://github.com/ArkForgeLabs/Astra/commit/e04ca745d5994b9ae5ce714a3ce752b8a276bfa8))
+- the websocket recv now returns type and value - ([32280f2](https://github.com/ArkForgeLabs/Astra/commit/32280f2f327abca1c56322c1952ca90153ce3531))
+- mlua functions for sending websocket messages - ([75fd957](https://github.com/ArkForgeLabs/Astra/commit/75fd95707e95b048ea887fbeccad56853fe25873))
+- #13, 98 - ([75fd957](https://github.com/ArkForgeLabs/Astra/commit/75fd95707e95b048ea887fbeccad56853fe25873))
+
+### Fix
+
+- #88 - ([d4359fb](https://github.com/ArkForgeLabs/Astra/commit/d4359fb8944e3dee275244c32e727a5749ada71d))
+
+### Refactoring
+
+- minor cleanups done to the middleware example - ([1874c90](https://github.com/ArkForgeLabs/Astra/commit/1874c906de3ec585132374dbf3a280dd3e4310b3))
+- less bloated version - ([d8a0d12](https://github.com/ArkForgeLabs/Astra/commit/d8a0d12e89d629b32948cc21e32f32a60e331f0c))
+- clamped libs together and moved middleware to http - ([31dff80](https://github.com/ArkForgeLabs/Astra/commit/31dff8017671b6f90c7852a16e01bb93a29c54de))
+- export now removes previously exported content - ([3b3a842](https://github.com/ArkForgeLabs/Astra/commit/3b3a84236c9572ca393f0a9882714c8874a9248e))
+- update command now recommends reexporting the type definitions - ([f1a5327](https://github.com/ArkForgeLabs/Astra/commit/f1a53275f26924028efdbf8022ca4ba58e1bc80c))
+- unnecessary error messages - ([e06bf1a](https://github.com/ArkForgeLabs/Astra/commit/e06bf1ad723553760d80fb14d6a7c77776eef17d))
+- renamed binary to bytes - ([097e8ce](https://github.com/ArkForgeLabs/Astra/commit/097e8cea99245c4a16bf824218851d874ad559db))
+- updated the datetime test and its formatting - ([4721d6e](https://github.com/ArkForgeLabs/Astra/commit/4721d6e588210152e425f9438f528991d8b3725e))
+
 ## [0.27.0](https://github.com/ArkForgeLabs/Astra/compare/v0.26.0..v0.27.0) - 2025-07-18
 
 ### Features
