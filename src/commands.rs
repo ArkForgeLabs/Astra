@@ -10,8 +10,13 @@ pub async fn run_command(
 ) {
     let lua = &LUA;
 
-    // ! Move VM preparation into a separate function
-    // ! To enable VM creation on route request
+    // enable teal file loading and running
+    #[allow(clippy::expect_used)]
+    lua.load(ASTRA_STD_LIBS.teal.clone())
+        .set_name("teal.lua")
+        .exec_async()
+        .await
+        .expect("Could not load the Teal language");
 
     // Set the script path.
     #[allow(clippy::expect_used)]
@@ -260,53 +265,42 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
     }
 
     let rerun_limit = 100;
+    #[allow(unused_assignments)]
     let mut failed_to_load_modules: Vec<(String, String)> = Vec::new();
 
-    // First attempt to load all modules
-    for (file_name, content) in lua_lib {
-        match lua
-            .load(content.as_str())
-            .set_name(&file_name)
-            .exec_async()
-            .await
-        {
-            Err(e) => {
-                if e.to_string().contains("attempt to index a nil value") {
-                    failed_to_load_modules.insert(0, (file_name, content));
-                } else {
-                    tracing::error!("Couldn't add prelude:\n{e}");
-                }
-            }
-            Ok(_result) => (),
-        }
-    }
-
-    for _ in 0..rerun_limit {
-        if failed_to_load_modules.is_empty() {
-            break; // All modules have been loaded successfully
-        }
-
-        let mut new_failed_modules: Vec<(String, String)> = Vec::new();
-
-        for (file_name, content) in failed_to_load_modules {
+    async fn process_modules(
+        lua: &mlua::Lua,
+        modules: Vec<(String, String)>,
+    ) -> Vec<(String, String)> {
+        let mut new_failed_modules = Vec::new();
+        for (file_name, content) in modules {
             match lua
                 .load(content.as_str())
                 .set_name(&file_name)
                 .exec_async()
                 .await
             {
-                Err(e) => {
-                    if e.to_string().contains("attempt to index") {
-                        new_failed_modules.insert(0, (file_name, content));
-                    } else {
-                        tracing::error!("Couldn't add prelude:\n{e}");
-                    }
+                Err(e) if e.to_string().contains("attempt to index") => {
+                    new_failed_modules.insert(0, (file_name, content));
                 }
-                Ok(_result) => (),
+                Err(e) => {
+                    tracing::error!("Couldn't add prelude:\n{e}");
+                }
+                Ok(_) => (),
             }
         }
+        new_failed_modules
+    }
 
-        failed_to_load_modules = new_failed_modules;
+    // First attempt to load all modules
+    failed_to_load_modules = process_modules(lua, lua_lib).await;
+
+    // Retry failed modules up to `rerun_limit` times
+    for _ in 0..rerun_limit {
+        if failed_to_load_modules.is_empty() {
+            break;
+        }
+        failed_to_load_modules = process_modules(lua, failed_to_load_modules).await;
     }
 
     if !failed_to_load_modules.is_empty() {

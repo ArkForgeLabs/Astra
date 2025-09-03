@@ -232,7 +232,30 @@ fn import(lua: &mlua::Lua) {
             lua.registry_value::<mlua::Value>(key)
         } else {
             let cleaned_path = path.replace(".", std::path::MAIN_SEPARATOR_STR);
-            let file = tokio::fs::read_to_string(format!("{cleaned_path}.lua")).await?;
+
+            let file: String;
+            if let Ok(result) = std::fs::exists(format!("{cleaned_path}.tl"))
+                && result
+            {
+                let file_content = tokio::fs::read_to_string(format!("{cleaned_path}.tl")).await?;
+
+                // to capture all types of string literals
+                let one_hundred_equal_signs = "================================================\
+                ====================================================";
+
+                file = format!(
+                    "teal.load([{one_hundred_equal_signs}[{file_content}]{one_hundred_equal_signs}], \"{cleaned_path}.tl\")()"
+                )
+            } else if let Ok(result) = std::fs::exists(format!("{cleaned_path}.lua"))
+                && result
+            {
+                file = tokio::fs::read_to_string(format!("{cleaned_path}.lua")).await?;
+            } else {
+                return Err(mlua::Error::runtime(format!(
+                    "Could not find the file: {cleaned_path}"
+                )));
+            }
+
             let result = lua
                 .load(file)
                 .set_name(cleaned_path)

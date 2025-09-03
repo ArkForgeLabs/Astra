@@ -15,9 +15,10 @@ function import(modName)
 		if not ok then
 			error("Failed to load module.\nImport Error:" .. import_result .. "\nError: " .. require_result)
 		end
-		return result
+		return require_result
+	else
+		return import_result
 	end
-	return result
 end
 
 ---Pretty prints any table or value

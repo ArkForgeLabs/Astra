@@ -41,7 +41,7 @@ pub static ASTRA_STD_LIBS: std::sync::LazyLock<AstraSTDLib> = std::sync::LazyLoc
 
     AstraSTDLib {
         lua_libs,
-        teal: include_str!("teal.lua").to_string(),
+        teal: include_str!("../language_specific_definitions/teal.lua").to_string(),
     }
 });
 
