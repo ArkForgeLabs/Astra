@@ -99,11 +99,12 @@ pub fn json_decode(lua: &mlua::Lua) {
 }
 
 pub fn getenv(lua: &mlua::Lua) {
-    if let Ok(function) = lua.create_function(|lua, key: String| match std::env::var(key) {
-        Ok(result) => Ok(lua.to_value(&result)),
-        Err(e) => Err(mlua::Error::runtime(format!(
-            "Could not fetch the environment variable: {e:?}"
-        ))),
+    if let Ok(function) = lua.create_function(|lua, key: String| {
+        if let Ok(value) = std::env::var(key) {
+            Ok(lua.to_value(&value)?)
+        } else {
+            Ok(mlua::Value::Nil)
+        }
     }) {
         if let Err(e) = lua.globals().set("astra_internal__getenv", function) {
             println!("Could not register the function for getenv: {e}");

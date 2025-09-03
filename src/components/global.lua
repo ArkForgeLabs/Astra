@@ -72,7 +72,7 @@ Astra.dotenv_load(".env.local")
 ---@param key string
 function os.getenv(key)
 	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__getenv
+	return astra_internal__getenv(key)
 end
 
 ---Sets the environment variable.

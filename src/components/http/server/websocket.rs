@@ -84,10 +84,7 @@ impl UserData for LuaWebSocket {
                     "pong" => Ok(Message::Ping(Self::value_to_bytes(&message)?)),
                     "close" => match message {
                         mlua::Value::Integer(close_code) => Ok(Message::Close(Some(CloseFrame {
-                            code: match u16::try_from(close_code) {
-                                Ok(code) => code,
-                                Err(_) => 1006,
-                            },
+                            code: u16::try_from(close_code).unwrap_or(1006),
                             reason: Utf8Bytes::from_static(""),
                         }))),
                         mlua::Value::Table(table) => Ok(Message::Close(Some(CloseFrame {
@@ -157,10 +154,7 @@ impl UserData for LuaWebSocket {
                 let close_frame: Message = match close_frame {
                     Some(frame) => match frame {
                         mlua::Value::Integer(close_code) => Message::Close(Some(CloseFrame {
-                            code: match u16::try_from(close_code) {
-                                Ok(code) => code,
-                                Err(_) => 1006,
-                            },
+                            code: u16::try_from(close_code).unwrap_or(1006),
                             reason: Utf8Bytes::from_static(""),
                         })),
                         mlua::Value::Table(table) => Message::Close(Some(CloseFrame {
