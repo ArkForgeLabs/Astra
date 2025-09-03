@@ -7,6 +7,7 @@
 
 - [HTTP Server](./std/http/http_server.md)
 - [HTTP Client](./std/http/http_client.md)
+- [WebSocket Server](./std/websocket/websocket_server.md)
 - [Templating](./std/templating.md)
 - [Importing](./std/importing.md)
 - [File IO](./std/file_io.md)

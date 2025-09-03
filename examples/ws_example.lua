@@ -5,13 +5,11 @@ local function handle_socket(socket)
 	print("Connection opened!")
 	while true do
 		pprint(socket:recv())
-		socket:send("text", { message = "Hello from the server" })
+		socket:send("text", "hello from the server")
+		socket:send_close(1000)
 	end
 end
 
-server:get("/", function()
-	print("hello from root")
-end)
-server:websocket("/ws", handle_socket)
+server:websocket("/", handle_socket)
 
 server:run()
