@@ -15275,5 +15275,5 @@ end
 return tl
 end
 
-teal = teal_source()
-teal.loader()
+Astra.teal = teal_source()
+Astra.teal.loader()

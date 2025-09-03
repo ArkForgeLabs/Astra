@@ -11,12 +11,12 @@ pub async fn run_command(
     let lua = &LUA;
 
     // enable teal file loading and running
-    #[allow(clippy::expect_used)]
-    lua.load(ASTRA_STD_LIBS.teal.clone())
-        .set_name("teal.lua")
-        .exec_async()
-        .await
-        .expect("Could not load the Teal language");
+    // #[allow(clippy::expect_used)]
+    // lua.load(ASTRA_STD_LIBS.teal.clone())
+    //     .set_name("teal.lua")
+    //     .exec_async()
+    //     .await
+    //     .expect("Could not load the Teal language");
 
     // Set the script path.
     #[allow(clippy::expect_used)]
@@ -263,6 +263,7 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
         let value = lua_lib.remove(index);
         lua_lib.insert(0, value);
     }
+    lua_lib.push(("teal.lua".to_string(), ASTRA_STD_LIBS.teal.clone()));
 
     let rerun_limit = 100;
     #[allow(unused_assignments)]

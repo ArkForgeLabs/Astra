@@ -244,7 +244,7 @@ fn import(lua: &mlua::Lua) {
                 ====================================================";
 
                 file = format!(
-                    "teal.load([{one_hundred_equal_signs}[{file_content}]{one_hundred_equal_signs}], \"{cleaned_path}.tl\")()"
+                    "Astra.teal.load([{one_hundred_equal_signs}[{file_content}]{one_hundred_equal_signs}], \"{cleaned_path}.tl\")()"
                 )
             } else if let Ok(result) = std::fs::exists(format!("{cleaned_path}.lua"))
                 && result
