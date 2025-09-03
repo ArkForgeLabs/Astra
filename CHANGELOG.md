@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.28.1](https://github.com/ArkForgeLabs/Astra/compare/v0.28.0..0.28.1) - 2025-09-03
+
+### Bug Fixes
+
+- return empty string when no reason provided for `send_close` - ([73271d1](https://github.com/ArkForgeLabs/Astra/commit/73271d1c28b5186585209863358f65ec41dee3b3))
+- #13 - ([73271d1](https://github.com/ArkForgeLabs/Astra/commit/73271d1c28b5186585209863358f65ec41dee3b3))
+- getenv not returning - ([58571c9](https://github.com/ArkForgeLabs/Astra/commit/58571c9f8fbcbf6d5909e440c03f00607dd08820))
+
+### Documentation
+
+- proper documentation for websockets - ([5a3fcf6](https://github.com/ArkForgeLabs/Astra/commit/5a3fcf68b0bdd01644ccfc1e1c55bdeed1c0a8b7))
+- #13 - ([5a3fcf6](https://github.com/ArkForgeLabs/Astra/commit/5a3fcf68b0bdd01644ccfc1e1c55bdeed1c0a8b7))
+- updated minor issue with websockets docs - ([8488733](https://github.com/ArkForgeLabs/Astra/commit/84887331e4a88465e2e12908630ee7a91cd0542e))
+
+### Features
+
+- send_code({1000})` - ([4091039](https://github.com/ArkForgeLabs/Astra/commit/40910393e90905a96bd6f318797eb790bc839532))
+- can send a reasonless close frame without wrapping it in braces - ([4091039](https://github.com/ArkForgeLabs/Astra/commit/40910393e90905a96bd6f318797eb790bc839532))
+- #13 - ([4091039](https://github.com/ArkForgeLabs/Astra/commit/40910393e90905a96bd6f318797eb790bc839532))
+
 ## [0.28.0](https://github.com/ArkForgeLabs/Astra/compare/v0.27.0..0.28.0) - 2025-09-02
 
 ### Bug Fixes
