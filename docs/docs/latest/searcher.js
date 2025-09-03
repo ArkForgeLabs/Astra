@@ -22,7 +22,6 @@ window.search = window.search || {};
     }
 
     const search_wrap = document.getElementById('search-wrapper'),
-        searchbar_outer = document.getElementById('searchbar-outer'),
         searchbar = document.getElementById('searchbar'),
         searchresults = document.getElementById('searchresults'),
         searchresults_outer = document.getElementById('searchresults-outer'),
@@ -263,18 +262,6 @@ window.search = window.search || {};
         doc_urls = config.doc_urls;
         searchindex = elasticlunr.Index.load(config.index);
 
-        searchbar_outer.classList.remove('searching');
-
-        searchbar.focus();
-
-        const searchterm = searchbar.value.trim();
-        if (searchterm !== '') {
-            searchbar.classList.add('active');
-            doSearch(searchterm);
-        }
-    }
-
-    function initSearchInteractions(config) {
         // Set up events
         searchicon.addEventListener('click', () => {
             searchIconClickHandler();
@@ -300,8 +287,6 @@ window.search = window.search || {};
         // Exported functions
         config.hasFocus = hasFocus;
     }
-
-    initSearchInteractions(window.search);
 
     function unfocusSearchbar() {
         // hacky, but just focusing a div only works once
@@ -416,28 +401,8 @@ window.search = window.search || {};
         }
     }
 
-    function loadSearchScript(url, id) {
-        if (document.getElementById(id)) {
-            return;
-        }
-        searchbar_outer.classList.add('searching');
-
-        const script = document.createElement('script');
-        script.src = url;
-        script.id = id;
-        script.onload = () => init(window.search);
-        script.onerror = error => {
-            console.error(`Failed to load \`${url}\`: ${error}`);
-        };
-        document.head.append(script);
-    }
-
     function showSearch(yes) {
         if (yes) {
-            loadSearchScript(
-                window.path_to_searchindex_js ||
-                path_to_root + 'searchindex.js',
-                'search-index');
             search_wrap.classList.remove('hidden');
             searchicon.setAttribute('aria-expanded', 'true');
         } else {
@@ -520,13 +485,13 @@ window.search = window.search || {};
         // Don't search the same twice
         if (current_searchterm === searchterm) {
             return;
+        } else {
+            current_searchterm = searchterm;
         }
-        searchbar_outer.classList.add('searching');
+
         if (searchindex === null) {
             return;
         }
-
-        current_searchterm = searchterm;
 
         // Do the actual search
         const results = searchindex.search(searchterm, search_options);
@@ -546,9 +511,19 @@ window.search = window.search || {};
 
         // Display results
         showResults(true);
-        searchbar_outer.classList.remove('searching');
     }
 
-    // Exported functions
-    search.hasFocus = hasFocus;
+    function loadScript(url, id) {
+        const script = document.createElement('script');
+        script.src = url;
+        script.id = id;
+        script.onload = () => init(window.search);
+        script.onerror = error => {
+            console.error(`Failed to load \`${url}\`: ${error}`);
+        };
+        document.head.append(script);
+    }
+
+    loadScript(path_to_root + 'searchindex.js', 'search-index');
+
 })(window.search);

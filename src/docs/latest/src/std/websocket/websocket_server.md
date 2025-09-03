@@ -19,7 +19,6 @@ After creating our Astra server, we have to create a function to handle WebSocke
 We can print out received messages from our client like this:
 
 ```lua
-...
 
 local function handle_socket(socket)
   print("Connection opened!")
@@ -29,7 +28,6 @@ local function handle_socket(socket)
   end
 end
 
-...
 ```
 
 For a minimal websocket client, you can paste this code in your browser's console.

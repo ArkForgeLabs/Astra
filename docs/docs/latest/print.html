@@ -722,8 +722,7 @@ server:run()
 </code></pre>
 <p>After creating our Astra server, we have to create a function to handle WebSocket behaviour, this function is then used as a callback by the <code>server:websocket()</code> function, which first takes the route for our websocket server, then the callback function.</p>
 <p>We can print out received messages from our client like this:</p>
-<pre><code class="language-lua">...
-
+<pre><code class="language-lua">
 local function handle_socket(socket)
   print("Connection opened!")
 
@@ -732,7 +731,6 @@ local function handle_socket(socket)
   end
 end
 
-...
 </code></pre>
 <p>For a minimal websocket client, you can paste this code in your browser's console.</p>
 <pre><code class="language-js">// Replace this with your appropriate address and route
