@@ -25,24 +25,24 @@ impl UserData for LuaWebSocket {
                         let recv = lua.create_table()?;
                         match msg {
                             Message::Text(utf8_bytes) => {
-                                recv.set("type", "Text")?;
+                                recv.set("type", "text")?;
                                 recv.set("value", utf8_bytes.to_string())?;
                             }
                             Message::Binary(bytes) => {
-                                recv.set("type", "Bytes")?;
+                                recv.set("type", "bytes")?;
                                 recv.set("value", bytes.to_vec())?;
                             }
                             Message::Ping(bytes) => {
-                                recv.set("type", "Ping")?;
+                                recv.set("type", "ping")?;
                                 recv.set("value", bytes.to_vec())?;
                             }
                             Message::Pong(bytes) => {
-                                recv.set("type", "Pong")?;
+                                recv.set("type", "pong")?;
                                 recv.set("value", bytes.to_vec())?;
                             }
                             Message::Close(close_frame) => match close_frame {
                                 Some(frame) => {
-                                    recv.set("type", "Close")?;
+                                    recv.set("type", "close")?;
                                     let close_frame = lua.create_table()?;
                                     close_frame.set("code", frame.code)?;
                                     close_frame.set("reason", frame.reason.to_string())?;
@@ -82,14 +82,21 @@ impl UserData for LuaWebSocket {
                     "bytes" => Ok(Message::Binary(Self::value_to_bytes(&message)?)),
                     "ping" => Ok(Message::Pong(Self::value_to_bytes(&message)?)),
                     "pong" => Ok(Message::Ping(Self::value_to_bytes(&message)?)),
-                    "close" => match message.as_table() {
-                        Some(frame) => Ok(Message::Close(Some(CloseFrame {
-                            code: frame.get::<u16>(1).unwrap_or(1005),
+                    "close" => match message {
+                        mlua::Value::Integer(close_code) => Ok(Message::Close(Some(CloseFrame {
+                            code: match u16::try_from(close_code) {
+                                Ok(code) => code,
+                                Err(_) => 1006,
+                            },
+                            reason: Utf8Bytes::from_static(""),
+                        }))),
+                        mlua::Value::Table(table) => Ok(Message::Close(Some(CloseFrame {
+                            code: table.get::<u16>(1).unwrap_or(1005),
                             reason: Utf8Bytes::from(
-                                frame.get::<String>(2).unwrap_or("".to_string()),
+                                table.get::<String>(2).unwrap_or("".to_string()),
                             ),
                         }))),
-                        None => Ok(Message::Close(None)),
+                        _ => Ok(Message::Close(None)),
                     },
                     _ => Err(mlua::Error::runtime("invalid message type")),
                 };
@@ -146,12 +153,24 @@ impl UserData for LuaWebSocket {
 
         methods.add_async_method_mut(
             "send_close",
-            |_, mut this, close_frame: Option<mlua::Table>| async move {
+            |_, mut this, close_frame: Option<mlua::Value>| async move {
                 let close_frame: Message = match close_frame {
-                    Some(frame) => Message::Close(Some(CloseFrame {
-                        code: frame.get::<u16>(1).unwrap_or(1005),
-                        reason: Utf8Bytes::from(frame.get::<String>(2)?),
-                    })),
+                    Some(frame) => match frame {
+                        mlua::Value::Integer(close_code) => Message::Close(Some(CloseFrame {
+                            code: match u16::try_from(close_code) {
+                                Ok(code) => code,
+                                Err(_) => 1006,
+                            },
+                            reason: Utf8Bytes::from_static(""),
+                        })),
+                        mlua::Value::Table(table) => Message::Close(Some(CloseFrame {
+                            code: table.get::<u16>(1).unwrap_or(1005),
+                            reason: Utf8Bytes::from(
+                                table.get::<String>(2).unwrap_or("".to_string()),
+                            ),
+                        })),
+                        _ => Message::Close(None),
+                    },
                     None => Message::Close(None),
                 };
 
