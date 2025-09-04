@@ -3,7 +3,6 @@ use mlua::{LuaSerdeExt, UserData};
 pub fn register_to_lua(lua: &mlua::Lua) {
     dotenv_function(lua);
     pprint(lua);
-    import(lua);
     // json
     json_encode(lua);
     json_decode(lua);
@@ -210,67 +209,6 @@ fn spawn_interval(lua: &mlua::Lua) {
             .set("astra_internal__spawn_interval", function)
         {
             println!("Could not register the function for spawn_interval: {e}");
-        }
-    }
-}
-
-fn import(lua: &mlua::Lua) {
-    if let Ok(function) = lua.create_async_function(|lua, path: String| async move {
-        if path.contains("astra_bundle") {
-            return Ok(mlua::Value::Nil);
-        }
-
-        let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
-        let key_id = key_id.as_str();
-
-        let mut cache = lua
-            .globals()
-            .get::<std::collections::HashMap<String, mlua::RegistryKey>>(key_id)
-            .unwrap_or_default();
-
-        if let Some(key) = cache.get(&path) {
-            lua.registry_value::<mlua::Value>(key)
-        } else {
-            let cleaned_path = path.replace(".", std::path::MAIN_SEPARATOR_STR);
-
-            let file: String;
-            if let Ok(result) = std::fs::exists(format!("{cleaned_path}.tl"))
-                && result
-            {
-                let file_content = tokio::fs::read_to_string(format!("{cleaned_path}.tl")).await?;
-
-                // to capture all types of string literals
-                let one_hundred_equal_signs = "================================================\
-                ====================================================";
-
-                file = format!(
-                    "Astra.teal.load([{one_hundred_equal_signs}[{file_content}]{one_hundred_equal_signs}], \"{cleaned_path}.tl\")()"
-                )
-            } else if let Ok(result) = std::fs::exists(format!("{cleaned_path}.lua"))
-                && result
-            {
-                file = tokio::fs::read_to_string(format!("{cleaned_path}.lua")).await?;
-            } else {
-                return Err(mlua::Error::runtime(format!(
-                    "Could not find the file: {cleaned_path}"
-                )));
-            }
-
-            let result = lua
-                .load(file)
-                .set_name(cleaned_path)
-                .eval_async::<mlua::Value>()
-                .await?;
-
-            let key = lua.create_registry_value(&result)?;
-            cache.insert(path, key);
-            lua.globals().set(key_id, cache)?;
-
-            Ok(result)
-        }
-    }) {
-        if let Err(e) = lua.globals().set("astra_internal__import", function) {
-            println!("Could not register the function for import: {e}");
         }
     }
 }
