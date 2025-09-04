@@ -138,6 +138,7 @@ impl UserData for Database {
 
         macro_rules! query_builder_fn {
             ($function_name:ident, $return_type:ty) => {
+                #[allow(mismatched_lifetime_syntaxes)]
                 fn $function_name(
                     lua: mlua::Lua,
                     sql: &str,

@@ -4,23 +4,6 @@
     All of the smaller scale components that are not big enough to need their own files, are here
 ]]
 
-import = require
-
----@param modName string
-function import(modName)
-	---@diagnostic disable-next-line: param-type-mismatch, undefined-global
-	local ok, import_result = pcall(astra_internal__import, modName)
-	if not ok then
-		ok, require_result = pcall(require, modName)
-		if not ok then
-			error("Failed to load module.\nImport Error:" .. import_result .. "\nError: " .. require_result)
-		end
-		return require_result
-	else
-		return import_result
-	end
-end
-
 ---Pretty prints any table or value
 ---@param value any
 function pprint(value)

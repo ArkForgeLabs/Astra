@@ -3,8 +3,5 @@
     "workspace.library": [
         "language_specific_definitions"
     ],
-    "runtime.special": {
-        "import": "require"
-    },
     "runtime.version": "LuaJIT"
 }
