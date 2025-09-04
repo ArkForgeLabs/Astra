@@ -31,21 +31,21 @@ pub async fn run_command(
     registration(lua, stdlib_path).await;
 
     // Handle extra arguments.
-    if let Some(extra_args) = extra_args {
-        if let Ok(args) = lua.create_table() {
-            if let Err(e) = args.set(0, file_path.clone()) {
+    if let Some(extra_args) = extra_args
+        && let Ok(args) = lua.create_table()
+    {
+        if let Err(e) = args.set(0, file_path.clone()) {
+            tracing::error!("Error adding arg to the args list: {e:?}");
+        }
+
+        for (index, value) in extra_args.into_iter().enumerate() {
+            if let Err(e) = args.set((index + 1) as i32, value) {
                 tracing::error!("Error adding arg to the args list: {e:?}");
             }
+        }
 
-            for (index, value) in extra_args.into_iter().enumerate() {
-                if let Err(e) = args.set((index + 1) as i32, value) {
-                    tracing::error!("Error adding arg to the args list: {e:?}");
-                }
-            }
-
-            if let Err(e) = lua.globals().set("arg", args) {
-                tracing::error!("Error setting the global variable ARGS: {e:?}");
-            }
+        if let Err(e) = lua.globals().set("arg", args) {
+            tracing::error!("Error setting the global variable ARGS: {e:?}");
         }
     }
 
@@ -101,11 +101,11 @@ pub async fn export_bundle_command(folder_path: Option<String>) {
     let luarc_file = include_str!("../.luarc.json")
         .replace("language_specific_definitions", ".astra")
         .replace("LuaJIT", runtime);
-    if let Ok(does_luarc_exist) = std::fs::exists(".luarc.json") {
-        if !does_luarc_exist {
-            std::fs::write(".luarc.json", luarc_file)
-                .unwrap_or_else(|e| panic!("Could not export the .luarc.json: {e}"));
-        }
+    if let Ok(does_luarc_exist) = std::fs::exists(".luarc.json")
+        && !does_luarc_exist
+    {
+        std::fs::write(".luarc.json", luarc_file)
+            .unwrap_or_else(|e| panic!("Could not export the .luarc.json: {e}"));
     }
 
     println!("🚀 Successfully exported the bundled library!");

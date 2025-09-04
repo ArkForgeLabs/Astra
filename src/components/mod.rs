@@ -5,14 +5,14 @@ mod database;
 mod datetime;
 pub mod global;
 pub mod http;
+mod import;
 mod io;
 mod regex;
 mod templates;
-mod import;
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     import::register_import_function(lua)?;
-    global::register_to_lua(lua);
+    global::register_to_lua(lua)?;
     http::server::register_to_lua(lua)?;
     http::client::HTTPClientRequest::register_to_lua(lua)?;
     database::Database::register_to_lua(lua)?;
