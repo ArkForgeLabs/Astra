@@ -5,7 +5,7 @@ use base64::{
     prelude::{BASE64_STANDARD, BASE64_URL_SAFE},
 };
 
-pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<&'static str> {
+pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     let hash_function =
         lua.create_function(|_, (hash_type, input): (String, String)| Ok(hash(hash_type, input)))?;
     lua.globals().set("astra_internal__hash", hash_function)?;
@@ -30,7 +30,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<&'static str> {
         lua.create_function(|_, input: String| base64_decode_urlsafe(input))?,
     )?;
 
-    Ok(include_str!("crypto.lua"))
+    Ok(())
 }
 
 fn hash(hash_type: String, input: String) -> String {

@@ -22,6 +22,8 @@ To install with differet Lua VM, e.g. Lua 5.4:
 cargo install lua-astra --no-default-features --features lua54
 ```
 
+> MSRV: 1.88+
+
 ## Example
 
 ```lua

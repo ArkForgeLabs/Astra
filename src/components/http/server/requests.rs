@@ -136,18 +136,17 @@ impl UserData for LuaMultipart {
                 };
 
                 while let Ok(Some(field)) = this.multipart.next_field().await {
-                    if file_path.is_none() {
-                        if let Some(filename) = field.file_name() {
-                            file_path = Some(tokio::fs::File::create(filename).await?);
-                        }
+                    if file_path.is_none()
+                        && let Some(filename) = field.file_name()
+                    {
+                        file_path = Some(tokio::fs::File::create(filename).await?);
                     }
 
-                    if let Some(ref mut file) = file_path {
-                        if let Ok(bytes) = field.bytes().await {
-                            if let Err(err) = file.write(&bytes).await {
-                                return Err(mlua::Error::runtime(err));
-                            }
-                        }
+                    if let Some(ref mut file) = file_path
+                        && let Ok(bytes) = field.bytes().await
+                        && let Err(err) = file.write(&bytes).await
+                    {
+                        return Err(mlua::Error::runtime(err));
                     }
                 }
 
