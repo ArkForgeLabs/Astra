@@ -4,6 +4,8 @@
     All of the smaller scale components that are not big enough to need their own files, are here
 ]]
 
+ASTRA_INTERNAL__CURRENT_SCRIPT = ""
+
 ---Pretty prints any table or value
 ---@param value any
 function pprint(value)

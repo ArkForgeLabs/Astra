@@ -10,14 +10,6 @@ pub async fn run_command(
 ) {
     let lua = &LUA;
 
-    // enable teal file loading and running
-    // #[allow(clippy::expect_used)]
-    // lua.load(ASTRA_STD_LIBS.teal.clone())
-    //     .set_name("teal.lua")
-    //     .exec_async()
-    //     .await
-    //     .expect("Could not load the Teal language");
-
     // Set the script path.
     #[allow(clippy::expect_used)]
     let path =
@@ -51,8 +43,28 @@ pub async fn run_command(
 
     // Load and execute the Lua script.
     #[allow(clippy::expect_used)]
-    let user_file = std::fs::read_to_string(&file_path).expect("Couldn't read file");
-    if let Err(e) = lua.load(user_file).set_name(file_path).exec_async().await {
+    let mut user_file = std::fs::read_to_string(&file_path).expect("Couldn't read file");
+
+    // to capture all types of string literals
+    const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
+====================================================";
+    if let Some(is_teal) = std::path::PathBuf::from(&file_path).extension()
+        && is_teal == "tl"
+    {
+        user_file = format!(
+            "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{user_file}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{file_path}\")()"
+        )
+    }
+    #[allow(clippy::expect_used)]
+    lua.globals()
+        .set("ASTRA_INTERNAL__CURRENT_SCRIPT", file_path.clone())
+        .expect("Couldn't set the script path");
+    if let Err(e) = lua
+        .load(user_file)
+        .set_name(format!("@{file_path}"))
+        .exec_async()
+        .await
+    {
         tracing::error!("{e}");
     }
 
@@ -211,8 +223,7 @@ astra export"#
     Ok(())
 }
 
-/// Registers Lua components.
-async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
+async fn get_lua_libs(lua: &mlua::Lua, stdlib_path: Option<String>) -> Vec<(String, String)> {
     let mut lua_lib: Vec<(String, String)> = Vec::new();
 
     let folder_path = stdlib_path.unwrap_or(
@@ -255,6 +266,13 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
         lua_lib = ASTRA_STD_LIBS.lua_libs.clone();
     }
 
+    lua_lib
+}
+
+/// Registers Lua components.
+async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
+    let mut lua_lib = get_lua_libs(lua, stdlib_path).await;
+
     // Try to make astra.lua the first to get interpreted
     if let Some(index) = lua_lib.iter().position(|entry| {
         let name = entry.0.to_ascii_lowercase();
@@ -277,7 +295,7 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
         for (file_name, content) in modules {
             match lua
                 .load(content.as_str())
-                .set_name(&file_name)
+                .set_name(format!("@{file_name}"))
                 .exec_async()
                 .await
             {

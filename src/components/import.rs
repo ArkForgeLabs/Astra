@@ -3,9 +3,16 @@
 
 use std::io::Read;
 
+use crate::ASTRA_STD_LIBS;
+
+// to capture all types of string literals
+const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
+====================================================";
+
 fn find_first_lua_match_with_content(
     lua_path: &str,
     module_name: &str,
+    is_current_script_teal: bool,
 ) -> Option<(std::path::PathBuf, String)> {
     for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
         let module_name = module_name.replace(".", std::path::MAIN_SEPARATOR_STR);
@@ -30,16 +37,33 @@ fn find_first_lua_match_with_content(
             }
         }
     }
+
+    if let Some(module_name) = module_name.split(".").last() {
+        if is_current_script_teal {
+            if let Some((path, content)) = ASTRA_STD_LIBS
+                .teal_libs
+                .iter()
+                .find(|lib| lib.0.contains(module_name))
+            {
+                return Some((std::path::PathBuf::from(&path), content.clone()));
+            }
+        } else if let Some((path, content)) = ASTRA_STD_LIBS
+            .lua_libs
+            .iter()
+            .find(|lib| lib.0.contains(module_name))
+        {
+            return Some((std::path::PathBuf::from(&path), content.clone()));
+        }
+    }
+
     None
 }
-
-// to capture all types of string literals
-const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
-====================================================";
 
 pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set("require", lua.create_async_function(|lua, path: String| async move {
         let lua_path: String = lua.load("return package.path").eval()?;
+        let current_script_path: String = lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
+        let is_current_script_teal = std::path::PathBuf::from(&current_script_path).ends_with("tl");
 
         let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
         let key_id = key_id.as_str();
@@ -53,24 +77,26 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
             lua.registry_value::<mlua::Value>(key)
         } else {
             #[allow(clippy::collapsible_else_if)]
-            if let Some((file_path, content)) = find_first_lua_match_with_content(&lua_path, &path)
+            if let Some((file_path, content)) = find_first_lua_match_with_content(&lua_path, &path, is_current_script_teal)
             && let Some(is_teal) = file_path.extension().map(|extension| extension.to_string_lossy().contains("tl")) {
-                let file_path = file_path.to_string_lossy().to_string();
+                let file_path = file_path.to_string_lossy().to_string().replace("./", "").replace(".\\", "");
+
                 let result = lua
                 .load(if is_teal {
                     format!(
-                    "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{file_path}\")()"
+                    "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{file_path}\")()"
                 )
                 } else {
-                    content
+                    format!("ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}")
                 })
-                .set_name(file_path)
+                .set_name(format!("@{file_path}"))
                 .eval_async::<mlua::Value>()
                 .await?;
 
                 let key = lua.create_registry_value(&result)?;
                 cache.insert(path, key);
                 lua.globals().set(key_id, cache)?;
+                lua.globals().set("ASTRA_INTERNAL__CURRENT_SCRIPT", current_script_path)?;
 
                 Ok(result)
             } else {
