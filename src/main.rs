@@ -21,7 +21,7 @@ pub struct AstraSTDLib {
 }
 /// Global standard libraries and type definitions from Astra
 pub static ASTRA_STD_LIBS: std::sync::LazyLock<AstraSTDLib> = std::sync::LazyLock::new(|| {
-    let folders = include_dir::include_dir!("language_specific_definitions");
+    let folders = include_dir::include_dir!("astra_stdlib");
 
     let lib_loader = |folder_name: &str| {
         #[allow(clippy::unwrap_used)]
@@ -43,12 +43,12 @@ pub static ASTRA_STD_LIBS: std::sync::LazyLock<AstraSTDLib> = std::sync::LazyLoc
     };
 
     let lua_libs = lib_loader("lua");
-    let teal_libs = lib_loader("teal/astra");
+    let teal_libs = lib_loader("teal");
 
     AstraSTDLib {
         lua_libs,
         teal_libs,
-        teal: include_str!("../language_specific_definitions/teal.lua").to_string(),
+        teal: include_str!("../astra_stdlib/teal.lua").to_string(),
     }
 });
 
@@ -97,7 +97,7 @@ enum AstraCLI {
 
 /// Initializes the Astra CLI.
 #[tokio::main]
-pub async fn main() {
+pub async fn main() -> std::io::Result<()> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
@@ -113,11 +113,13 @@ pub async fn main() {
             stdlib_path,
             extra_args,
         } => commands::run_command(file_path, stdlib_path, extra_args).await,
-        AstraCLI::ExportBundle { path } => commands::export_bundle_command(path).await,
+        AstraCLI::ExportBundle { path } => commands::export_bundle_command(path).await?,
         AstraCLI::Upgrade { user_agent } => {
             if let Err(e) = commands::upgrade_command(user_agent).await {
                 eprintln!("Could not update to the latest version: {e}");
             }
         }
     }
+
+    Ok(())
 }

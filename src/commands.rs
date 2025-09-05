@@ -81,21 +81,26 @@ pub async fn run_command(
 }
 
 /// Exports the Lua bundle.
-pub async fn export_bundle_command(folder_path: Option<String>) {
+pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Result<()> {
     #[allow(clippy::expect_used)]
     crate::components::register_components(&LUA)
         .await
         .expect("Error setting up the standard library");
 
-    let folder_path = std::path::Path::new(&folder_path.unwrap_or(".".to_string())).join(".astra");
+    let folder_path =
+        std::path::Path::new(&folder_path.unwrap_or(".".to_string())).join("astra_stdlib");
 
     let _ = std::fs::remove_dir_all(&folder_path);
-    let _ = std::fs::create_dir_all(&folder_path);
+    std::fs::create_dir_all(folder_path.join("lua"))?;
+    std::fs::create_dir_all(folder_path.join("teal"))?;
+    // Write the bundled library to the file.
     for (file_path, content) in ASTRA_STD_LIBS.lua_libs.clone() {
-        // Write the bundled library to the file.
-        std::fs::write(folder_path.join(&file_path), content)
-            .unwrap_or_else(|e| panic!("Could not export the {file_path}: {e}"));
+        std::fs::write(folder_path.join("lua").join(&file_path), content)?;
     }
+    for (file_path, content) in ASTRA_STD_LIBS.teal_libs.clone() {
+        std::fs::write(folder_path.join("teal").join(&file_path), content)?;
+    }
+    std::fs::write(folder_path.join("teal.lua"), ASTRA_STD_LIBS.teal.clone())?;
 
     let runtime = if cfg!(feature = "lua54") {
         "Lua 5.4"
@@ -111,17 +116,19 @@ pub async fn export_bundle_command(folder_path: Option<String>) {
         "LuaJIT"
     };
     let luarc_file = include_str!("../.luarc.json")
-        .replace("language_specific_definitions", ".astra")
+        .replace("astra_stdlib", "astra_stdlib")
         .replace("LuaJIT", runtime);
-    if let Ok(does_luarc_exist) = std::fs::exists(".luarc.json")
-        && !does_luarc_exist
-    {
-        std::fs::write(".luarc.json", luarc_file)
-            .unwrap_or_else(|e| panic!("Could not export the .luarc.json: {e}"));
-    }
+    let tlconfig_file = include_str!("../tlconfig.lua").replace("astra_stdlib", "astra_stdlib");
+
+    std::fs::exists(".luarc.json")
+        .map(|exists| !exists)
+        .map(|_| std::fs::write(".luarc.json", luarc_file))??;
+    std::fs::exists("tlconfig.lua")
+        .map(|exists| !exists)
+        .map(|_| std::fs::write("tlconfig.lua", tlconfig_file))??;
 
     println!("🚀 Successfully exported the bundled library!");
-    std::process::exit(0);
+    Ok(())
 }
 
 /// Upgrades to the latest version.
@@ -223,9 +230,7 @@ astra export"#
     Ok(())
 }
 
-async fn get_lua_libs(lua: &mlua::Lua, stdlib_path: Option<String>) -> Vec<(String, String)> {
-    let mut lua_lib: Vec<(String, String)> = Vec::new();
-
+async fn get_stdlib_folder_paths(stdlib_path: Option<String>) -> (String, String) {
     let folder_path = stdlib_path.unwrap_or(
         // get the folder path from .luarc.json
         // { "workspace.library": ["./folder_path"] }
@@ -246,7 +251,16 @@ async fn get_lua_libs(lua: &mlua::Lua, stdlib_path: Option<String>) -> Vec<(Stri
             "".to_string()
         },
     );
-    if let Ok(mut files) = tokio::fs::read_dir(folder_path).await {
+
+    (folder_path, "folder_path".to_string())
+}
+
+async fn get_lua_libs(lua: &mlua::Lua, stdlib_path: Option<String>) -> Vec<(String, String)> {
+    let mut lua_lib: Vec<(String, String)> = Vec::new();
+
+    let (lua_folder_path, teal_folder_path) = get_stdlib_folder_paths(stdlib_path).await;
+
+    if let Ok(mut files) = tokio::fs::read_dir(lua_folder_path).await {
         // add them to the lua_lib for being sent to interpretation
         while let Ok(Some(file)) = files.next_entry().await {
             if (file.path().ends_with("lua") || file.path().ends_with("luau")) // make sure only lua files are loaded
