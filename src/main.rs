@@ -21,7 +21,7 @@ pub struct AstraSTDLib {
 }
 /// Global standard libraries and type definitions from Astra
 pub static ASTRA_STD_LIBS: std::sync::LazyLock<AstraSTDLib> = std::sync::LazyLock::new(|| {
-    let folders = include_dir::include_dir!("astra_stdlib");
+    let folders = include_dir::include_dir!("astra");
 
     let lib_loader = |folder_name: &str| {
         #[allow(clippy::unwrap_used)]
@@ -48,7 +48,7 @@ pub static ASTRA_STD_LIBS: std::sync::LazyLock<AstraSTDLib> = std::sync::LazyLoc
     AstraSTDLib {
         lua_libs,
         teal_libs,
-        teal: include_str!("../astra_stdlib/teal.lua").to_string(),
+        teal: include_str!("../astra/teal.lua").to_string(),
     }
 });
 

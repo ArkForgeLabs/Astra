@@ -1,21 +1,22 @@
-// TODO: Change into require syntax instead of global Astra table.
-// TODO: Have the modules loaded from packed ones if none are available on the path
-
-use std::io::Read;
-
 use crate::ASTRA_STD_LIBS;
+use std::io::Read;
 
 // to capture all types of string literals
 const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
 ====================================================";
+
+fn find_module_in_stdlib_folder(module_name: &str, is_current_script_teal: bool) {}
 
 fn find_first_lua_match_with_content(
     lua_path: &str,
     module_name: &str,
     is_current_script_teal: bool,
 ) -> Option<(std::path::PathBuf, String)> {
+    let module_name = module_name.replace(".", std::path::MAIN_SEPARATOR_STR);
+
+    // TODO: check if is available on local stdlib, and then load it, else from the lua_path, and finally from packed stdlib
+
     for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
-        let module_name = module_name.replace(".", std::path::MAIN_SEPARATOR_STR);
         let pattern = pattern.replacen('?', &module_name, 1);
         let pattern_path = std::path::PathBuf::from(&pattern);
 

@@ -2,7 +2,7 @@
 
 return {
     include_dir = {
-        "astra_stdlib/teal",
+        "astra/teal",
     },
-    global_env_def = "astra_stdlib/teal/astra"
+    global_env_def = "astra/teal/astra"
 }

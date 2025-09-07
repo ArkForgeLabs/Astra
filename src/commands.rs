@@ -87,8 +87,7 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
         .await
         .expect("Error setting up the standard library");
 
-    let folder_path =
-        std::path::Path::new(&folder_path.unwrap_or(".".to_string())).join("astra_stdlib");
+    let folder_path = std::path::Path::new(&folder_path.unwrap_or(".".to_string())).join("astra");
 
     let _ = std::fs::remove_dir_all(&folder_path);
     std::fs::create_dir_all(folder_path.join("lua"))?;
@@ -116,9 +115,9 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
         "LuaJIT"
     };
     let luarc_file = include_str!("../.luarc.json")
-        .replace("astra_stdlib", "astra_stdlib")
+        .replace("astra", "astra")
         .replace("LuaJIT", runtime);
-    let tlconfig_file = include_str!("../tlconfig.lua").replace("astra_stdlib", "astra_stdlib");
+    let tlconfig_file = include_str!("../tlconfig.lua").replace("astra", "astra");
 
     std::fs::exists(".luarc.json")
         .map(|exists| !exists)
@@ -230,53 +229,46 @@ astra export"#
     Ok(())
 }
 
-async fn get_stdlib_folder_paths(stdlib_path: Option<String>) -> (String, String) {
-    let folder_path = stdlib_path.unwrap_or(
-        // get the folder path from .luarc.json
-        // { "workspace.library": ["./folder_path"] }
-        if let Ok(exists) = tokio::fs::try_exists(".astra").await
-            && exists
-        {
-            ".astra".to_string()
-        } else if let Ok(file) = tokio::fs::read_to_string(".luarc.json").await
-            && let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&file)
-            && let Some(parsed) = parsed.as_object()
-            && let Some(parsed) = parsed.get("workspace.library")
-            && let Some(parsed) = parsed.as_array()
-            && let Some(folder_path) = parsed.first()
-            && let Some(folder_path) = folder_path.as_str()
-        {
-            folder_path.to_string()
-        } else {
-            "".to_string()
-        },
-    );
-
-    (folder_path, "folder_path".to_string())
+async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
+    #[allow(clippy::expect_used)]
+    crate::components::register_components(lua)
+        .await
+        .expect("Error setting up the standard library");
 }
 
+#[deprecated]
 async fn get_lua_libs(lua: &mlua::Lua, stdlib_path: Option<String>) -> Vec<(String, String)> {
-    let mut lua_lib: Vec<(String, String)> = Vec::new();
-
-    let (lua_folder_path, teal_folder_path) = get_stdlib_folder_paths(stdlib_path).await;
-
-    if let Ok(mut files) = tokio::fs::read_dir(lua_folder_path).await {
-        // add them to the lua_lib for being sent to interpretation
-        while let Ok(Some(file)) = files.next_entry().await {
-            if (file.path().ends_with("lua") || file.path().ends_with("luau")) // make sure only lua files are loaded
-                && let Ok(content) = tokio::fs::read_to_string(file.path()).await
-            {
-                lua_lib.push((file.path().to_string_lossy().to_string(), content));
+    #[inline]
+    async fn read_local_libs(lua_lib: &mut Vec<(String, String)>, folder_path: std::path::PathBuf) {
+        if let Ok(mut files) = tokio::fs::read_dir(folder_path).await {
+            // add them to the lua_lib for being sent to interpretation
+            while let Ok(Some(file)) = files.next_entry().await {
+                // make sure only lua files are loaded
+                if (file.path().ends_with("lua")
+                    || file.path().ends_with("luau")
+                    || file.path().ends_with("tl"))
+                    && let Ok(content) = tokio::fs::read_to_string(file.path()).await
+                {
+                    lua_lib.push((file.path().to_string_lossy().to_string(), content));
+                }
             }
         }
     }
-    if lua_lib.is_empty() {
-        // if the folder couldn't be opened or issues existed
-        #[allow(clippy::expect_used)]
-        crate::components::register_components(lua)
-            .await
-            .expect("Error setting up the standard library");
 
+    let mut lua_lib: Vec<(String, String)> = Vec::new();
+
+    #[allow(clippy::expect_used)]
+    let current_path = if let Some(stdlib_path) = stdlib_path {
+        std::path::PathBuf::from(stdlib_path)
+    } else {
+        std::env::current_dir().expect("could not get the current directory")
+    }
+    .join("astra");
+
+    read_local_libs(&mut lua_lib, current_path.join("lua")).await;
+    read_local_libs(&mut lua_lib, current_path.join("teal")).await;
+
+    if lua_lib.is_empty() {
         lua_lib = ASTRA_STD_LIBS.lua_libs.clone();
     }
 
@@ -284,7 +276,8 @@ async fn get_lua_libs(lua: &mlua::Lua, stdlib_path: Option<String>) -> Vec<(Stri
 }
 
 /// Registers Lua components.
-async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
+#[deprecated]
+async fn legacy_registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
     let mut lua_lib = get_lua_libs(lua, stdlib_path).await;
 
     // Try to make astra.lua the first to get interpreted
@@ -328,7 +321,7 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
     // First attempt to load all modules
     failed_to_load_modules = process_modules(lua, lua_lib).await;
 
-    // Retry failed modules up to `rerun_limit` times
+    // Retry failed modules up to `rerun_limit` times``
     for _ in 0..rerun_limit {
         if failed_to_load_modules.is_empty() {
             break;

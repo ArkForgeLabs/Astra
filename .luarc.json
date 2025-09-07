@@ -1,7 +1,5 @@
 {
-    "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
-    "workspace.library": [
-        "astra_stdlib"
-    ],
-    "runtime.version": "LuaJIT"
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "workspace.library": ["astra"],
+  "runtime.version": "LuaJIT"
 }
