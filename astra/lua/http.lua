@@ -4,7 +4,7 @@
 ---@field text fun(): string
 ---@field json fun(): table Returns the body parsed as JSON -> Lua Table
 
-Astra.http = {}
+local http = {}
 
 --- Represents an HTTP client response.
 ---@class HTTPClientResponse
@@ -29,18 +29,328 @@ Astra.http = {}
 ---@field execute fun(): HTTPClientResponse Executes the request and returns the response
 ---@field execute_task fun(http_request: HTTPClientRequest, callback: http_client_callback) Executes the request as an async task
 
+---@diagnostic disable-next-line: duplicate-doc-alias
+---@alias callback fun(request: HTTPServerRequest, response: HTTPServerResponse): any
+
+---@class HTTPRouteConfiguration
+---@field body_limit? number
+
+---@class HTTPRoute
+---@field path string
+---@field method string
+---@field func function
+---@field static_dir string?
+---@field static_file string?
+---@field config HTTPRouteConfiguration?
+
+---@class HTTPMultipart
+---@field save_file fun(multipart: HTTPMultipart, file_path: string | nil): string | nil Saves the multipart into disk
+
+---@class HTTPServerRequest
+---@field method fun(request: HTTPServerRequest): string Returns the HTTP method (e.g., "GET", "POST").
+---@field uri fun(request: HTTPServerRequest): string
+---@field queries fun(request: HTTPServerRequest): table
+---@field params fun(request: HTTPServerRequest): table
+---@field headers fun(request: HTTPServerRequest): table
+---@field body fun(request: HTTPServerRequest): HTTPBody|nil Returns the body of the request, which can be a table or a string.
+---@field multipart fun(request: HTTPServerRequest): HTTPMultipart|nil
+---@field get_cookie fun(request: HTTPServerRequest, name: string): Cookie
+---@field new_cookie fun(request: HTTPServerRequest, name: string, value: string): Cookie
+
+---@class HTTPServerResponse
+---Sets the HTTP status code of the response
+---@field set_status_code fun(response: HTTPServerResponse, new_status_code: number)
+---@field set_header fun(response: HTTPServerResponse, key: string, value: string)
+---Returns the entire headers list that so far has been set for the response
+---@field get_headers fun(response: HTTPServerResponse): table|nil
+---@field remove_header fun(response: HTTPServerResponse, key: string)
+---@field set_cookie fun(response: HTTPServerResponse, cookie: Cookie)
+---@field remove_cookie fun(response: HTTPServerResponse, cookie: Cookie)
+
+---@class Cookie
+---@field set_name fun(cookie: Cookie, name: string)
+---@field set_value fun(cookie: Cookie, value: string)
+---@field set_domain fun(cookie: Cookie, domain: string)
+---@field set_path fun(cookie: Cookie, path: string)
+---@field set_expiration fun(cookie: Cookie, expiration: number)
+---@field set_http_only fun(cookie: Cookie, http_only: boolean)
+---@field set_max_age fun(cookie: Cookie, max_age: number)
+---@field set_permanent fun(cookie: Cookie)
+---@field get_name fun(cookie: Cookie): string?
+---@field get_value fun(cookie: Cookie): string?
+---@field get_domain fun(cookie: Cookie): string?
+---@field get_path fun(cookie: Cookie): string?
+---@field get_expiration fun(cookie: Cookie): number?
+---@field get_http_only fun(cookie: Cookie): boolean?
+---@field get_max_age fun(cookie: Cookie): number?
+
+---@class CloseFrame
+---@field code integer
+---@field reason string
+
+---@alias WebSocketMessageType "text" | "bytes" | "ping" | "pong" | "close"
+
+---@class WebSocketMessage
+---@field type WebSocketMessageType
+---@field data string
+
+---@class WebSocket
+---Receive another message. Returns `nil` if the stream has closed.
+---@field recv fun(socket: WebSocket): WebSocketMessage|nil
+---
+---A flexible WebSocket message
+---@field send fun(socket: WebSocket, message_type: WebSocketMessageType, message: any)
+---
+---A text WebSocket message
+---@field send_text fun(socket: WebSocket, message: string)
+---
+---A binary WebSocket message
+---@field send_bytes fun(socket: WebSocket, bytes: table)
+---
+---A ping message with the specified payload
+---
+---The payload here must have a length less than 125 bytes.
+---
+---Ping messages will be automatically responded to by the server,
+---so you do not have to worry about dealing with them yourself.
+---@field send_ping fun(socket: WebSocket, bytes: string)
+---
+---A pong message with the specified payload
+---
+---The payload here must have a length less than 125 bytes.
+---
+---Pong messages will be automatically sent to the client if a ping message is received,
+---so you do not have to worry about constructing them yourself unless you want to implement a unidirectional heartbeat.
+---@field send_pong fun(socket: WebSocket, bytes: string)
+---
+---@field send_close fun(socket: WebSocket, close_frame: CloseFrame?)
+
+---@alias wscallback fun(socket: WebSocket): any
+
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+
+
+---@class HTTPServer
+---@diagnostic disable-next-line: missing-fields
+local HTTPServer = {
+	version = "0.0.0",
+	hostname = "127.0.0.1",
+	--- Enable or disable compression
+	compression = false,
+	port = 8080,
+	--- Contains all of the route details
+	routes = {},
+}
+function HTTPServer:new()
+	local server = {
+		version = "0.0.0",
+		hostname = "127.0.0.1",
+		--- Enable or disable compression
+		compression = false,
+		port = 8080,
+		--- Contains all of the route details
+		routes = {},
+	}
+
+	setmetatable(server, self)
+	self.__index = self
+	return server
+end
+
+---@return HTTPServer
+function http.server.new()
+	return HTTPServer:new()
+end
+
+local function add_to_routes(server, method, path, callback, config)
+	local index = (path == "/") and 1 or #server.routes + 1
+	table.insert(server.routes, index, {
+		path = path,
+		method = method,
+		func = callback,
+		config = config or {},
+	})
+end
+
+---@param path string
+---@param callback callback
+---@param config HTTPRouteConfiguration?
+function HTTPServer:get(path, callback, config)
+	add_to_routes(self, "get", path, callback, config)
+end
+
+---@param path string
+---@param callback callback
+---@param config HTTPRouteConfiguration?
+function HTTPServer:post(path, callback, config)
+	add_to_routes(self, "post", path, callback, config)
+end
+
+---@param path string
+---@param callback callback
+---@param config HTTPRouteConfiguration?
+function HTTPServer:put(path, callback, config)
+	add_to_routes(self, "put", path, callback, config)
+end
+
+---@param path string
+---@param callback callback
+---@param config HTTPRouteConfiguration?
+function HTTPServer:delete(path, callback, config)
+	add_to_routes(self, "delete", path, callback, config)
+end
+
+---@param path string
+---@param callback callback
+---@param config HTTPRouteConfiguration?
+function HTTPServer:options(path, callback, config)
+	add_to_routes(self, "options", path, callback, config)
+end
+
+---@param path string
+---@param callback callback
+---@param config HTTPRouteConfiguration?
+function HTTPServer:patch(path, callback, config)
+	add_to_routes(self, "patch", path, callback, config)
+end
+
+---@param path string
+---@param callback callback
+---@param config HTTPRouteConfiguration?
+function HTTPServer:trace(path, callback, config)
+	add_to_routes(self, "trace", path, callback, config)
+end
+
+---@param path string
+---@param serve_path string
+---@param config HTTPRouteConfiguration?
+function HTTPServer:static_dir(path, serve_path, config)
+	table.insert(self.routes, {
+		path = path,
+		method = "static_dir",
+		func = function() end,
+		static_dir = serve_path,
+		config = config or {},
+	})
+end
+
+---@param path string
+---@param serve_path string
+---@param config HTTPRouteConfiguration?
+function HTTPServer:static_file(path, serve_path, config)
+	table.insert(self.routes, {
+		path = path,
+		method = "static_file",
+		func = function() end,
+		static_file = serve_path,
+		config = config or {},
+	})
+end
+
+---@param path string
+---@param wscallback wscallback
+---@param config HTTPRouteConfiguration?
+function HTTPServer:websocket(path, wscallback, config)
+	add_to_routes(self, "web_socket", path, wscallback, config)
+end
+
+---Runs the server
+function HTTPServer:run()
+	---@diagnostic disable-next-line: undefined-global
+	astra_internal__start_server(self)
+end
+
+http.middleware = {}
+
+--- `on Entry:`
+--- Include *on Entry* description if the middleware does something before calling *next_handler*
+---
+--- `on Leave:`
+--- Include *on Leave* description if the middleware does something after calling *next_handler*
+---
+--- `Depends on:`
+--- Include *Depends on* description if the middleware depends on other middlewares
+---
+---@param next_handler function
+local function middleware_template(next_handler)
+    --- Next_handler is a function which represents a middleware or a handler
+
+    --- Each middleware must return a function which accepts 3 arguments,
+    --- and passes them to the next_handler
+    ---@param request HTTPServerRequest
+    ---@param response HTTPServerResponse
+    ---@param ctx { key_inserted_by_middleware_I_depend_on: string }
+    return function(request, response, ctx)
+        -- Pre-handler logic
+        if "something wrong" then
+            return "Waaait a minute."
+        end
+        local result = next_handler(request, response, ctx)
+        -- Post-handler logic
+        if "you came up with a use case" then
+            local things = "Do some on-Leave logic"
+        end
+        return result
+    end
+end
+
+---------------
+-- Utilities --
+---------------
+
+--- Chains middlewares together in order
+---@param chain table A list of middlewares
+---@return function middleware Composed middleware
+---
+--- Functionally
+--- ```lua
+--- chain {context, html, logger} (handler)
+--- ```
+--- equals to
+--- ```lua
+--- context(html(logger(handler)))
+--- ```
+---
+--- and
+--- ```lua
+--- chain {context, html, logger}
+--- ```
+--- equals to
+--- ```lua
+--- function(next_handler)
+---     return function(request, response, ctx)
+---         context(html(logger(next_handler(request, response, ctx))))
+---     end
+--- end
+--- ```
+function http.middleware.chain(chain)
+    return function(handler)
+        assert(type(handler) == "function",
+            "Handler must be a function, got " .. type(handler))
+        assert(#chain >= 2, "Chain must have at least 2 middlewares")
+        for i = #chain, 1, -1 do
+            local middleware = chain[i]
+            assert(type(middleware) == "function",
+                "Middleware must be a function, got " .. type(middleware))
+            handler = middleware(handler)
+        end
+        return handler
+    end
+end
+
 ---Opens a new async HTTP Request. The request is running as a task in parallel
 ---@param url string
 ---@return HTTPClientRequest
 ---@nodiscard
 ---@diagnostic disable-next-line: missing-return, lowercase-global
-function Astra.http.request(url)
+function http.request(url)
 	---@diagnostic disable-next-line: undefined-global
 	return astra_internal__http_request(url)
 end
 
-
-Astra.http.status_codes = {
+http.status_codes = {
     --- The server has received the request headers and the client should proceed to send the request body.
     CONTINUE = 100,
     --- The requester has asked the server to switch protocols and the server has agreed to do so.
@@ -174,3 +484,5 @@ Astra.http.status_codes = {
     --- The client needs to authenticate to gain network access.
     NETWORK_AUTHENTICATION_REQUIRED = 511
 }
+
+return http

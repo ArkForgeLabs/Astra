@@ -5,7 +5,7 @@
 ---@param input_table table
 ---@param schema table
 ---@return boolean, string | nil
-function Astra.validate_table(input_table, schema)
+local function validate_table(input_table, schema)
     -- Helper function to check if a value is of the expected type
     local function check_type(value, expected_type)
         local type_map = {
@@ -27,7 +27,7 @@ function Astra.validate_table(input_table, schema)
 
     -- Helper function to validate nested tables
     local function validate_nested_table(value, nested_schema, path)
-        local is_valid, err = Astra.validate_table(value, nested_schema)
+        local is_valid, err = validate_table(value, nested_schema)
         if not is_valid then
             return false, "\"" .. path .. "\"" .. err
         end
@@ -127,3 +127,5 @@ function Astra.validate_table(input_table, schema)
 
     return true
 end
+
+return validate_table

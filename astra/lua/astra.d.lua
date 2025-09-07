@@ -7,6 +7,10 @@ Astra = {
 
 ASTRA_INTERNAL__CURRENT_SCRIPT = ""
 
+--[[
+    All of the smaller scale components that are not big enough to need their own files, are here
+]]
+
 ---Pretty prints any table or value
 ---@param value any
 function pprint(value)
@@ -60,15 +64,43 @@ end
 
 ---Load your own file into env
 ---@param file_path string
-function Astra.dotenv_load(file_path)
+function dotenv_load(file_path)
 	---@diagnostic disable-next-line: undefined-global
 	return astra_internal__dotenv_load(file_path)
 end
 
-Astra.dotenv_load(".env")
-Astra.dotenv_load(".env.production")
-Astra.dotenv_load(".env.prod")
-Astra.dotenv_load(".env.development")
-Astra.dotenv_load(".env.dev")
-Astra.dotenv_load(".env.test")
-Astra.dotenv_load(".env.local")
+dotenv_load(".env")
+dotenv_load(".env.production")
+dotenv_load(".env.prod")
+dotenv_load(".env.development")
+dotenv_load(".env.dev")
+dotenv_load(".env.test")
+dotenv_load(".env.local")
+
+---@class Regex
+---@field captures fun(regex: Regex, content: string): string[][]
+---@field replace fun(regex: Regex, content: string, replacement: string, limit: number?): string
+---@field is_match fun(regex: Regex, content: string): boolean
+
+---@param expression string
+---@return Regex
+function regex(expression)
+	---@diagnostic disable-next-line: undefined-global
+	return astra_internal__regex(expression)
+end
+
+---@param key string
+function os.getenv(key)
+	---@diagnostic disable-next-line: undefined-global
+	return astra_internal__getenv(key)
+end
+
+---Sets the environment variable.
+---
+---NOT SAFE WHEN USED IN MULTITHREADING ENVIRONMENT
+---@param key string
+---@param value string
+function os.setenv(key, value)
+	---@diagnostic disable-next-line: undefined-global
+	return astra_internal__setenv(key, value)
+end

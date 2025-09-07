@@ -8,7 +8,7 @@ template_engine:add_function("test", function(args)
 end)
 
 -- Create an HTTP Server
-local server = Astra.http.server.new()
+local server = require("astra.lua.http").server.new()
 
 -- Serve the templates
 template_engine:add_to_server(
