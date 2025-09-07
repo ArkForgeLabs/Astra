@@ -2,7 +2,7 @@
 
 ---@class Astra
 Astra = {
-    version = "@ASTRA_VERSION",
+	version = "@ASTRA_VERSION",
 }
 
 ASTRA_INTERNAL__CURRENT_SCRIPT = ""

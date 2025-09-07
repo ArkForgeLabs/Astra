@@ -80,7 +80,8 @@ local function validate_table(input_table, schema)
 
         -- If the key exists, check its type
         if value ~= nil and not check_type(value, expected_type) then
-            return false, "\n" .. "Incorrect type for key: " .. path .. ". Expected " .. expected_type .. ", got " .. type(value)
+            return false,
+                "\n" .. "Incorrect type for key: " .. path .. ". Expected " .. expected_type .. ", got " .. type(value)
         end
 
         -- If the value is a nested table, validate it recursively
@@ -128,4 +129,4 @@ local function validate_table(input_table, schema)
     return true
 end
 
-return validate_table
+return { validate_table = validate_table }

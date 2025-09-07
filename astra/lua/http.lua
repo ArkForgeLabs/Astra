@@ -135,131 +135,132 @@ local http = {}
 ---@class HTTPServer
 ---@diagnostic disable-next-line: missing-fields
 local HTTPServer = {
-	version = "0.0.0",
-	hostname = "127.0.0.1",
-	--- Enable or disable compression
-	compression = false,
-	port = 8080,
-	--- Contains all of the route details
-	routes = {},
+    version = "0.0.0",
+    hostname = "127.0.0.1",
+    --- Enable or disable compression
+    compression = false,
+    port = 8080,
+    --- Contains all of the route details
+    routes = {},
 }
 function HTTPServer:new()
-	local server = {
-		version = "0.0.0",
-		hostname = "127.0.0.1",
-		--- Enable or disable compression
-		compression = false,
-		port = 8080,
-		--- Contains all of the route details
-		routes = {},
-	}
+    local server = {
+        version = "0.0.0",
+        hostname = "127.0.0.1",
+        --- Enable or disable compression
+        compression = false,
+        port = 8080,
+        --- Contains all of the route details
+        routes = {},
+    }
 
-	setmetatable(server, self)
-	self.__index = self
-	return server
+    setmetatable(server, self)
+    self.__index = self
+    return server
 end
 
+http.server = {}
 ---@return HTTPServer
 function http.server.new()
-	return HTTPServer:new()
+    return HTTPServer:new()
 end
 
 local function add_to_routes(server, method, path, callback, config)
-	local index = (path == "/") and 1 or #server.routes + 1
-	table.insert(server.routes, index, {
-		path = path,
-		method = method,
-		func = callback,
-		config = config or {},
-	})
+    local index = (path == "/") and 1 or #server.routes + 1
+    table.insert(server.routes, index, {
+        path = path,
+        method = method,
+        func = callback,
+        config = config or {},
+    })
 end
 
 ---@param path string
 ---@param callback callback
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:get(path, callback, config)
-	add_to_routes(self, "get", path, callback, config)
+    add_to_routes(self, "get", path, callback, config)
 end
 
 ---@param path string
 ---@param callback callback
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:post(path, callback, config)
-	add_to_routes(self, "post", path, callback, config)
+    add_to_routes(self, "post", path, callback, config)
 end
 
 ---@param path string
 ---@param callback callback
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:put(path, callback, config)
-	add_to_routes(self, "put", path, callback, config)
+    add_to_routes(self, "put", path, callback, config)
 end
 
 ---@param path string
 ---@param callback callback
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:delete(path, callback, config)
-	add_to_routes(self, "delete", path, callback, config)
+    add_to_routes(self, "delete", path, callback, config)
 end
 
 ---@param path string
 ---@param callback callback
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:options(path, callback, config)
-	add_to_routes(self, "options", path, callback, config)
+    add_to_routes(self, "options", path, callback, config)
 end
 
 ---@param path string
 ---@param callback callback
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:patch(path, callback, config)
-	add_to_routes(self, "patch", path, callback, config)
+    add_to_routes(self, "patch", path, callback, config)
 end
 
 ---@param path string
 ---@param callback callback
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:trace(path, callback, config)
-	add_to_routes(self, "trace", path, callback, config)
+    add_to_routes(self, "trace", path, callback, config)
 end
 
 ---@param path string
 ---@param serve_path string
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:static_dir(path, serve_path, config)
-	table.insert(self.routes, {
-		path = path,
-		method = "static_dir",
-		func = function() end,
-		static_dir = serve_path,
-		config = config or {},
-	})
+    table.insert(self.routes, {
+        path = path,
+        method = "static_dir",
+        func = function() end,
+        static_dir = serve_path,
+        config = config or {},
+    })
 end
 
 ---@param path string
 ---@param serve_path string
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:static_file(path, serve_path, config)
-	table.insert(self.routes, {
-		path = path,
-		method = "static_file",
-		func = function() end,
-		static_file = serve_path,
-		config = config or {},
-	})
+    table.insert(self.routes, {
+        path = path,
+        method = "static_file",
+        func = function() end,
+        static_file = serve_path,
+        config = config or {},
+    })
 end
 
 ---@param path string
 ---@param wscallback wscallback
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:websocket(path, wscallback, config)
-	add_to_routes(self, "web_socket", path, wscallback, config)
+    add_to_routes(self, "web_socket", path, wscallback, config)
 end
 
 ---Runs the server
 function HTTPServer:run()
-	---@diagnostic disable-next-line: undefined-global
-	astra_internal__start_server(self)
+    ---@diagnostic disable-next-line: undefined-global
+    astra_internal__start_server(self)
 end
 
 http.middleware = {}
@@ -346,8 +347,8 @@ end
 ---@nodiscard
 ---@diagnostic disable-next-line: missing-return, lowercase-global
 function http.request(url)
-	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__http_request(url)
+    ---@diagnostic disable-next-line: undefined-global
+    return astra_internal__http_request(url)
 end
 
 http.status_codes = {

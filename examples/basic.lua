@@ -6,7 +6,7 @@ server:get("/", function()
 end)
 
 -- The path parameters also works
-server:get("/{id}", function (request)
+server:get("/{id}", function(request)
 	return "The value of id is: " .. request:params().id
 end)
 

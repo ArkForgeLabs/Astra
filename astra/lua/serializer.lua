@@ -17,5 +17,5 @@ function json.decode(value)
 end
 
 return {
-    json = json
+	json = json
 }
