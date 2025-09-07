@@ -236,106 +236,106 @@ async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
         .expect("Error setting up the standard library");
 }
 
-#[deprecated]
-async fn get_lua_libs(lua: &mlua::Lua, stdlib_path: Option<String>) -> Vec<(String, String)> {
-    #[inline]
-    async fn read_local_libs(lua_lib: &mut Vec<(String, String)>, folder_path: std::path::PathBuf) {
-        if let Ok(mut files) = tokio::fs::read_dir(folder_path).await {
-            // add them to the lua_lib for being sent to interpretation
-            while let Ok(Some(file)) = files.next_entry().await {
-                // make sure only lua files are loaded
-                if (file.path().ends_with("lua")
-                    || file.path().ends_with("luau")
-                    || file.path().ends_with("tl"))
-                    && let Ok(content) = tokio::fs::read_to_string(file.path()).await
-                {
-                    lua_lib.push((file.path().to_string_lossy().to_string(), content));
-                }
-            }
-        }
-    }
+// #[deprecated]
+// async fn get_lua_libs(lua: &mlua::Lua, stdlib_path: Option<String>) -> Vec<(String, String)> {
+//     #[inline]
+//     async fn read_local_libs(lua_lib: &mut Vec<(String, String)>, folder_path: std::path::PathBuf) {
+//         if let Ok(mut files) = tokio::fs::read_dir(folder_path).await {
+//             // add them to the lua_lib for being sent to interpretation
+//             while let Ok(Some(file)) = files.next_entry().await {
+//                 // make sure only lua files are loaded
+//                 if (file.path().ends_with("lua")
+//                     || file.path().ends_with("luau")
+//                     || file.path().ends_with("tl"))
+//                     && let Ok(content) = tokio::fs::read_to_string(file.path()).await
+//                 {
+//                     lua_lib.push((file.path().to_string_lossy().to_string(), content));
+//                 }
+//             }
+//         }
+//     }
 
-    let mut lua_lib: Vec<(String, String)> = Vec::new();
+//     let mut lua_lib: Vec<(String, String)> = Vec::new();
 
-    #[allow(clippy::expect_used)]
-    let current_path = if let Some(stdlib_path) = stdlib_path {
-        std::path::PathBuf::from(stdlib_path)
-    } else {
-        std::env::current_dir().expect("could not get the current directory")
-    }
-    .join("astra");
+//     #[allow(clippy::expect_used)]
+//     let current_path = if let Some(stdlib_path) = stdlib_path {
+//         std::path::PathBuf::from(stdlib_path)
+//     } else {
+//         std::env::current_dir().expect("could not get the current directory")
+//     }
+//     .join("astra");
 
-    read_local_libs(&mut lua_lib, current_path.join("lua")).await;
-    read_local_libs(&mut lua_lib, current_path.join("teal")).await;
+//     read_local_libs(&mut lua_lib, current_path.join("lua")).await;
+//     read_local_libs(&mut lua_lib, current_path.join("teal")).await;
 
-    if lua_lib.is_empty() {
-        lua_lib = ASTRA_STD_LIBS.lua_libs.clone();
-    }
+//     if lua_lib.is_empty() {
+//         lua_lib = ASTRA_STD_LIBS.lua_libs.clone();
+//     }
 
-    lua_lib
-}
+//     lua_lib
+// }
 
-/// Registers Lua components.
-#[deprecated]
-async fn legacy_registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
-    let mut lua_lib = get_lua_libs(lua, stdlib_path).await;
+// /// Registers Lua components.
+// #[deprecated]
+// async fn legacy_registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
+//     let mut lua_lib = get_lua_libs(lua, stdlib_path).await;
 
-    // Try to make astra.lua the first to get interpreted
-    if let Some(index) = lua_lib.iter().position(|entry| {
-        let name = entry.0.to_ascii_lowercase();
-        name == "astra.lua"
-    }) {
-        let value = lua_lib.remove(index);
-        lua_lib.insert(0, value);
-    }
-    lua_lib.push(("teal.lua".to_string(), ASTRA_STD_LIBS.teal.clone()));
+//     // Try to make astra.lua the first to get interpreted
+//     if let Some(index) = lua_lib.iter().position(|entry| {
+//         let name = entry.0.to_ascii_lowercase();
+//         name == "astra.lua"
+//     }) {
+//         let value = lua_lib.remove(index);
+//         lua_lib.insert(0, value);
+//     }
+//     lua_lib.push(("teal.lua".to_string(), ASTRA_STD_LIBS.teal.clone()));
 
-    let rerun_limit = 100;
-    #[allow(unused_assignments)]
-    let mut failed_to_load_modules: Vec<(String, String)> = Vec::new();
+//     let rerun_limit = 100;
+//     #[allow(unused_assignments)]
+//     let mut failed_to_load_modules: Vec<(String, String)> = Vec::new();
 
-    async fn process_modules(
-        lua: &mlua::Lua,
-        modules: Vec<(String, String)>,
-    ) -> Vec<(String, String)> {
-        let mut new_failed_modules = Vec::new();
-        for (file_name, content) in modules {
-            match lua
-                .load(content.as_str())
-                .set_name(format!("@{file_name}"))
-                .exec_async()
-                .await
-            {
-                Err(e) if e.to_string().contains("attempt to index") => {
-                    new_failed_modules.insert(0, (file_name, content));
-                }
-                Err(e) => {
-                    tracing::error!("Couldn't add prelude:\n{e}");
-                }
-                Ok(_) => (),
-            }
-        }
-        new_failed_modules
-    }
+//     async fn process_modules(
+//         lua: &mlua::Lua,
+//         modules: Vec<(String, String)>,
+//     ) -> Vec<(String, String)> {
+//         let mut new_failed_modules = Vec::new();
+//         for (file_name, content) in modules {
+//             match lua
+//                 .load(content.as_str())
+//                 .set_name(format!("@{file_name}"))
+//                 .exec_async()
+//                 .await
+//             {
+//                 Err(e) if e.to_string().contains("attempt to index") => {
+//                     new_failed_modules.insert(0, (file_name, content));
+//                 }
+//                 Err(e) => {
+//                     tracing::error!("Couldn't add prelude:\n{e}");
+//                 }
+//                 Ok(_) => (),
+//             }
+//         }
+//         new_failed_modules
+//     }
 
-    // First attempt to load all modules
-    failed_to_load_modules = process_modules(lua, lua_lib).await;
+//     // First attempt to load all modules
+//     failed_to_load_modules = process_modules(lua, lua_lib).await;
 
-    // Retry failed modules up to `rerun_limit` times``
-    for _ in 0..rerun_limit {
-        if failed_to_load_modules.is_empty() {
-            break;
-        }
-        failed_to_load_modules = process_modules(lua, failed_to_load_modules).await;
-    }
+//     // Retry failed modules up to `rerun_limit` times``
+//     for _ in 0..rerun_limit {
+//         if failed_to_load_modules.is_empty() {
+//             break;
+//         }
+//         failed_to_load_modules = process_modules(lua, failed_to_load_modules).await;
+//     }
 
-    if !failed_to_load_modules.is_empty() {
-        for (file_name, _) in failed_to_load_modules {
-            tracing::error!(
-                "Failed to load module '{}' after {} retries",
-                file_name,
-                rerun_limit
-            );
-        }
-    }
-}
+//     if !failed_to_load_modules.is_empty() {
+//         for (file_name, _) in failed_to_load_modules {
+//             tracing::error!(
+//                 "Failed to load module '{}' after {} retries",
+//                 file_name,
+//                 rerun_limit
+//             );
+//         }
+//     }
+// }

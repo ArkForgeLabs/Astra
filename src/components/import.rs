@@ -62,21 +62,20 @@ fn find_first_lua_match_with_content(
 
 pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set("require", lua.create_async_function(|lua, path: String| async move {
-        let lua_path: String = lua.load("return package.path").eval()?;
-        let current_script_path: String = lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
-        let is_current_script_teal = std::path::PathBuf::from(&current_script_path).ends_with("tl");
-
         let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
-        let key_id = key_id.as_str();
-
+        
         let mut cache = lua
             .globals()
-            .get::<std::collections::HashMap<String, mlua::RegistryKey>>(key_id)
+            .get::<std::collections::HashMap<String, mlua::RegistryKey>>(key_id.as_str())
             .unwrap_or_default();
 
-        if let Some(key) = cache.get(&path) {
-            lua.registry_value::<mlua::Value>(key)
-        } else {
+    if let Some(key) = cache.get(&path) {
+        lua.registry_value::<mlua::Value>(key)
+    } else {
+            let lua_path: String = lua.load("return package.path").eval()?;
+            let current_script_path: String = lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
+            let is_current_script_teal = std::path::PathBuf::from(&current_script_path).ends_with("tl");
+
             #[allow(clippy::collapsible_else_if)]
             if let Some((file_path, content)) = find_first_lua_match_with_content(&lua_path, &path, is_current_script_teal)
             && let Some(is_teal) = file_path.extension().map(|extension| extension.to_string_lossy().contains("tl")) {
