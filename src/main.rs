@@ -10,9 +10,6 @@ mod components;
 /// Global Lua instance.
 pub static LUA: std::sync::LazyLock<mlua::Lua> =
     std::sync::LazyLock::new(|| unsafe { mlua::Lua::unsafe_new() });
-/// Global script path.
-pub static SCRIPT_PATH: tokio::sync::OnceCell<std::path::PathBuf> =
-    tokio::sync::OnceCell::const_new();
 
 pub struct AstraSTDLib {
     lua_libs: Vec<(String, String)>,

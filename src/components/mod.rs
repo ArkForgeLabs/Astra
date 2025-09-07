@@ -11,7 +11,7 @@ mod regex;
 mod templates;
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
-    import::register_import_function(lua)?;
+    import::register_import_function(lua).await?;
     global::register_to_lua(lua)?;
     http::server::register_to_lua(lua)?;
     http::client::HTTPClientRequest::register_to_lua(lua)?;

@@ -1,23 +1,17 @@
-use crate::{ASTRA_STD_LIBS, LUA, SCRIPT_PATH};
+use crate::{ASTRA_STD_LIBS, LUA};
 use clap::crate_version;
-use std::str::FromStr;
 
-/// Runs a Lua script.
-pub async fn run_command(
-    file_path: String,
+// to capture all types of string literals
+const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
+====================================================";
+
+async fn run_command_prerequisite(
+    file_path: &str,
     stdlib_path: Option<String>,
     extra_args: Option<Vec<String>>,
 ) {
     let lua = &LUA;
-
-    // Set the script path.
-    #[allow(clippy::expect_used)]
-    let path =
-        std::path::PathBuf::from_str(&file_path).expect("Could not turn path into a path buffer");
-    #[allow(clippy::expect_used)]
-    SCRIPT_PATH
-        .set(path)
-        .expect("Could not set the script path to OnceCell");
+    let stdlib_path = stdlib_path.unwrap_or("astra".to_string());
 
     // Register Lua components.
     registration(lua, stdlib_path).await;
@@ -26,7 +20,7 @@ pub async fn run_command(
     if let Some(extra_args) = extra_args
         && let Ok(args) = lua.create_table()
     {
-        if let Err(e) = args.set(0, file_path.clone()) {
+        if let Err(e) = args.set(0, file_path) {
             tracing::error!("Error adding arg to the args list: {e:?}");
         }
 
@@ -40,14 +34,22 @@ pub async fn run_command(
             tracing::error!("Error setting the global variable ARGS: {e:?}");
         }
     }
+}
+
+/// Runs a Lua script.
+pub async fn run_command(
+    file_path: String,
+    stdlib_path: Option<String>,
+    extra_args: Option<Vec<String>>,
+) {
+    let lua = &LUA;
+
+    run_command_prerequisite(&file_path, stdlib_path, extra_args).await;
 
     // Load and execute the Lua script.
     #[allow(clippy::expect_used)]
     let mut user_file = std::fs::read_to_string(&file_path).expect("Couldn't read file");
 
-    // to capture all types of string literals
-    const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
-====================================================";
     if let Some(is_teal) = std::path::PathBuf::from(&file_path).extension()
         && is_teal == "tl"
     {
@@ -115,9 +117,10 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
         "LuaJIT"
     };
     let luarc_file = include_str!("../.luarc.json")
-        .replace("astra", "astra")
+        .replace("astra", folder_path.to_string_lossy().as_ref())
         .replace("LuaJIT", runtime);
-    let tlconfig_file = include_str!("../tlconfig.lua").replace("astra", "astra");
+    let tlconfig_file =
+        include_str!("../tlconfig.lua").replace("astra", folder_path.to_string_lossy().as_ref());
 
     std::fs::exists(".luarc.json")
         .map(|exists| !exists)
@@ -223,119 +226,42 @@ Some of the next steps could be updating the exported type definitions:
 astra export"#
         );
     } else {
-        println!("Already up to date!");
+        println!("Already up to date!")
     }
 
     Ok(())
 }
 
-async fn registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
+async fn registration(lua: &mlua::Lua, stdlib_path: String) {
     #[allow(clippy::expect_used)]
     crate::components::register_components(lua)
         .await
         .expect("Error setting up the standard library");
+
+    let stdlib_path = std::path::PathBuf::from(stdlib_path);
+
+    // astra.d.lua
+    if let Ok(content) =
+        tokio::fs::read_to_string(stdlib_path.join("lua").join("astra.d.lua")).await
+        && let Err(e) = lua.load(content).set_name("astra.d.lua").exec_async().await
+    {
+        tracing::error!("Could not load the astra's lua globals: {e}");
+    }
+
+    // teal.lua
+    if let Ok(content) = tokio::fs::read_to_string(stdlib_path.join("teal.lua")).await
+        && let Err(e) = lua.load(content).set_name("teal.lua").exec_async().await
+    {
+        tracing::error!("Could not load the teal: {e}");
+    }
+
+    // astra.d.tl
+    if let Ok(content) =
+        tokio::fs::read_to_string(stdlib_path.join("teal").join("astra.d.tl")).await
+        && let Err(e) = lua.load(format!(
+            "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"astra.d.tl\")()"
+        )).set_name("astra.d.tl").exec_async().await
+    {
+        tracing::error!("Could not load the astra's teal globals: {e}");
+    }
 }
-
-// #[deprecated]
-// async fn get_lua_libs(lua: &mlua::Lua, stdlib_path: Option<String>) -> Vec<(String, String)> {
-//     #[inline]
-//     async fn read_local_libs(lua_lib: &mut Vec<(String, String)>, folder_path: std::path::PathBuf) {
-//         if let Ok(mut files) = tokio::fs::read_dir(folder_path).await {
-//             // add them to the lua_lib for being sent to interpretation
-//             while let Ok(Some(file)) = files.next_entry().await {
-//                 // make sure only lua files are loaded
-//                 if (file.path().ends_with("lua")
-//                     || file.path().ends_with("luau")
-//                     || file.path().ends_with("tl"))
-//                     && let Ok(content) = tokio::fs::read_to_string(file.path()).await
-//                 {
-//                     lua_lib.push((file.path().to_string_lossy().to_string(), content));
-//                 }
-//             }
-//         }
-//     }
-
-//     let mut lua_lib: Vec<(String, String)> = Vec::new();
-
-//     #[allow(clippy::expect_used)]
-//     let current_path = if let Some(stdlib_path) = stdlib_path {
-//         std::path::PathBuf::from(stdlib_path)
-//     } else {
-//         std::env::current_dir().expect("could not get the current directory")
-//     }
-//     .join("astra");
-
-//     read_local_libs(&mut lua_lib, current_path.join("lua")).await;
-//     read_local_libs(&mut lua_lib, current_path.join("teal")).await;
-
-//     if lua_lib.is_empty() {
-//         lua_lib = ASTRA_STD_LIBS.lua_libs.clone();
-//     }
-
-//     lua_lib
-// }
-
-// /// Registers Lua components.
-// #[deprecated]
-// async fn legacy_registration(lua: &mlua::Lua, stdlib_path: Option<String>) {
-//     let mut lua_lib = get_lua_libs(lua, stdlib_path).await;
-
-//     // Try to make astra.lua the first to get interpreted
-//     if let Some(index) = lua_lib.iter().position(|entry| {
-//         let name = entry.0.to_ascii_lowercase();
-//         name == "astra.lua"
-//     }) {
-//         let value = lua_lib.remove(index);
-//         lua_lib.insert(0, value);
-//     }
-//     lua_lib.push(("teal.lua".to_string(), ASTRA_STD_LIBS.teal.clone()));
-
-//     let rerun_limit = 100;
-//     #[allow(unused_assignments)]
-//     let mut failed_to_load_modules: Vec<(String, String)> = Vec::new();
-
-//     async fn process_modules(
-//         lua: &mlua::Lua,
-//         modules: Vec<(String, String)>,
-//     ) -> Vec<(String, String)> {
-//         let mut new_failed_modules = Vec::new();
-//         for (file_name, content) in modules {
-//             match lua
-//                 .load(content.as_str())
-//                 .set_name(format!("@{file_name}"))
-//                 .exec_async()
-//                 .await
-//             {
-//                 Err(e) if e.to_string().contains("attempt to index") => {
-//                     new_failed_modules.insert(0, (file_name, content));
-//                 }
-//                 Err(e) => {
-//                     tracing::error!("Couldn't add prelude:\n{e}");
-//                 }
-//                 Ok(_) => (),
-//             }
-//         }
-//         new_failed_modules
-//     }
-
-//     // First attempt to load all modules
-//     failed_to_load_modules = process_modules(lua, lua_lib).await;
-
-//     // Retry failed modules up to `rerun_limit` times``
-//     for _ in 0..rerun_limit {
-//         if failed_to_load_modules.is_empty() {
-//             break;
-//         }
-//         failed_to_load_modules = process_modules(lua, failed_to_load_modules).await;
-//     }
-
-//     if !failed_to_load_modules.is_empty() {
-//         for (file_name, _) in failed_to_load_modules {
-//             tracing::error!(
-//                 "Failed to load module '{}' after {} retries",
-//                 file_name,
-//                 rerun_limit
-//             );
-//         }
-//     }
-// }
