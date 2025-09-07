@@ -229,7 +229,9 @@
 <h1 id="schema-validation"><a class="header" href="#schema-validation">Schema Validation</a></h1>
 <p>Sometimes during development, your server likely recieves structured data such as JSON from outside. You likely also have a structure in mind for them. For these cases to validate that the structures are correct and to confidently go through them without risk of errors, hopefully, you can use the schema validation utility.</p>
 <p>Schema Validation essentially is a function that returns true if a given table is of a given structure. The structure is defined as a separate table that has the field names along the types and requirements. For example:</p>
-<pre><code class="language-lua">-- Your schema
+<pre><code class="language-lua">local validation = require("astra.lua.validation")
+
+-- Your schema
 local schema = {
     -- Type names along their types and requirements
     id = { type = "number" },
@@ -238,7 +240,7 @@ local schema = {
 -- Your actual data
 local example = { id = "123", name = 456 }
 -- Check the validation
-local is_valid, err = Astra.validate_table(example, schema)
+local is_valid, err = validation.validate_table(example, schema)
 assert(not is_valid, "Validation failed: expected validation to fail")
 </code></pre>
 <p>Almost all of the native lua types are accounted for. Deeply nesting is obviously supported as well:</p>
@@ -263,7 +265,7 @@ local example = {
         },
     },
 }
-local is_valid, err = Astra.validate_table(example, schema)
+local is_valid, err = validation.validate_table(example, schema)
 assert(is_valid, "Validation failed: " .. tostring(err))
 </code></pre>
 <p>As well as arrays:</p>
@@ -296,7 +298,7 @@ local tbl = {
     }
 }
 
-local is_valid, err = Astra.validate_table(tbl, schema)
+local is_valid, err = validation.validate_table(tbl, schema)
 assert(is_valid, "Validation failed: " .. tostring(err))
 </code></pre>
 

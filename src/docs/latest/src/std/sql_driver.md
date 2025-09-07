@@ -4,7 +4,7 @@ If your server requires access to an SQL database such as PostgreSQL and SQLite,
 
 ```lua
 -- connect to your db
-local db = Astra.database_connect("postgres", "postgres://astra_postgres:password@localhost/astr_database")
+local db = require("astra.lua.database")("postgres", "postgres://astra_postgres:password@localhost/astr_database")
 
 -- You can execute queries to the database along with optional parameters
 db:execute([[

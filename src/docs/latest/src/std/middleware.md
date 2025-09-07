@@ -1,12 +1,12 @@
 # Middleware
 
-Middleware modifies the way a request is processed. 
+Middleware modifies the way a request is processed.
 
-Since Lua is a very flexible language, there are lots of ways to implement middlewares. 
+Since Lua is a very flexible language, there are lots of ways to implement middlewares.
 
-We decided to take an advantage of Lua functions being a [first-class values](https://www.lua.org/pil/6.html). 
+We decided to take an advantage of Lua functions being a [first-class values](https://www.lua.org/pil/6.html).
 
-> [!NOTE] 
+> [!NOTE]
 > If you are familiar with this concept, feel free to go to the **Full example** at the bottom of the page.
 
 Astra has several built-in middlewares. You can modify or extend middlewares directly in `.astra/middleware.lua` (after running `astra export`) or in your own files. We are opened to PRs.
@@ -18,7 +18,8 @@ For more details, see the [middleware.lua](https://github.com/ArkForgeLabs/Astra
 The following example shows the most basic middleware that changes the response headers.
 
 ```lua
-local server = Astra.http.server:new()
+local http = require("astra.lua.http")
+local server = http.server:new()
 
 local function sunny_day(request, response)
     return "What a great sunny day!"
@@ -45,7 +46,8 @@ server:run()
 When we want to pass data through middleware, we can use the third argument and treat it as a context table.
 
 ```lua
-local server = Astra.http.server:new()
+local datetime = require("astra.lua.datetime")
+local server = http.server:new()
 
 ---@param ctx { datetime: DateTime }
 local function favourite_day(_request, _response, ctx)
@@ -59,13 +61,13 @@ local function favourite_day(_request, _response, ctx)
 end
 
 --- `on Entry:`
---- Inserts `Astra.datetime.new()` into `ctx.datetime`
+--- Inserts `datetime.new()` into `ctx.datetime`
 ---
 --- `Depends on:`
 --- `ctx`
 local function insert_datetime(next_handler)
     return function(request, response, ctx)
-        ctx.datetime = Astra.datetime.new()
+        ctx.datetime = datetime.new()
         return next_handler(request, response, ctx)
     end
 end
@@ -98,12 +100,11 @@ server:run()
 
 To make it less tedious to compose middleware, we introduced the `chain` function, which combines all provided middleware into a single middleware.
 
-> [!NOTE] 
+> [!NOTE]
 > Read more about why we can drop parenthesis while calling `chain` function here: [Writing a DSL in Lua](https://leafo.net/guides/dsl-in-lua.html)
 
 ```lua
-local middleware = Astra.http.middleware
-local chain = middleware.chain
+local chain = http.middleware.chain
 
 -- This will behave exactly the same as ctx(insert_datetime(html(favourite_day)))
 server:get("/favourite-day", chain {ctx, insert_datetime, html} (favourite_day) )
@@ -155,15 +156,16 @@ server:get("/favourite-day", chain { common, insert_datetime } (favourite_day))
 
 server:run()
 ```
-The `logger` we got from the `file_logger` is gonna be used in all routes we pass it as a middleware.
 
+The `logger` we got from the `file_logger` is gonna be used in all routes we pass it as a middleware.
 
 ## Full example
 
 ```lua
-local server = Astra.http.server:new()
-local middleware = Astra.http.middleware
-local chain = middleware.chain
+local http = require("astra.lua.http")
+local datetime = require("astra.lua.datetime")
+local server = http.server:new()
+local chain = http.middleware.chain
 
 local function sunny_day(_request, _response)
     return "What a great sunny day!"
@@ -194,13 +196,13 @@ local function ctx(next_handler)
 end
 
 --- `on Entry:`
---- Inserts `Astra.datetime.new()` into `ctx.datetime`
+--- Inserts `datetime.new()` into `ctx.datetime`
 ---
 --- `Depends on:`
 --- `ctx`
 local function insert_datetime(next_handler)
     return function(request, response, ctx)
-        ctx.datetime = Astra.datetime.new()
+        ctx.datetime = datetime.new()
         return next_handler(request, response, ctx)
     end
 end
