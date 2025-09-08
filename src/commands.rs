@@ -1,4 +1,4 @@
-use crate::{ASTRA_STD_LIBS, LUA};
+use crate::{ASTRA_STD_LIBS, LUA, STDLIB_PATH};
 use clap::crate_version;
 
 // to capture all types of string literals
@@ -12,6 +12,10 @@ async fn run_command_prerequisite(
 ) {
     let lua = &LUA;
     let stdlib_path = stdlib_path.unwrap_or("astra".to_string());
+    #[allow(clippy::expect_used)]
+    STDLIB_PATH
+        .set(std::path::PathBuf::from(stdlib_path.clone()))
+        .expect("Could not set the global STDLIB_PATH");
 
     // Register Lua components.
     registration(lua, stdlib_path).await;
@@ -89,19 +93,10 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
         .await
         .expect("Error setting up the standard library");
 
-    let folder_path = std::path::Path::new(&folder_path.unwrap_or(".".to_string())).join("astra");
-
-    let _ = std::fs::remove_dir_all(&folder_path);
-    std::fs::create_dir_all(folder_path.join("lua"))?;
-    std::fs::create_dir_all(folder_path.join("teal"))?;
-    // Write the bundled library to the file.
-    for (file_path, content) in ASTRA_STD_LIBS.lua_libs.clone() {
-        std::fs::write(folder_path.join("lua").join(&file_path), content)?;
-    }
-    for (file_path, content) in ASTRA_STD_LIBS.teal_libs.clone() {
-        std::fs::write(folder_path.join("teal").join(&file_path), content)?;
-    }
-    std::fs::write(folder_path.join("teal.lua"), ASTRA_STD_LIBS.teal.clone())?;
+    let folder_path = folder_path.unwrap_or(".".to_string());
+    let folder_path = std::path::Path::new(&folder_path);
+    let _ = std::fs::remove_dir_all(folder_path.join("astra"));
+    ASTRA_STD_LIBS.extract(folder_path)?;
 
     let runtime = if cfg!(feature = "lua54") {
         "Lua 5.4"
@@ -240,24 +235,48 @@ async fn registration(lua: &mlua::Lua, stdlib_path: String) {
 
     let stdlib_path = std::path::PathBuf::from(stdlib_path);
 
+    async fn read_from_stdlib(
+        stdlib_path: &std::path::Path,
+        path: std::path::PathBuf,
+    ) -> Option<String> {
+        if let Ok(content) = tokio::fs::read_to_string(stdlib_path.join(path.clone())).await {
+            return Some(content);
+        }
+
+        if let Some(file) = ASTRA_STD_LIBS.get_file(path)
+            && let Some(content) = file.contents_utf8()
+        {
+            return Some(content.to_string());
+        }
+
+        None
+    }
+
     // astra.d.lua
-    if let Ok(content) =
-        tokio::fs::read_to_string(stdlib_path.join("lua").join("astra.d.lua")).await
+    if let Some(content) = read_from_stdlib(
+        &stdlib_path,
+        std::path::PathBuf::from("lua").join("astra.d.lua"),
+    )
+    .await
         && let Err(e) = lua.load(content).set_name("astra.d.lua").exec_async().await
     {
         tracing::error!("Could not load the astra's lua globals: {e}");
     }
 
     // teal.lua
-    if let Ok(content) = tokio::fs::read_to_string(stdlib_path.join("teal.lua")).await
+    if let Some(content) =
+        read_from_stdlib(&stdlib_path, std::path::PathBuf::from("teal.lua")).await
         && let Err(e) = lua.load(content).set_name("teal.lua").exec_async().await
     {
         tracing::error!("Could not load the teal: {e}");
     }
 
     // astra.d.tl
-    if let Ok(content) =
-        tokio::fs::read_to_string(stdlib_path.join("teal").join("astra.d.tl")).await
+    if let Some(content) = read_from_stdlib(
+        &stdlib_path,
+        std::path::PathBuf::from("teal").join("astra.d.tl"),
+    )
+    .await
         && let Err(e) = lua.load(format!(
             "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"astra.d.tl\")()"
         )).set_name("astra.d.tl").exec_async().await

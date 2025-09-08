@@ -1,17 +1,16 @@
-use crate::{ASTRA_STD_LIBS};
-use std::io::Read;
+use crate::{ASTRA_STD_LIBS, STDLIB_PATH};
 
 // to capture all types of string literals
 const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
 ====================================================";
 
 async fn find_first_lua_match_with_content(
-    lua_path: &str,
+    lua_path: String,
     module_name: &str,
-    is_current_script_teal: bool,
 ) -> Option<(std::path::PathBuf, String)> {
     let module_path = module_name.replace(".", std::path::MAIN_SEPARATOR_STR);
-    
+    let stdlib_path = STDLIB_PATH.get_or_init(|| async { std::path::PathBuf::from("astra") }).await;
+
     // check the lua paths if the module exist there
     for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
         let pattern = pattern.replacen('?', &module_path, 1);
@@ -26,30 +25,27 @@ async fn find_first_lua_match_with_content(
             pattern_path.clone(), // For directories or files without extensions
         ];
 
-        for candidate in candidates {
-            if let Ok(mut file) = std::fs::File::open(&candidate) {
-                let mut content = String::new();
-                if file.read_to_string(&mut content).is_ok() {
-                    return Some((candidate, content));
-                }
+        // Check the file system
+        for candidate in candidates.iter() {
+            if let Ok(content) = tokio::fs::read_to_string(&candidate).await {
+                return Some((candidate.clone(), content));
             }
         }
-    }
 
-    // and finally get it from the packaged library
-    if let Some(module_name) = module_name.split(".").last() {
-        if is_current_script_teal && let Some((path, content)) = ASTRA_STD_LIBS
-                .teal_libs
-                .iter()
-                .find(|lib| lib.0.contains(module_name))
-        {
-            return Some((std::path::PathBuf::from(&path), content.clone()));
-        } else if let Some((path, content)) = ASTRA_STD_LIBS
-            .lua_libs
-            .iter()
-            .find(|lib| lib.0.contains(module_name))
-        {
-            return Some((std::path::PathBuf::from(&path), content.clone()));
+        // Check in packaged libs if it exists
+        for candidate in candidates {
+            if let Some(file_name) =  stdlib_path.file_name()
+                && let file_name = candidate.to_string_lossy().to_string().replace(
+                        format!(".{}{}{}",
+                        std::path::MAIN_SEPARATOR_STR,
+                        file_name.to_string_lossy(), 
+                        std::path::MAIN_SEPARATOR_STR).as_str(), ""
+                    )
+                && let _ = println!("{file_name:?}")
+                && let Some(file) = ASTRA_STD_LIBS.get_file(file_name)
+                && let Some(content) = file.contents_utf8() {
+                return Some((candidate, content.to_string()));
+            }
         }
     }
 
@@ -70,10 +66,10 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
     } else {
             let lua_path: String = lua.load("return package.path").eval()?;
             let current_script_path: String = lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
-            let is_current_script_teal = std::path::PathBuf::from(&current_script_path).ends_with("tl");
+            // let is_current_script_teal = std::path::PathBuf::from(&current_script_path).ends_with("tl");
 
             #[allow(clippy::collapsible_else_if)]
-            if let Some((file_path, content)) = find_first_lua_match_with_content(&lua_path, &path, is_current_script_teal).await
+            if let Some((file_path, content)) = find_first_lua_match_with_content(lua_path, &path).await
             && let Some(is_teal) = file_path.extension().map(|extension| extension.to_string_lossy().contains("tl")) {
                 let file_path = file_path.to_string_lossy().to_string().replace("./", "").replace(".\\", "");
 

@@ -11,43 +11,12 @@ mod components;
 pub static LUA: std::sync::LazyLock<mlua::Lua> =
     std::sync::LazyLock::new(|| unsafe { mlua::Lua::unsafe_new() });
 
-pub struct AstraSTDLib {
-    lua_libs: Vec<(String, String)>,
-    teal_libs: Vec<(String, String)>,
-    teal: String,
-}
+pub static STDLIB_PATH: tokio::sync::OnceCell<std::path::PathBuf> =
+    tokio::sync::OnceCell::const_new();
+
 /// Global standard libraries and type definitions from Astra
-pub static ASTRA_STD_LIBS: std::sync::LazyLock<AstraSTDLib> = std::sync::LazyLock::new(|| {
-    let folders = include_dir::include_dir!("astra");
-
-    let lib_loader = |folder_name: &str| {
-        #[allow(clippy::unwrap_used)]
-        folders
-            .get_dir(folder_name)
-            .unwrap()
-            .files()
-            .filter_map(|file| {
-                if let Some(name) = file.path().file_name()
-                    && let Some(name) = name.to_str().map(|name| name.to_string())
-                    && let Some(content) = file.contents_utf8()
-                {
-                    Some((name, content.replace("@ASTRA_VERSION", crate_version!())))
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>()
-    };
-
-    let lua_libs = lib_loader("lua");
-    let teal_libs = lib_loader("teal");
-
-    AstraSTDLib {
-        lua_libs,
-        teal_libs,
-        teal: include_str!("../astra/teal.lua").to_string(),
-    }
-});
+pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
+    std::sync::LazyLock::new(|| include_dir::include_dir!("astra"));
 
 /// Command-line interface for Astra.
 #[derive(Parser)]
