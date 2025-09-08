@@ -5,46 +5,48 @@ The Pub/Sub pattern in Astra is similar to the [observer pattern](./observer_pat
 You must remember that the rules of operating on pubsub stores is the same as that for the observer pattern, but pubsub stores are much more powerful and flexible.
 
 ```lua
+local stores = require("astra.lua.stores")
+
 -- Let's create a few tables as examples for observable objects
 local user1 = {
-	name = "John Doe",
-	email = "johndoe@example.com",
+ name = "John Doe",
+ email = "johndoe@example.com",
 }
 
 local user2 = {
-	name = "Jane Doe",
-	email = "janedoe@example.com",
+ name = "Jane Doe",
+ email = "janedoe@example.com",
 }
 
 -- We're going to subscribe functions to both user objects
 -- The first parameter is the topic, for which we will use "user:update"
 -- Then we pass in the observable object we want to subscribe to
 -- Finally we pass in the function that'll subscribe to the aforementioned observable
-Astra.pubsub.subscribe("user:update", user1, function(user)
-	print("User1 updated:", user.name, user.email)
+stores.pubsub.subscribe("user:update", user1, function(user)
+ print("User1 updated:", user.name, user.email)
 end)
 
-Astra.pubsub.subscribe("user:update", user2, function(user)
-	print("User2 updated:", user.name, user.email)
+stores.pubsub.subscribe("user:update", user2, function(user)
+ print("User2 updated:", user.name, user.email)
 end)
 
 -- Publish updates to the "user_update" topic
 user1.name = "John Doe Jr."
-Astra.pubsub.publish("user:update", user1)
+stores.pubsub.publish("user:update", user1)
 
 -- While unsubscribing a function, if the function isn't stored as a variable, you must match it exactly
 -- The parameters required while unsubscribing are exactly the same as while subscribing.
-Astra.pubsub.unsubscribe("user:update", user1, function(user)
-	print("User1 updated:", user.name, user.email)
+stores.pubsub.unsubscribe("user:update", user1, function(user)
+ print("User1 updated:", user.name, user.email)
 end)
 
 user2.email = "jane.doe@company.com"
-Astra.pubsub.publish("user:update", user2)
+stores.pubsub.publish("user:update", user2)
 ```
 
 You should get an output like this:
 
-```
+```txt
 User1 updated:  John Doe Jr.    johndoe@example.com
 User2 updated:  Jane Doe        janedoe@example.com
 User2 updated:  Jane Doe        jane.doe@company.com

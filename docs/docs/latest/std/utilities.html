@@ -233,7 +233,7 @@
 <h2 id="string-split"><a class="header" href="#string-split">String Split</a></h2>
 <p><code>string.split</code> splits a string according to the seperator provided and result into an array of chunks.</p>
 <h2 id="dotenv"><a class="header" href="#dotenv">Dotenv</a></h2>
-<p>It is always a good idea to never include sensitive API keys within your server code. For these reasons we usually recommend using a <code>.env</code> file. Astra automatically loads them if they are present in the same folder into the environment, accessible through the <code>os.getenv</code>. You can also load your own file using the global <code>Astra.dotenv_load</code> function.</p>
+<p>It is always a good idea to never include sensitive API keys within your server code. For these reasons we usually recommend using a <code>.env</code> file. Astra automatically loads them if they are present in the same folder into the environment, accessible through the <code>os.getenv</code>. You can also load your own file using the global <code>dotenv_load</code> function.</p>
 <p>This is the load order of these files (They can overwrite the ones loaded previously):</p>
 <ul>
 <li><code>.env</code></li>
@@ -247,7 +247,7 @@
 <h2 id="regex"><a class="header" href="#regex">Regex</a></h2>
 <p>Astra has support for a very performant regex engine. The regex code is advised to be compiled once and reused multiple times to save up even more on performence. Example:</p>
 <pre><code class="language-lua">-- Create a new regex
-local my_re = Astra.regex([[(?:index)?\.(html|lua|tera)$]])
+local my_re = regex([[(?:index)?\.(html|lua|tera)$]])
 
 -- Capture all of the hits as list of string lists (string[][])
 pprint(my_re:captures([[

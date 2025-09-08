@@ -22,11 +22,13 @@ To install with differet Lua VM, e.g. Lua 5.4:
 cargo install lua-astra --no-default-features --features lua54
 ```
 
+> MSRV: 1.88+
+
 ## Example
 
 ```lua
 -- Create a new server
-local server = Astra.http.server.new()
+local server = require("astra.lua.http").server.new()
 
 -- Register a route
 server:get("/", function()

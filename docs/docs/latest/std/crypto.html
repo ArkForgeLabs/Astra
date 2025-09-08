@@ -230,21 +230,23 @@
 <p>During development of your web servers, you might need some cryptography functionality such as hashing and encoding. For these cases, Astra provides commonly used cryptographic functions to ease up development.</p>
 <h2 id="hashing"><a class="header" href="#hashing">Hashing</a></h2>
 <p>Currently Astra provides SHA2 and SHA3 (both 256 and 512 variants) hashing functions.</p>
-<pre><code class="language-lua">Astra.crypto.hash("sha2_512", "MY INPUT")
+<pre><code class="language-lua">local crypto = require("astra.lua.crypto")
+
+crypto.hash("sha2_512", "MY INPUT")
 </code></pre>
 <h2 id="base64"><a class="header" href="#base64">Base64</a></h2>
 <p>Astra also provides encoding and decoding of base64 strings, including URL safe variants:</p>
 <pre><code class="language-lua">local input = "MY VERY COOL STRING"
 
-local encoded = Astra.crypto.base64.encode(input)
+local encoded = crypto.base64.encode(input)
 print(encoded)
 
-local decoded = Astra.crypto.base64.decode(encoded)
+local decoded = crypto.base64.decode(encoded)
 print(decoded)
 </code></pre>
 <h2 id="json"><a class="header" href="#json">JSON</a></h2>
 <p>Often you will have to deal with a medium of structured data between your server and the clients. This could be in form of JSON, YAML, e.t.c. Astra includes some utilities to serialize and deserialize these with native Lua structures.</p>
-<p>For JSON, the <code>Astra.json.encode()</code> and <code>Astra.json.decode()</code> methods are available which converts JSON data from and into Lua tables.</p>
+<p>For JSON, you can import the serializer package (<code>require("astra.lua.serializer")</code>), and then use <code>json.encode()</code> and <code>json.decode()</code> methods which converts JSON data from and into Lua tables.</p>
 
                     </main>
 

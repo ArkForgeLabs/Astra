@@ -228,8 +228,10 @@
 </style>
 <h1 id="datetime"><a class="header" href="#datetime">DateTime</a></h1>
 <p>Astra provides date &amp; time functionality as an extension to the standard library. It is loosely inspired by the <a href="https://www.w3schools.com/jsref/jsref_obj_date.asp">JavaScript Date</a> implementation.</p>
-<pre><code class="language-lua">-- Returns a DateTime object which corresponds to the current date, time &amp; local offset from UTC.
-local dt = Astra.datetime.new()
+<pre><code class="language-lua">local datetime = require("astra.lua.datetime")
+
+-- Returns a DateTime object which corresponds to the current date, time &amp; local offset from UTC.
+local dt = datetime.new()
 
 -- Returns a DateTime object which corresponds to the provided date and/or time arguments &amp; local offset from UTC.
 -- You can provide the following arguments:
@@ -243,10 +245,10 @@ local dt = Astra.datetime.new()
 --
 -- Providing the year is mandatory.
 -- The other values, if not provided, will default to the following in respective order: 1, 1, 0, 0, 0, 0
-local dt = Astra.datetime.new(2001, 7, 8, 0, 24, 48, 241)
+local dt = datetime.new(2001, 7, 8, 0, 24, 48, 241)
 
 -- Or parse a string
-local dt = Astra.datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
+local dt = datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
 </code></pre>
 <p>Available methods:</p>
 <ul>

@@ -5,6 +5,8 @@ Sometimes during development, your server likely recieves structured data such a
 Schema Validation essentially is a function that returns true if a given table is of a given structure. The structure is defined as a separate table that has the field names along the types and requirements. For example:
 
 ```lua
+local validation = require("astra.lua.validation")
+
 -- Your schema
 local schema = {
     -- Type names along their types and requirements
@@ -14,7 +16,7 @@ local schema = {
 -- Your actual data
 local example = { id = "123", name = 456 }
 -- Check the validation
-local is_valid, err = Astra.validate_table(example, schema)
+local is_valid, err = validation.validate_table(example, schema)
 assert(not is_valid, "Validation failed: expected validation to fail")
 ```
 
@@ -42,7 +44,7 @@ local example = {
         },
     },
 }
-local is_valid, err = Astra.validate_table(example, schema)
+local is_valid, err = validation.validate_table(example, schema)
 assert(is_valid, "Validation failed: " .. tostring(err))
 ```
 
@@ -78,6 +80,6 @@ local tbl = {
     }
 }
 
-local is_valid, err = Astra.validate_table(tbl, schema)
+local is_valid, err = validation.validate_table(tbl, schema)
 assert(is_valid, "Validation failed: " .. tostring(err))
 ```

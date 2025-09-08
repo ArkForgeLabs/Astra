@@ -1,11 +1,8 @@
-local server = Astra.http.server:new()
-local middleware = Astra.http.middleware
+local http = require("astra.lua.http")
+local datetime = require("astra.lua.datetime")
 
-local context = middleware.context
-local console_logger = middleware.console_logger
-local file_logger = middleware.file_logger
-local chain = middleware.chain
-local html = middleware.html
+local server = http.server.new()
+local chain = http.middleware.chain
 
 
 local function homepage()
@@ -21,9 +18,20 @@ local function insert_datetime(next_handler)
     ---@param request HTTPServerRequest
     ---@param response HTTPServerResponse
     return function(request, response, ctx)
-        ctx.datetime = Astra.datetime.new()
+        ctx.datetime = datetime.new()
         local result = next_handler(request, response, ctx)
         return result
+    end
+end
+
+--- `on Entry:`
+--- Creates a new `ctx` table and passes it as a third argument into the `next_handler`
+local function context(next_handler)
+    ---@param request HTTPServerRequest
+    ---@param response HTTPServerResponse
+    return function(request, response)
+        local ctx = {}
+        return next_handler(request, response, ctx)
     end
 end
 
@@ -32,14 +40,9 @@ local function favourite_day(_, _, ctx)
     return "My favourite day is " .. ctx.datetime:to_date_string()
 end
 
-local file_handler, err = io.open("logs.txt", "a")
-if not file_handler then
-    error(err)
-end
+local long_chain = chain { context, insert_datetime }
 
-local long_chain = chain { context, file_logger(file_handler), insert_datetime, html }
-
-server:get("/", chain { console_logger, html } (homepage))
+server:get("/", chain { context, insert_datetime } (homepage))
 server:get("/fn", long_chain(favourite_day))
 
 server:run()

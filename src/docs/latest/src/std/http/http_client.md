@@ -3,18 +3,21 @@
 Sometimes your server needs to access other servers and make an HTTP Request, for these cases Astra provides a HTTP Client function:
 
 ```lua
+-- Import
+local http = require("astra.lua.http")
+
 -- By default its always a GET request
-local response = Astra.http.request("https://example.com/"):execute()
+local response = http.request("https://example.com/"):execute()
 pprint(response:status_code())
 pprint(response:headers())
 pprint(response:remote_address())
 pprint(response:body():text())
 ```
 
-The `Astra.http.request` function returns a `HTTPClientRequest` object which can be further modified to the needs before execution. The way to do these modification is through chained setters.
+The `http.request` function returns a `HTTPClientRequest` object which can be further modified to the needs before execution. The way to do these modification is through chained setters.
 
 ```lua
-local request_client = Astra.http.request("https://example.com")
+local request_client = http.request("https://example.com")
 -- - Method. You can pick between one of these:
 --   - GET,
 --   - POST,

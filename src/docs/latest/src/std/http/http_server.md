@@ -4,7 +4,7 @@ Astra offers HTTP1/2 web server through the [axum](https://github.com/tokio-rs/a
 
 ```lua
 -- create a new server with
-local server = Astra.http.server.new()
+local server = require("astra.lua.http").server.new()
 
 -- run the server with
 server:run()

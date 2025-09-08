@@ -1,4 +1,4 @@
-local server = Astra.http.server.new()
+local server = require("astra.lua.http").server.new()
 
 -- A simple GET index route with text return
 server:get("/", function()
@@ -6,7 +6,7 @@ server:get("/", function()
 end)
 
 -- The path parameters also works
-server:get("/{id}", function (request)
+server:get("/{id}", function(request)
 	return "The value of id is: " .. request:params().id
 end)
 

@@ -207,14 +207,14 @@ pub fn load_routes(server: mlua::Table) -> Router {
             }
         }
 
-        if let Ok(should_compress) = server.get::<bool>("compression") {
-            if should_compress {
-                router = router.layer(
-                    tower::ServiceBuilder::new()
-                        .layer(tower_http::decompression::RequestDecompressionLayer::new())
-                        .layer(tower_http::compression::CompressionLayer::new()),
-                );
-            }
+        if let Ok(should_compress) = server.get::<bool>("compression")
+            && should_compress
+        {
+            router = router.layer(
+                tower::ServiceBuilder::new()
+                    .layer(tower_http::decompression::RequestDecompressionLayer::new())
+                    .layer(tower_http::compression::CompressionLayer::new()),
+            );
         }
     }
 

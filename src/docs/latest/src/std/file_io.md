@@ -18,5 +18,6 @@ Astra provides some File IO functionality to help extend the standard library. W
 They are fairly self explanitory and does not require further details. Example usage:
 
 ```lua
+local io = require("astra.lua.io")
 pprint(Astra.io.get_script_path())
 ```

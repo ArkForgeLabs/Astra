@@ -1,6 +1,6 @@
 ---@meta
 
-Astra.io = {}
+local io = {}
 
 ---@class FileType
 ---@field is_file fun(file_type: FileType): boolean
@@ -26,7 +26,7 @@ Astra.io = {}
 ---Returns the metadata of a file or directory
 ---@param path string
 ---@return FileMetadata
-function Astra.io.get_metadata(path)
+function io.get_metadata(path)
 	---@diagnostic disable-next-line: undefined-global
 	return astra_internal__get_metadata(path)
 end
@@ -34,34 +34,34 @@ end
 ---Returns the content of the directory
 ---@param path string Path to the file
 ---@return DirEntry[]
-function Astra.io.read_dir(path)
+function io.read_dir(path)
 	---@diagnostic disable-next-line: undefined-global
 	return astra_internal__read_dir(path)
 end
 
 ---Returns the path of the current directory
 ---@return string
-function Astra.io.get_current_dir() ---@diagnostic disable-next-line: undefined-global
+function io.get_current_dir() ---@diagnostic disable-next-line: undefined-global
 	return astra_internal__get_current_dir()
 end
 
 ---Returns the path separator based on the operating system
 ---@return string
-function Astra.io.get_separator()
+function io.get_separator()
 	---@diagnostic disable-next-line: undefined-global
 	return astra_internal__get_separator()
 end
 
 ---Returns the path of the current running script
 ---@return string
-function Astra.io.get_script_path()
+function io.get_script_path()
 	---@diagnostic disable-next-line: undefined-global
 	return astra_internal__get_script_path()
 end
 
 ---Changes the current directory
 ---@param path string Path to the directory
-function Astra.io.change_dir(path)
+function io.change_dir(path)
 	---@diagnostic disable-next-line: undefined-global
 	astra_internal__change_dir(path)
 end
@@ -69,42 +69,44 @@ end
 ---Checks if a path exists
 ---@param path string Path to the file or directory
 ---@return boolean
-function Astra.io.exists(path)
+function io.exists(path)
 	---@diagnostic disable-next-line: undefined-global
 	return astra_internal__exists(path)
 end
 
 ---Creates a directory
 ---@param path string Path to the directory
-function Astra.io.create_dir(path)
+function io.create_dir(path)
 	---@diagnostic disable-next-line: undefined-global
 	astra_internal__create_dir(path)
 end
 
 ---Creates a directory recursively
 ---@param path string Path to the directory
-function Astra.io.create_dir_all(path)
+function io.create_dir_all(path)
 	---@diagnostic disable-next-line: undefined-global
 	astra_internal__create_dir_all(path)
 end
 
 ---Removes a file
 ---@param path string Path to the file
-function Astra.io.remove(path)
+function io.remove(path)
 	---@diagnostic disable-next-line: undefined-global
 	astra_internal__remove(path)
 end
 
 ---Removes a directory
 ---@param path string Path to the directory
-function Astra.io.remove_dir(path)
+function io.remove_dir(path)
 	---@diagnostic disable-next-line: undefined-global
 	astra_internal__remove_dir(path)
 end
 
 ---Removes a directory recursively
 ---@param path string Path to the directory
-function Astra.io.remove_dir_all(path)
+function io.remove_dir_all(path)
 	---@diagnostic disable-next-line: undefined-global
 	astra_internal__remove_dir_all(path)
 end
+
+return io

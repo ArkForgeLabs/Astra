@@ -5,7 +5,7 @@
 ---An observable object that wraps around the provided data
 ---@param val any
 ---@return table
-Astra.observable = function(val)
+local observable = function(val)
 	local new_observable = {
 		---The original value to be observed
 		value = val,
@@ -42,13 +42,13 @@ end
 local subscriptions = {}
 local subcounter = {}
 
-Astra.pubsub = {}
+local pubsub = {}
 
 ---
 ---@param topic string
 ---@param observable any
 ---@param callback function
-Astra.pubsub.subscribe = function(topic, observable, callback)
+pubsub.subscribe = function(topic, observable, callback)
 	if not subscriptions[topic] then
 		subscriptions[topic] = {}
 		subcounter[topic] = {}
@@ -72,7 +72,7 @@ end
 ---@param topic string
 ---@param observable any
 ---@param callback function
-Astra.pubsub.unsubscribe = function(topic, observable, callback)
+pubsub.unsubscribe = function(topic, observable, callback)
 	subscriptions[topic][observable][callback] = nil
 	subcounter[topic][observable].num_subs = subcounter[topic][observable].num_subs - 1
 
@@ -85,10 +85,15 @@ end
 ---
 ---@param topic string
 ---@param data function | any
-Astra.pubsub.publish = function(topic, data)
+pubsub.publish = function(topic, data)
 	for observable, kv in pairs(subscriptions[topic]) do
 		for k, _ in pairs(kv) do
 			k(observable, data)
 		end
 	end
 end
+
+return {
+	observable = observable,
+	pubsub = pubsub
+}
