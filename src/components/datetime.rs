@@ -178,9 +178,9 @@ impl UserData for LuaDateTime {
         });
         add_getter_method!("to_rfc2822", to_rfc2822);
         add_getter_method!("to_rfc3339", to_rfc3339);
+        add_getter_method!("to_datetime_string", to_rfc3339);
         add_formatted_method!("to_date_string", "%Y-%m-%d");
         add_formatted_method!("to_time_string", "%H:%M:%S%.3f%:z");
-        add_formatted_method!("to_datetime_string", "%Y-%m-%dT%H:%M:%S%.3f%:z");
         add_formatted_method!("to_locale_date_string", "%x");
         add_formatted_method!("to_locale_time_string", "%X");
         add_formatted_method!("to_locale_datetime_string", "%c");
@@ -189,6 +189,12 @@ impl UserData for LuaDateTime {
         });
         methods.add_method("to_format", |_, this, format: String| {
             Ok(this.dt.format(&format).to_string())
+        });
+
+        // meta methods
+        methods.add_meta_method("__tostring", |_, this, _: ()| Ok(this.dt.to_rfc3339()));
+        methods.add_meta_method("__concat", |_, _, (a, b): (mlua::Value, mlua::Value)| {
+            Ok(a.to_string()? + &b.to_string()?)
         });
     }
 }

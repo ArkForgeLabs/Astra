@@ -15266,4 +15266,3 @@ return tl
 end
 
 Astra.teal = teal_source()
--- Astra.teal.loader()

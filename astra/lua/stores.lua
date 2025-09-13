@@ -1,99 +1,101 @@
 ---@meta
 
 --MARK: Observable
+---@alias observable_function_type fun(data: any)
 
----An observable object that wraps around the provided data
+---@class Observable
+---@field value any
+---@field observers observable_function_type[]
+---@field subscribe fun(self: Observable, observer: observable_function_type)
+---@field unsubscribe fun(self: Observable, observer: observable_function_type)
+---@field publish fun(self: Observable, data: any)
+
 ---@param val any
----@return table
-local observable = function(val)
-	local new_observable = {
-		---The original value to be observed
-		value = val,
-		observers = {},
-	}
-
-	---Subscribe to an observable object with a callback function
-	---@param observer function
-	function new_observable:subscribe(observer)
-		if not self.observers[observer] then
-			self.observers[observer] = true
+---@return Observable
+local function observable(val)
+    ---@type Observable
+    local new_observable = {
+        value = val,
+        observers = {},
+		subscribe = function(self, observer)
+			table.insert(self.observers, observer)
+		end,
+		unsubscribe = function(self, observer)
+			for i, obs in ipairs(self.observers) do
+				if obs == observer then
+					table.remove(self.observers, i)
+					break
+				end
+			end
+		end,
+		publish = function(self, data)
+			for _, observer in ipairs(self.observers) do
+				observer(data)
+			end
 		end
-	end
+    }
 
-	---Unsubscribe a callback function from an observable object
-	---@param observer function
-	function new_observable:unsubscribe(observer)
-		self.observers[observer] = nil
-	end
-
-	---Publish the provided data to all subcribers
-	---@param data function | any
-	function new_observable:publish(data)
-		for k, _ in pairs(self.observers) do
-			k(data)
-		end
-	end
-
-	return new_observable
+    return new_observable
 end
 
 --MARK: PubSub
 
-local subscriptions = {}
-local subcounter = {}
+---@class PubSub
+local PubSub = {}
 
-local pubsub = {}
+---@alias Subscriber fun(data: any, topic: string)
 
----
+---@type table<string, Subscriber[]>
+local topics = {}
+
+--- Subscribe a callback to a topic.
 ---@param topic string
----@param observable any
----@param callback function
-pubsub.subscribe = function(topic, observable, callback)
-	if not subscriptions[topic] then
-		subscriptions[topic] = {}
-		subcounter[topic] = {}
-	end
-
-	if not subscriptions[topic][observable] then
-		subscriptions[topic][observable] = {}
-
-		subcounter[topic][observable] = {
-			num_subs = 0,
-		}
-	end
-
-	if not subscriptions[topic][observable][callback] then
-		subscriptions[topic][observable][callback] = true
-		subcounter[topic][observable].num_subs = subcounter[topic][observable].num_subs + 1
-	end
+---@param callback Subscriber
+function PubSub.subscribe(topic, callback)
+    if not topics[topic] then
+        topics[topic] = {}
+    end
+    table.insert(topics[topic], callback)
 end
 
----
+--- Unsubscribe a callback from a topic.
 ---@param topic string
----@param observable any
----@param callback function
-pubsub.unsubscribe = function(topic, observable, callback)
-	subscriptions[topic][observable][callback] = nil
-	subcounter[topic][observable].num_subs = subcounter[topic][observable].num_subs - 1
-
-	if subcounter[topic][observable].num_subs < 1 then
-		subscriptions[topic][observable] = nil
-		subcounter[topic][observable] = nil
-	end
+---@param callback? Subscriber # Optional: if not provided, removes the last subscriber
+function PubSub.unsubscribe(topic, callback)
+    if not topics[topic] then
+        return
+    end
+    if callback then
+        for i, cb in ipairs(topics[topic]) do
+            if cb == callback then
+                table.remove(topics[topic], i)
+                break
+            end
+        end
+    else
+        -- If no callback is provided, remove the last subscriber
+        table.remove(topics[topic])
+    end
 end
 
----
+--- Publish data to a topic.
 ---@param topic string
----@param data function | any
-pubsub.publish = function(topic, data)
-	for observable, kv in pairs(subscriptions[topic]) do
-		for k, _ in pairs(kv) do
-			k(observable, data)
-		end
-	end
+---@param data any
+function PubSub.publish(topic, data)
+    if not topics[topic] then
+        return
+    end
+    -- Iterate over a copy of the subscribers to avoid issues if a callback modifies the list
+    local subs = {}
+    for _, cb in ipairs(topics[topic]) do
+        table.insert(subs, cb)
+    end
+    for _, callback in ipairs(subs) do
+        callback(data, topic)
+    end
 end
 
 return {
 	observable = observable,
-	pubsub = pubsub
+	pubsub = PubSub
 }

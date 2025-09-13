@@ -1,10 +1,6 @@
 use crate::{ASTRA_STD_LIBS, LUA, STDLIB_PATH};
 use clap::crate_version;
 
-// to capture all types of string literals
-const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
-====================================================";
-
 async fn run_command_prerequisite(
     file_path: &str,
     stdlib_path: Option<String>,
@@ -263,24 +259,26 @@ async fn registration(lua: &mlua::Lua, stdlib_path: String) {
         tracing::error!("Could not load the astra's lua globals: {e}");
     }
 
-    // teal.lua
-    if let Some(content) =
-        read_from_stdlib(&stdlib_path, std::path::PathBuf::from("teal.lua")).await
-        && let Err(e) = lua.load(content).set_name("teal.lua").exec_async().await
-    {
-        tracing::error!("Could not load the teal: {e}");
-    }
+    // teal.lua (does not work on luau)
+    if !cfg!(feature = "luau") {
+        if let Some(content) =
+            read_from_stdlib(&stdlib_path, std::path::PathBuf::from("teal.lua")).await
+            && let Err(e) = lua.load(content).set_name("teal.lua").exec_async().await
+        {
+            tracing::error!("Could not load the teal: {e}");
+        }
 
-    // astra.d.tl
-    if let Some(content) = read_from_stdlib(
-        &stdlib_path,
-        std::path::PathBuf::from("teal").join("astra.d.tl"),
-    )
-    .await
-        && let Err(e) = lua.load(format!(
-            "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"astra.d.tl\")()"
-        )).set_name("astra.d.tl").exec_async().await
-    {
-        tracing::error!("Could not load the astra's teal globals: {e}");
+        // astra.d.tl
+        if let Some(content) = read_from_stdlib(
+            &stdlib_path,
+            std::path::PathBuf::from("teal").join("astra.d.tl"),
+        )
+        .await
+            && let Err(e) = lua.load(format!(
+                "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"astra.d.tl\")()"
+            )).set_name("astra.d.tl").exec_async().await
+        {
+            tracing::error!("Could not load the astra's teal globals: {e}");
+        }
     }
 }

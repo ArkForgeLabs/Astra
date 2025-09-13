@@ -7,7 +7,7 @@ global function pprint(value: any)
 end
 
 ---Represents an async task
-global record TaskHandler
+global interface TaskHandler is userdata
     abord: function()
     await: function()
 end
@@ -28,4 +28,30 @@ local type astra_internal__spawn_interval = function(callback: function(), timeo
 ---Starts a new async task that runs infinitely in a loop but with a delay in milliseconds
 global function spawn_interval(callback: function(), timeout: number): TaskHandler
 	return astra_internal__spawn_interval(callback, timeout)
+end
+
+local type astra_internal__dotenv_load = function(file_path: string)
+---Load your own file into env
+global function dotenv_load(file_path: string)
+	astra_internal__dotenv_load(file_path)
+end
+
+dotenv_load(".env")
+dotenv_load(".env.production")
+dotenv_load(".env.prod")
+dotenv_load(".env.development")
+dotenv_load(".env.dev")
+dotenv_load(".env.test")
+dotenv_load(".env.local")
+
+global interface Regex is userdata
+	captures: function(regex: Regex, content: string): {{string}}
+	replace: function(regex: Regex, content: string, replacement: string, limit?: number): string
+	is_match: function(regex: Regex, content: string): boolean
+end
+
+local type astra_internal__regex = function(expression: string): Regex
+---@param expression string
+global function regex(expression: string): Regex
+	return astra_internal__regex(expression)
 end
