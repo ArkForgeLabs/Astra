@@ -1,4 +1,48 @@
 ---@meta
+local original_io_open = io.open
+
+function custom_io_open(filename, mode)
+    if string.find(filename, "astra.d.tl", 1, true) then
+        -- Create a table that mimics a file handle
+        local fake_file = {
+            content = [[@ASTRA_TEAL_SOURCE]],
+            pointer = 1,
+        }
+
+        -- Implement the 'read' method
+        function fake_file:read(...)
+            local args = {...}
+            if #args == 0 or args[1] == "*a" then
+                -- Return all remaining content
+                local result = self.content:sub(self.pointer)
+                self.pointer = #self.content + 1
+                return result
+            elseif args[1] == "*l" then
+                -- Return the next line
+                local result = self.content:match("([^\n]*)\n?", self.pointer)
+                if result then
+                    self.pointer = self.pointer + #result + (result:find("\n") and 1 or 0)
+                    return result
+                end
+            else
+                -- Handle other read modes if needed
+                return nil
+            end
+        end
+
+        -- Implement the 'close' method
+        function fake_file:close()
+            -- Do nothing, or add cleanup logic
+        end
+
+        return fake_file
+    else
+        return original_io_open(filename, mode)
+    end
+end
+
+io.open = custom_io_open
+
 
 local function teal_source()
 local VERSION = "0.24.7+dev"

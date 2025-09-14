@@ -1,8 +1,4 @@
-use crate::{ASTRA_STD_LIBS, STDLIB_PATH};
-
-// to capture all types of string literals
-const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
-====================================================";
+use crate::{ASTRA_STD_LIBS, STDLIB_PATH, TEAL_IMPORT_SCRIPT};
 
 async fn find_first_lua_match_with_content(
     lua_path: String,
@@ -22,6 +18,8 @@ async fn find_first_lua_match_with_content(
             pattern_path.with_extension("tl"),
             pattern_path.join("init.lua"),
             pattern_path.join("init.tl"),
+            pattern_path.join("d.lua"),
+            pattern_path.join("d.tl"),
             pattern_path.clone(), // For directories or files without extensions
         ];
 
@@ -75,9 +73,9 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
 
                 let result = lua
                 .load(if is_teal {
-                    format!(
-                    "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{file_path}\")()"
-                )
+                    TEAL_IMPORT_SCRIPT
+                        .replace("@SOURCE", &format!("global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}"))
+                        .replace("@FILE_NAME", &file_path)
                 } else {
                     format!("ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}")
                 })

@@ -18,6 +18,8 @@ pub static STDLIB_PATH: tokio::sync::OnceCell<std::path::PathBuf> =
 pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
     std::sync::LazyLock::new(|| include_dir::include_dir!("astra"));
 
+pub const TEAL_IMPORT_SCRIPT: &str = include_str!("components/teal_import.lua");
+
 /// Command-line interface for Astra.
 #[derive(Parser)]
 #[command(

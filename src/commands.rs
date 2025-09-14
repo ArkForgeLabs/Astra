@@ -1,4 +1,4 @@
-use crate::{ASTRA_STD_LIBS, LUA, STDLIB_PATH};
+use crate::{ASTRA_STD_LIBS, LUA, STDLIB_PATH, TEAL_IMPORT_SCRIPT};
 use clap::crate_version;
 
 async fn run_command_prerequisite(
@@ -53,9 +53,9 @@ pub async fn run_command(
     if let Some(is_teal) = std::path::PathBuf::from(&file_path).extension()
         && is_teal == "tl"
     {
-        user_file = format!(
-            "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{user_file}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{file_path}\")()"
-        )
+        user_file = TEAL_IMPORT_SCRIPT
+            .replace("@SOURCE", &user_file)
+            .replace("@FILE_NAME", &file_path);
     }
     #[allow(clippy::expect_used)]
     lua.globals()
@@ -260,23 +260,34 @@ async fn registration(lua: &mlua::Lua, stdlib_path: String) {
     }
 
     // teal.lua (does not work on luau)
-    if !cfg!(feature = "luau") {
+    if !cfg!(feature = "luau")
+        && let Some(teal_source) = read_from_stdlib(
+            &stdlib_path,
+            std::path::PathBuf::from("teal").join("astra.d.tl"),
+        )
+        .await
+    {
         if let Some(content) =
             read_from_stdlib(&stdlib_path, std::path::PathBuf::from("teal.lua")).await
-            && let Err(e) = lua.load(content).set_name("teal.lua").exec_async().await
+            && let Err(e) = lua
+                .load(content.replace("@ASTRA_TEAL_SOURCE", teal_source.as_str()))
+                .set_name("teal.lua")
+                .exec_async()
+                .await
         {
             tracing::error!("Could not load the teal: {e}");
         }
 
         // astra.d.tl
-        if let Some(content) = read_from_stdlib(
-            &stdlib_path,
-            std::path::PathBuf::from("teal").join("astra.d.tl"),
-        )
-        .await
-            && let Err(e) = lua.load(format!(
-                "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"astra.d.tl\")()"
-            )).set_name("astra.d.tl").exec_async().await
+        if let Err(e) = lua
+            .load(
+                TEAL_IMPORT_SCRIPT
+                    .replace("@SOURCE", &teal_source)
+                    .replace("@FILE_NAME", "astra.d.tl"),
+            )
+            .set_name("astra.d.tl")
+            .exec_async()
+            .await
         {
             tracing::error!("Could not load the astra's teal globals: {e}");
         }
