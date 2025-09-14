@@ -1,5 +1,9 @@
 use crate::{RuntimeFlags, ASTRA_STD_LIBS, RUNTIME_FLAGS, TEAL_IMPORT_SCRIPT};
 
+// to capture all types of string literals
+const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
+====================================================";
+
 async fn find_first_lua_match_with_content(
     lua_path: String,
     module_name: &str,
@@ -76,15 +80,19 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
             && let Some(is_teal) = file_path.extension().map(|extension| extension.to_string_lossy().contains("tl")) {
                 let file_path = file_path.to_string_lossy().to_string().replace("./", "").replace(".\\", "");
 
-                let result = lua
-                .load(if is_teal {
-                    TEAL_IMPORT_SCRIPT
+                if runtime_flags.teal_compile_checks {
+                    lua.load(TEAL_IMPORT_SCRIPT
                         .replace("@SOURCE", &format!("global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}"))
                         .replace(
                             "local teal_compile_checks = true",
                             &format!("local teal_compile_checks = {}", runtime_flags.teal_compile_checks),
                         )
-                        .replace("@FILE_NAME", &file_path)
+                        .replace("@FILE_NAME", &file_path)).exec_async().await?
+                }
+                let result = lua
+                .load(if is_teal {
+                    format!(
+                    "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{file_path}\")()")
                 } else {
                     format!("ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}")
                 })
