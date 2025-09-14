@@ -30,14 +30,14 @@ if teal_compile_checks then
                 print("========================================")
                 print(tostring(#syntax_errors) .. " syntax errors:")
                 for _, value in ipairs(syntax_errors) do
-                    print(file_name .. ":" .. tostring(value.x) .. ":" .. tostring(value.y) .. ": " .. value.msg)
+                    print(file_name .. ":" .. tostring(value.y) .. ":" .. tostring(value.x) .. ": " .. value.msg)
                 end
             end
             if #type_errors ~= 0 then
                 print("========================================")
                 print(tostring(#type_errors) .. " type errors:")
                 for _, value in ipairs(type_errors) do
-                    print(file_name .. ":" .. tostring(value.x) .. ":" .. tostring(value.y) .. ": " .. value.msg)
+                    print(file_name .. ":" .. tostring(value.y) .. ":" .. tostring(value.x) .. ": " .. value.msg)
                 end
             end
             print("----------------------------------------")
@@ -45,4 +45,4 @@ if teal_compile_checks then
         end
     end
 end
-Astra.teal.load(source, file_name)()
+return Astra.teal.load(source, file_name)()

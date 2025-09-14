@@ -25,7 +25,8 @@ global interface HTTPClientRequest is userdata
     execute_task: function(self: HTTPClientRequest, callback: http_client_callback)
 end
 
-global type callback_function_type = function(request?: HTTPServerRequest, response?: HTTPServerResponse): any
+global type HTTPServerCallback = function(request?: HTTPServerRequest, response?: HTTPServerResponse): any
+global type HTTPServerWSCallback = function(socket: WebSocket): any
 
 global interface HTTPRouteConfiguration
     body_limit: number | nil
@@ -137,44 +138,51 @@ local function add_to_routes(
     self: HTTPServer,
     method: string,
     path: string,
-    callback: callback_function_type | wscallback_function_type,
+    callback: HTTPServerCallback,
+    wscallback?: HTTPServerWSCallback,
     config?: HTTPRouteConfiguration
 )
     local index: integer = (path == "/") and 1 or #self.routes + 1
+    local callback_function: function
+    if wscallback then
+        callback_function = wscallback
+    else
+        callback_function = callback
+    end
     table.insert(self.routes, index, {
         path = path,
         method = method,
-        func = callback,
+        func = callback_function,
         config = config or { body_limit = nil },
     })
 end
 
-function HTTPServer:get(path: string, callback: callback_function_type, config?: HTTPRouteConfiguration)
-    add_to_routes(self, "get", path, callback, config)
+function HTTPServer:get(path: string, callback: HTTPServerCallback, config?: HTTPRouteConfiguration)
+    add_to_routes(self, "get", path, callback, nil, config)
 end
 
-function HTTPServer:post(path: string, callback: callback_function_type, config?: HTTPRouteConfiguration)
-    add_to_routes(self, "post", path, callback, config)
+function HTTPServer:post(path: string, callback: HTTPServerCallback, config?: HTTPRouteConfiguration)
+    add_to_routes(self, "post", path, callback, nil, config)
 end
 
-function HTTPServer:put(path: string, callback: callback_function_type, config?: HTTPRouteConfiguration)
-    add_to_routes(self, "put", path, callback, config)
+function HTTPServer:put(path: string, callback: HTTPServerCallback, config?: HTTPRouteConfiguration)
+    add_to_routes(self, "put", path, callback, nil, config)
 end
 
-function HTTPServer:delete(path: string, callback: callback_function_type, config?: HTTPRouteConfiguration)
-    add_to_routes(self, "delete", path, callback, config)
+function HTTPServer:delete(path: string, callback: HTTPServerCallback, config?: HTTPRouteConfiguration)
+    add_to_routes(self, "delete", path, callback, nil, config)
 end
 
-function HTTPServer:options(path: string, callback: callback_function_type, config?: HTTPRouteConfiguration)
-    add_to_routes(self, "options", path, callback, config)
+function HTTPServer:options(path: string, callback: HTTPServerCallback, config?: HTTPRouteConfiguration)
+    add_to_routes(self, "options", path, callback, nil, config)
 end
 
-function HTTPServer:patch(path: string, callback: callback_function_type, config?: HTTPRouteConfiguration)
-    add_to_routes(self, "patch", path, callback, config)
+function HTTPServer:patch(path: string, callback: HTTPServerCallback, config?: HTTPRouteConfiguration)
+    add_to_routes(self, "patch", path, callback, nil, config)
 end
 
-function HTTPServer:trace(path: string, callback: callback_function_type, config?: HTTPRouteConfiguration)
-    add_to_routes(self, "trace", path, callback, config)
+function HTTPServer:trace(path: string, callback: HTTPServerCallback, config?: HTTPRouteConfiguration)
+    add_to_routes(self, "trace", path, callback, nil, config)
 end
 
 function HTTPServer:static_dir(path: string, serve_path: string, config?: HTTPRouteConfiguration)
@@ -182,7 +190,7 @@ function HTTPServer:static_dir(path: string, serve_path: string, config?: HTTPRo
         path = path,
         method = "static_dir",
         static_dir = serve_path,
-        func = function() end,
+        func = function():nil end,
         config = config or {},
     })
 end
@@ -191,15 +199,14 @@ function HTTPServer:static_file(path: string, serve_path: string, config?: HTTPR
     table.insert(self.routes, {
         path = path,
         method = "static_file",
-        func = function() end,
+        func = function():nil end,
         static_file = serve_path,
         config = config or {},
     })
 end
 
-local type wscallback_function_type = function(socket: WebSocket): any
-function HTTPServer:websocket(path: string, wscallback: wscallback_function_type, config?: HTTPRouteConfiguration)
-    add_to_routes(self, "web_socket", path, wscallback, config)
+function HTTPServer:websocket(path: string, wscallback: HTTPServerWSCallback, config?: HTTPRouteConfiguration)
+    add_to_routes(self, "web_socket", path, function():nil end, wscallback, config)
 end
 
 local type astra_internal__start_server = function(HTTPServer)
@@ -210,68 +217,14 @@ end
 
 local middleware = {}
 
---- `on Entry:`
---- Include *on Entry* description if the middleware does something before calling *next_handler*
----
---- `on Leave:`
---- Include *on Leave* description if the middleware does something after calling *next_handler*
----
---- `Depends on:`
---- Include *Depends on* description if the middleware depends on other middlewares
--- local function middleware_template(next_handler: function): any
---     --- Next_handler is a function which represents a middleware or a handler
-
---     --- Each middleware must return a function which accepts 3 arguments,
---     --- and passes them to the next_handler
---     return function(request: HTTPServerRequest, response: HTTPServerResponse, ctx: { string:string }): any
---         -- Pre-handler logic
---         if "something wrong" then
---             return "Waaait a minute."
---         end
---         local result = next_handler(request, response, ctx)
---         -- Post-handler logic
---         if "you came up with a use case" then
---             local things = "Do some on-Leave logic"
---         end
---         return result
---     end
--- end
-
----------------
--- Utilities --
----------------
-
---- Chains middlewares together in order
----
---- Functionally
---- ```lua
---- chain {context, html, logger} (handler)
---- ```
---- equals to
---- ```lua
---- context(html(logger(handler)))
---- ```
----
---- and
---- ```lua
---- chain {context, html, logger}
---- ```
---- equals to
---- ```lua
---- function(next_handler)
----     return function(request, response, ctx)
----         context(html(logger(next_handler(request, response, ctx))))
----     end
---- end
---- ```
-local type middleware_callback_function_type = function(...: any): function
+local type middleware_HTTPServerCallback = function(...: any): function
 function middleware.chain(chain: {function}): function
     return function(handler: function): function
         assert(type(handler) == "function",
             "Handler must be a function, got " .. type(handler))
         assert(#chain >= 2, "Chain must have at least 2 middlewares")
         for i = #chain, 1, -1 do
-            local http_middleware: middleware_callback_function_type = chain[i]
+            local http_middleware: middleware_HTTPServerCallback = chain[i]
             assert(type(http_middleware) == "function",
                 "Middleware must be a function, got " .. type(http_middleware))
             handler = http_middleware(handler)

@@ -1,8 +1,8 @@
-local http = require("astra.lua.http")
+local http = require("astra.teal.http")
 local server = http.server.new();
 
 ---@param socket WebSocket
-local function handle_socket(socket)
+local function handle_socket(socket: WebSocket): nil
 	print("Connection opened!")
 	while true do
 		pprint(socket:recv())
