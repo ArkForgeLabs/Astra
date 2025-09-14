@@ -1,12 +1,12 @@
 # WebSocket Server
 
-Astra offers a WebSocket server powered by axum. Server creation takes a route, and as of now, you will have to inject JS code to have a functioning client, but this is subject to change in the future. You can create a WebSocket server like this:
+Astra offers a WebSocket server powered by axum. Server creation takes a route similar to any other normal routes:
 
 ```lua
-local server = Astra.http.server:new()
+local server = require("astra.http").server:new()
 
 local function handle_socket(socket)
-	print("Connection opened!")
+  print("Connection opened!")
 end
 
 server:websocket("/", handle_socket)
@@ -84,7 +84,7 @@ socket:send_ping({0, 88, 14, 67, 45})
 socket:send_pong({17, 38, 80, 0, 85})
 
 -- I can also send a close frame, first with the close code, and then the reason:
-socket:send_close({1000, "finally, done with everything"})
+socket:send_close({code = 1000, reason = "finally, done with everything"})
 -- The reason is optional, so you can also just go with this:
 socket:send_close(1000)
 -- If you're in a rush, you can close it uncleanly too, like this:

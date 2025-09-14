@@ -2,17 +2,27 @@
 #![deny(clippy::expect_used)]
 
 use clap::{Parser, command, crate_authors, crate_version};
-use std::sync::LazyLock;
-use tokio::sync::OnceCell;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod commands;
 mod components;
 
 /// Global Lua instance.
-pub static LUA: LazyLock<mlua::Lua> = LazyLock::new(mlua::Lua::new);
-/// Global script path.
-pub static SCRIPT_PATH: OnceCell<std::path::PathBuf> = OnceCell::const_new();
+pub static LUA: std::sync::LazyLock<mlua::Lua> =
+    std::sync::LazyLock::new(|| unsafe { mlua::Lua::unsafe_new() });
+
+#[derive(Debug, Clone)]
+pub struct RuntimeFlags {
+    pub stdlib_path: std::path::PathBuf,
+    pub teal_compile_checks: bool,
+}
+pub static RUNTIME_FLAGS: tokio::sync::OnceCell<RuntimeFlags> = tokio::sync::OnceCell::const_new();
+
+/// Global standard libraries and type definitions from Astra
+pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
+    std::sync::LazyLock::new(|| include_dir::include_dir!("astra"));
+
+pub const TEAL_IMPORT_SCRIPT: &str = include_str!("components/teal_import.lua");
 
 /// Command-line interface for Astra.
 #[derive(Parser)]
@@ -38,6 +48,9 @@ enum AstraCLI {
         /// Path to the standard library folder
         #[arg(short, long)]
         stdlib_path: Option<String>,
+        /// Enable or disable Teal's compile checks before loading the moudles
+        #[arg(short, long)]
+        teal_compile_checks: Option<bool>,
         /// Extra arguments to pass to the script.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         extra_args: Option<Vec<String>>,
@@ -59,7 +72,7 @@ enum AstraCLI {
 
 /// Initializes the Astra CLI.
 #[tokio::main]
-pub async fn main() {
+pub async fn main() -> std::io::Result<()> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
@@ -73,13 +86,16 @@ pub async fn main() {
         AstraCLI::Run {
             file_path,
             stdlib_path,
+            teal_compile_checks,
             extra_args,
-        } => commands::run_command(file_path, stdlib_path, extra_args).await,
-        AstraCLI::ExportBundle { path } => commands::export_bundle_command(path).await,
+        } => commands::run_command(file_path, stdlib_path, teal_compile_checks, extra_args).await,
+        AstraCLI::ExportBundle { path } => commands::export_bundle_command(path).await?,
         AstraCLI::Upgrade { user_agent } => {
             if let Err(e) = commands::upgrade_command(user_agent).await {
                 eprintln!("Could not update to the latest version: {e}");
             }
         }
     }
+
+    Ok(())
 }

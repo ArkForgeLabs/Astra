@@ -1,5 +1,5 @@
 -- Create a templating engine, read more about template syntax at: https://keats.github.io/tera/docs
-local template_engine = Astra.new_templating_engine("examples/templates/**/*.html")
+local template_engine = require("astra.lua.jinja2")("examples/templates/**/*.html")
 -- Exclude base files from rendering
 template_engine:exclude_templates({ "base.html" })
 -- You can also add functions to be used within the templates
@@ -8,7 +8,7 @@ template_engine:add_function("test", function(args)
 end)
 
 -- Create an HTTP Server
-local server = Astra.http.server.new()
+local server = require("astra.lua.http").server.new()
 
 -- Serve the templates
 template_engine:add_to_server(

@@ -1,5 +1,3 @@
----@meta
-
 --- SQL driver
 ---@class Database
 ---@field execute fun(database: Database, sql: string, parameters: table | nil)
@@ -13,7 +11,9 @@
 ---@param max_connections number? Max number of connections to the database pool
 ---@return Database Database that represents the SQL connection.
 ---@nodiscard
-function Astra.database_connect(database_type, url, max_connections)
+local function connect(database_type, url, max_connections)
     ---@diagnostic disable-next-line: undefined-global
-	return astra_internal__database_connect(database_type, url, max_connections)
+    return astra_internal__database_connect(database_type, url, max_connections)
 end
+
+return { new = connect }

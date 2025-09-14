@@ -394,7 +394,7 @@
 <h1 id="http-server"><a class="header" href="#http-server">HTTP Server</a></h1>
 <p>Astra offers HTTP1/2 web server through the <a href="https://github.com/tokio-rs/axum">axum</a> project. On the Lua's side, the server holds configuration and route details, which are then sent to the Rust for running them. Since it is running on Tokio, it can take advantage of all available resources automatically, making it easy for vertical scaling. Throughout this documentation, the word <code>server</code> is used to describe an HTTP web server table on the Lua's side. You can create one as such:</p>
 <pre><code class="language-lua">-- create a new server with
-local server = Astra.http.server.new()
+local server = require("astra.lua.http").server.new()
 
 -- run the server with
 server:run()
@@ -614,15 +614,18 @@ sudo ufw allow 443
 </style>
 <h1 id="http-client"><a class="header" href="#http-client">HTTP Client</a></h1>
 <p>Sometimes your server needs to access other servers and make an HTTP Request, for these cases Astra provides a HTTP Client function:</p>
-<pre><code class="language-lua">-- By default its always a GET request
-local response = Astra.http.request("https://example.com/"):execute()
+<pre><code class="language-lua">-- Import
+local http = require("astra.lua.http")
+
+-- By default its always a GET request
+local response = http.request("https://example.com/"):execute()
 pprint(response:status_code())
 pprint(response:headers())
 pprint(response:remote_address())
 pprint(response:body():text())
 </code></pre>
-<p>The <code>Astra.http.request</code> function returns a <code>HTTPClientRequest</code> object which can be further modified to the needs before execution. The way to do these modification is through chained setters.</p>
-<pre><code class="language-lua">local request_client = Astra.http.request("https://example.com")
+<p>The <code>http.request</code> function returns a <code>HTTPClientRequest</code> object which can be further modified to the needs before execution. The way to do these modification is through chained setters.</p>
+<pre><code class="language-lua">local request_client = http.request("https://example.com")
 -- - Method. You can pick between one of these:
 --   - GET,
 --   - POST,
@@ -709,11 +712,11 @@ pprint(response:body():text())
 
 </style>
 <h1 id="websocket-server"><a class="header" href="#websocket-server">WebSocket Server</a></h1>
-<p>Astra offers a WebSocket server powered by axum. Server creation takes a route, and as of now, you will have to inject JS code to have a functioning client, but this is subject to change in the future. You can create a WebSocket server like this:</p>
-<pre><code class="language-lua">local server = Astra.http.server:new()
+<p>Astra offers a WebSocket server powered by axum. Server creation takes a route similar to any other normal routes:</p>
+<pre><code class="language-lua">local server = require("astra.http").server:new()
 
 local function handle_socket(socket)
-	print("Connection opened!")
+  print("Connection opened!")
 end
 
 server:websocket("/", handle_socket)
@@ -780,7 +783,7 @@ socket:send_ping({0, 88, 14, 67, 45})
 socket:send_pong({17, 38, 80, 0, 85})
 
 -- I can also send a close frame, first with the close code, and then the reason:
-socket:send_close({1000, "finally, done with everything"})
+socket:send_close({code = 1000, reason = "finally, done with everything"})
 -- The reason is optional, so you can also just go with this:
 socket:send_close(1000)
 -- If you're in a rush, you can close it uncleanly too, like this:
@@ -857,7 +860,9 @@ socket
 <h1 id="templating"><a class="header" href="#templating">Templating</a></h1>
 <p>Astra supports jinja templating through <a href="https://github.com/mitsuhiko/minijinja/blob/main/COMPATIBILITY.md">minijinja</a>. It is incredibly performent, feature rich and easy to use.</p>
 <pre><code class="language-lua">-- can also pass no arguments to make an empty templating engine
-local templates = Astra.new_templating_engine("examples/templates/**/*.html")
+local templating_engine = require("astra.lua.jinja2")
+local templates = templating_engine.new("examples/templates/**/*.html")
+
 -- Exclude files
 templates:exclude_templates({ "base.html" })
 
@@ -1057,7 +1062,8 @@ print(a.value) -- value = 2
 <li><code>remove_dir_all</code></li>
 </ul>
 <p>They are fairly self explanitory and does not require further details. Example usage:</p>
-<pre><code class="language-lua">pprint(Astra.io.get_script_path())
+<pre><code class="language-lua">local io = require("astra.lua.io")
+pprint(Astra.io.get_script_path())
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -1129,7 +1135,9 @@ print(a.value) -- value = 2
 <h1 id="schema-validation"><a class="header" href="#schema-validation">Schema Validation</a></h1>
 <p>Sometimes during development, your server likely recieves structured data such as JSON from outside. You likely also have a structure in mind for them. For these cases to validate that the structures are correct and to confidently go through them without risk of errors, hopefully, you can use the schema validation utility.</p>
 <p>Schema Validation essentially is a function that returns true if a given table is of a given structure. The structure is defined as a separate table that has the field names along the types and requirements. For example:</p>
-<pre><code class="language-lua">-- Your schema
+<pre><code class="language-lua">local validation = require("astra.lua.validation")
+
+-- Your schema
 local schema = {
     -- Type names along their types and requirements
     id = { type = "number" },
@@ -1138,7 +1146,7 @@ local schema = {
 -- Your actual data
 local example = { id = "123", name = 456 }
 -- Check the validation
-local is_valid, err = Astra.validate_table(example, schema)
+local is_valid, err = validation.validate_table(example, schema)
 assert(not is_valid, "Validation failed: expected validation to fail")
 </code></pre>
 <p>Almost all of the native lua types are accounted for. Deeply nesting is obviously supported as well:</p>
@@ -1163,7 +1171,7 @@ local example = {
         },
     },
 }
-local is_valid, err = Astra.validate_table(example, schema)
+local is_valid, err = validation.validate_table(example, schema)
 assert(is_valid, "Validation failed: " .. tostring(err))
 </code></pre>
 <p>As well as arrays:</p>
@@ -1196,7 +1204,7 @@ local tbl = {
     }
 }
 
-local is_valid, err = Astra.validate_table(tbl, schema)
+local is_valid, err = validation.validate_table(tbl, schema)
 assert(is_valid, "Validation failed: " .. tostring(err))
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><style>
@@ -1270,21 +1278,23 @@ assert(is_valid, "Validation failed: " .. tostring(err))
 <p>During development of your web servers, you might need some cryptography functionality such as hashing and encoding. For these cases, Astra provides commonly used cryptographic functions to ease up development.</p>
 <h2 id="hashing"><a class="header" href="#hashing">Hashing</a></h2>
 <p>Currently Astra provides SHA2 and SHA3 (both 256 and 512 variants) hashing functions.</p>
-<pre><code class="language-lua">Astra.crypto.hash("sha2_512", "MY INPUT")
+<pre><code class="language-lua">local crypto = require("astra.lua.crypto")
+
+crypto.hash("sha2_512", "MY INPUT")
 </code></pre>
 <h2 id="base64"><a class="header" href="#base64">Base64</a></h2>
 <p>Astra also provides encoding and decoding of base64 strings, including URL safe variants:</p>
 <pre><code class="language-lua">local input = "MY VERY COOL STRING"
 
-local encoded = Astra.crypto.base64.encode(input)
+local encoded = crypto.base64.encode(input)
 print(encoded)
 
-local decoded = Astra.crypto.base64.decode(encoded)
+local decoded = crypto.base64.decode(encoded)
 print(decoded)
 </code></pre>
 <h2 id="json"><a class="header" href="#json">JSON</a></h2>
 <p>Often you will have to deal with a medium of structured data between your server and the clients. This could be in form of JSON, YAML, e.t.c. Astra includes some utilities to serialize and deserialize these with native Lua structures.</p>
-<p>For JSON, the <code>Astra.json.encode()</code> and <code>Astra.json.decode()</code> methods are available which converts JSON data from and into Lua tables.</p>
+<p>For JSON, you can import the serializer package (<code>require("astra.lua.serializer")</code>), and then use <code>json.encode()</code> and <code>json.decode()</code> methods which converts JSON data from and into Lua tables.</p>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -1355,7 +1365,8 @@ print(decoded)
 <h1 id="sql-driver"><a class="header" href="#sql-driver">SQL Driver</a></h1>
 <p>If your server requires access to an SQL database such as PostgreSQL and SQLite, Astra provides utilities for basic connection and querying.</p>
 <pre><code class="language-lua">-- connect to your db
-local db = Astra.database_connect("postgres", "postgres://astra_postgres:password@localhost/astr_database")
+local driver = require("astra.lua.database")
+local db = driver.new("postgres", "postgres://astra_postgres:password@localhost/astr_database")
 
 -- You can execute queries to the database along with optional parameters
 db:execute([[
@@ -1542,8 +1553,10 @@ end, 5000)
 </style>
 <h1 id="datetime"><a class="header" href="#datetime">DateTime</a></h1>
 <p>Astra provides date &amp; time functionality as an extension to the standard library. It is loosely inspired by the <a href="https://www.w3schools.com/jsref/jsref_obj_date.asp">JavaScript Date</a> implementation.</p>
-<pre><code class="language-lua">-- Returns a DateTime object which corresponds to the current date, time &amp; local offset from UTC.
-local dt = Astra.datetime.new()
+<pre><code class="language-lua">local datetime = require("astra.lua.datetime")
+
+-- Returns a DateTime object which corresponds to the current date, time &amp; local offset from UTC.
+local dt = datetime.new()
 
 -- Returns a DateTime object which corresponds to the provided date and/or time arguments &amp; local offset from UTC.
 -- You can provide the following arguments:
@@ -1557,10 +1570,10 @@ local dt = Astra.datetime.new()
 --
 -- Providing the year is mandatory.
 -- The other values, if not provided, will default to the following in respective order: 1, 1, 0, 0, 0, 0
-local dt = Astra.datetime.new(2001, 7, 8, 0, 24, 48, 241)
+local dt = datetime.new(2001, 7, 8, 0, 24, 48, 241)
 
 -- Or parse a string
-local dt = Astra.datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
+local dt = datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
 </code></pre>
 <p>Available methods:</p>
 <ul>
@@ -1671,7 +1684,8 @@ local dt = Astra.datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
 <p>For more details, see the <a href="https://github.com/ArkForgeLabs/Astra/blob/main/src/components/http/middleware.lua">middleware.lua</a> and the <a href="https://github.com/ArkForgeLabs/Astra/tree/main/examples/middleware.lua">middleware_example.lua</a>.</p>
 <h2 id="basic-middleware"><a class="header" href="#basic-middleware">Basic middleware</a></h2>
 <p>The following example shows the most basic middleware that changes the response headers.</p>
-<pre><code class="language-lua">local server = Astra.http.server:new()
+<pre><code class="language-lua">local http = require("astra.lua.http")
+local server = http.server:new()
 
 local function sunny_day(request, response)
     return "What a great sunny day!"
@@ -1694,7 +1708,8 @@ server:run()
 </code></pre>
 <h2 id="context"><a class="header" href="#context">Context</a></h2>
 <p>When we want to pass data through middleware, we can use the third argument and treat it as a context table.</p>
-<pre><code class="language-lua">local server = Astra.http.server:new()
+<pre><code class="language-lua">local datetime = require("astra.lua.datetime")
+local server = http.server:new()
 
 ---@param ctx { datetime: DateTime }
 local function favourite_day(_request, _response, ctx)
@@ -1708,13 +1723,13 @@ local function favourite_day(_request, _response, ctx)
 end
 
 --- `on Entry:`
---- Inserts `Astra.datetime.new()` into `ctx.datetime`
+--- Inserts `datetime.new()` into `ctx.datetime`
 ---
 --- `Depends on:`
 --- `ctx`
 local function insert_datetime(next_handler)
     return function(request, response, ctx)
-        ctx.datetime = Astra.datetime.new()
+        ctx.datetime = datetime.new()
         return next_handler(request, response, ctx)
     end
 end
@@ -1751,8 +1766,7 @@ server:run()
 </p>
 <p>Read more about why we can drop parenthesis while calling <code>chain</code> function here: <a href="https://leafo.net/guides/dsl-in-lua.html">Writing a DSL in Lua</a></p>
 </div>
-<pre><code class="language-lua">local middleware = Astra.http.middleware
-local chain = middleware.chain
+<pre><code class="language-lua">local chain = http.middleware.chain
 
 -- This will behave exactly the same as ctx(insert_datetime(html(favourite_day)))
 server:get("/favourite-day", chain {ctx, insert_datetime, html} (favourite_day) )
@@ -1801,9 +1815,10 @@ server:run()
 </code></pre>
 <p>The <code>logger</code> we got from the <code>file_logger</code> is gonna be used in all routes we pass it as a middleware.</p>
 <h2 id="full-example"><a class="header" href="#full-example">Full example</a></h2>
-<pre><code class="language-lua">local server = Astra.http.server:new()
-local middleware = Astra.http.middleware
-local chain = middleware.chain
+<pre><code class="language-lua">local http = require("astra.lua.http")
+local datetime = require("astra.lua.datetime")
+local server = http.server:new()
+local chain = http.middleware.chain
 
 local function sunny_day(_request, _response)
     return "What a great sunny day!"
@@ -1834,13 +1849,13 @@ local function ctx(next_handler)
 end
 
 --- `on Entry:`
---- Inserts `Astra.datetime.new()` into `ctx.datetime`
+--- Inserts `datetime.new()` into `ctx.datetime`
 ---
 --- `Depends on:`
 --- `ctx`
 local function insert_datetime(next_handler)
     return function(request, response, ctx)
-        ctx.datetime = Astra.datetime.new()
+        ctx.datetime = datetime.new()
         return next_handler(request, response, ctx)
     end
 end
@@ -1961,7 +1976,7 @@ server:run()
 <h2 id="string-split"><a class="header" href="#string-split">String Split</a></h2>
 <p><code>string.split</code> splits a string according to the seperator provided and result into an array of chunks.</p>
 <h2 id="dotenv"><a class="header" href="#dotenv">Dotenv</a></h2>
-<p>It is always a good idea to never include sensitive API keys within your server code. For these reasons we usually recommend using a <code>.env</code> file. Astra automatically loads them if they are present in the same folder into the environment, accessible through the <code>os.getenv</code>. You can also load your own file using the global <code>Astra.dotenv_load</code> function.</p>
+<p>It is always a good idea to never include sensitive API keys within your server code. For these reasons we usually recommend using a <code>.env</code> file. Astra automatically loads them if they are present in the same folder into the environment, accessible through the <code>os.getenv</code>. You can also load your own file using the global <code>dotenv_load</code> function.</p>
 <p>This is the load order of these files (They can overwrite the ones loaded previously):</p>
 <ul>
 <li><code>.env</code></li>
@@ -1975,7 +1990,7 @@ server:run()
 <h2 id="regex"><a class="header" href="#regex">Regex</a></h2>
 <p>Astra has support for a very performant regex engine. The regex code is advised to be compiled once and reused multiple times to save up even more on performence. Example:</p>
 <pre><code class="language-lua">-- Create a new regex
-local my_re = Astra.regex([[(?:index)?\.(html|lua|tera)$]])
+local my_re = regex([[(?:index)?\.(html|lua|tera)$]])
 
 -- Capture all of the hits as list of string lists (string[][])
 pprint(my_re:captures([[
@@ -2063,18 +2078,20 @@ pprint(new_string)
 </style>
 <h1 id="observer-pattern"><a class="header" href="#observer-pattern">Observer Pattern</a></h1>
 <p>Astra provides you with an observable object which can have functions subcribe and unsubscribe to it, to which you can publish a desired data payload.</p>
-<pre><code class="language-lua">-- You can can construct an observable object as shown below:
+<pre><code class="language-lua">local stores = require("astra.lua.stores")
+
+-- You can can construct an observable object as shown below:
 -- Replace `0` with whatever data you'd like
-local counter = Astra.observable(0)
+local counter = stores.observable(0)
 
 -- Let's create a function which will subscribe to `counter`
 local function simply_notify()
-	print("The count has been updated!")
+ print("The count has been updated!")
 end
 
 -- You can use counter.value to access the data wrapped inside a counter
 local function detailed_notify()
-	print("The count now is " .. counter.value)
+ print("The count now is " .. counter.value)
 end
 
 counter:subscribe(simply_notify)
@@ -2082,10 +2099,10 @@ counter:subscribe(detailed_notify)
 </code></pre>
 <p>When a function that can modify the underlying data of the observable object subscribes to it and is ran with the default (luajit) backend, the execution order of the subscribers can't be predicted, which is fine for most functions, but dangerous/undesirable when you want to change the underlying data. We want to avoid this unpredictability <strong>always</strong>. We can mutate our observable object safely by passing a function which wraps around our observable object that'll execute any logic we program as an argument to the publish function, or we can mutate it in the preceding line, then pass any data we need to the <code>publish()</code> method.</p>
 <pre><code class="language-lua">local function add_to_counter(data)
-	counter.value = counter.value + data
+ counter.value = counter.value + data
 end
 
--- We pass a function that 
+-- We pass a function that
 counter:publish(add_to_counter(5))
 
 -- Just some spacing
@@ -2094,7 +2111,7 @@ print("")
 counter:publish(add_to_counter(4))
 </code></pre>
 <p>This code will result in the following output:</p>
-<pre><code>The count has been updated!
+<pre><code class="language-txt">The count has been updated!
 The count now is 5
 
 The count has been updated!
@@ -2102,21 +2119,21 @@ The count now is 9
 </code></pre>
 <p>We can also make these "closure functions" return a value that can be passed as data which a subscriber function can describe what to do with. Let's go back and change our <code>detailed_notify()</code> and <code>add_to_counter()</code> functions.</p>
 <pre><code class="language-lua">local function detailed_notify(data)
-	print("The count now is " .. counter.value)
+ print("The count now is " .. counter.value)
 
-	if type(data) == "number" then
-		print("The count was increased by " .. data)
-	end
+ if type(data) == "number" then
+  print("The count was increased by " .. data)
+ end
 end
 </code></pre>
 <pre><code class="language-lua">local function add_to_counter(num)
-	counter.value = counter.value + num
+ counter.value = counter.value + num
 
-	return num
+ return num
 end
 </code></pre>
 <p>This gives us the following output:</p>
-<pre><code>The count has been updated!
+<pre><code class="language-xt">The count has been updated!
 The count now is 5
 The count was increased by 5
 
@@ -2125,9 +2142,7 @@ The count now is 9
 The count was increased by 4
 </code></pre>
 <p>When you're done with a subscriber and don't want it to be called anymore, you can simply unsubscribe it. Let's unsubscribe to the <code>simple_notify()</code> function after our first <code>publish()</code> call.</p>
-<pre><code class="language-lua">...
-
--- You can publish any type of data to the counter, and all subscribers will be notified about it
+<pre><code class="language-lua">-- You can publish any type of data to the counter, and all subscribers will be notified about it
 counter:publish(add_to_counter(5))
 
 -- Just some spacing
@@ -2137,7 +2152,7 @@ counter:unsubscribe(simply_notify)
 counter:publish(add_to_counter(4))
 </code></pre>
 <p>After running the script, you will see that the print statement from the unsubscribed function is gone.</p>
-<pre><code>The count has been updated!
+<pre><code class="language-txt">The count has been updated!
 The count now is 5
 The count was increased by 5
 
@@ -2147,27 +2162,27 @@ The count was increased by 4
 <p>In total, our example script should look like this:</p>
 <pre><code class="language-lua">-- You can can construct an observable object as shown below:
 -- Replace `0` with whatever data you'd like
-local counter = Astra.observable(0)
+local counter = stores.observable(0)
 
 local function simply_notify()
-	print("The count has been updated!")
+ print("The count has been updated!")
 end
 
 local function detailed_notify(data)
-	print("The count now is " .. counter.value)
+ print("The count now is " .. counter.value)
 
-	if type(data) == "number" then
-		print("The count was increased by " .. data)
-	end
+ if type(data) == "number" then
+  print("The count was increased by " .. data)
+ end
 end
 
 counter:subscribe(simply_notify)
 counter:subscribe(detailed_notify)
 
 local function add_to_counter(num)
-	counter.value = counter.value + num
+ counter.value = counter.value + num
 
-	return num
+ return num
 end
 
 -- You can publish any type of data to the counter, and all subscribers will be notified about it
@@ -2249,44 +2264,46 @@ counter:publish(add_to_counter(4))
 <h1 id="publishersubscriber-pattern"><a class="header" href="#publishersubscriber-pattern">Publisher/Subscriber Pattern</a></h1>
 <p>The Pub/Sub pattern in Astra is similar to the <a href="std/./observer_pattern.html">observer pattern</a> in terms of core functionality, but it differs in terms of publisher &amp; subscriber management. A pubsub store is a global store. It can have multiple functions subcribed to an observable object, and multiple of these observable objects organized into topics, which are simply string keywords.</p>
 <p>You must remember that the rules of operating on pubsub stores is the same as that for the observer pattern, but pubsub stores are much more powerful and flexible.</p>
-<pre><code class="language-lua">-- Let's create a few tables as examples for observable objects
+<pre><code class="language-lua">local stores = require("astra.lua.stores")
+
+-- Let's create a few tables as examples for observable objects
 local user1 = {
-	name = "John Doe",
-	email = "johndoe@example.com",
+ name = "John Doe",
+ email = "johndoe@example.com",
 }
 
 local user2 = {
-	name = "Jane Doe",
-	email = "janedoe@example.com",
+ name = "Jane Doe",
+ email = "janedoe@example.com",
 }
 
 -- We're going to subscribe functions to both user objects
 -- The first parameter is the topic, for which we will use "user:update"
 -- Then we pass in the observable object we want to subscribe to
 -- Finally we pass in the function that'll subscribe to the aforementioned observable
-Astra.pubsub.subscribe("user:update", user1, function(user)
-	print("User1 updated:", user.name, user.email)
+stores.pubsub.subscribe("user:update", user1, function(user)
+ print("User1 updated:", user.name, user.email)
 end)
 
-Astra.pubsub.subscribe("user:update", user2, function(user)
-	print("User2 updated:", user.name, user.email)
+stores.pubsub.subscribe("user:update", user2, function(user)
+ print("User2 updated:", user.name, user.email)
 end)
 
 -- Publish updates to the "user_update" topic
 user1.name = "John Doe Jr."
-Astra.pubsub.publish("user:update", user1)
+stores.pubsub.publish("user:update", user1)
 
 -- While unsubscribing a function, if the function isn't stored as a variable, you must match it exactly
 -- The parameters required while unsubscribing are exactly the same as while subscribing.
-Astra.pubsub.unsubscribe("user:update", user1, function(user)
-	print("User1 updated:", user.name, user.email)
+stores.pubsub.unsubscribe("user:update", user1, function(user)
+ print("User1 updated:", user.name, user.email)
 end)
 
 user2.email = "jane.doe@company.com"
-Astra.pubsub.publish("user:update", user2)
+stores.pubsub.publish("user:update", user2)
 </code></pre>
 <p>You should get an output like this:</p>
-<pre><code>User1 updated:  John Doe Jr.    johndoe@example.com
+<pre><code class="language-txt">User1 updated:  John Doe Jr.    johndoe@example.com
 User2 updated:  Jane Doe        janedoe@example.com
 User2 updated:  Jane Doe        jane.doe@company.com
 </code></pre>

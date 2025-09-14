@@ -23,14 +23,14 @@
 ---@param dir? string path to the directory, for example: `"templates/**/[!exclude.html]*.html"`
 ---@return TemplateEngine
 ---@nodiscard
-function Astra.new_templating_engine(dir)
+local function new_engine(dir)
 	---@type TemplateEngine
 	---@diagnostic disable-next-line: undefined-global
 	local engine = astra_internal__new_templating_engine(dir)
 	---@type TemplateEngine
 	---@diagnostic disable-next-line: missing-fields
 	local TemplateEngineWrapper = { engine = engine }
-	local templates_re = Astra.regex([[(?:index)?\.(html|lua)$]])
+	local templates_re = regex([[(?:index)?\.(html|lua)$]])
 
 	local function normalize_paths(path)
 		-- Ensure path starts with "/"
@@ -103,3 +103,5 @@ function Astra.new_templating_engine(dir)
 
 	return TemplateEngineWrapper
 end
+
+return { new = new_engine }

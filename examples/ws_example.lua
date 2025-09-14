@@ -1,4 +1,5 @@
-local server = Astra.http.server:new()
+local http = require("astra.lua.http")
+local server = http.server.new();
 
 ---@param socket WebSocket
 local function handle_socket(socket)
@@ -6,7 +7,10 @@ local function handle_socket(socket)
 	while true do
 		pprint(socket:recv())
 		socket:send("text", "hello from the server")
-		socket:send_close(1000)
+		socket:send_close({
+			code = 1000,
+			reason = "end of chat"
+		})
 	end
 end
 

@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.29.0](https://github.com/ArkForgeLabs/Astra/compare/v0.28.1..v0.29.0) - 2025-09-14
+
+### Bug Fixes
+
+- loading stdlib and globals without exported local folder - ([ec622d3](https://github.com/ArkForgeLabs/Astra/commit/ec622d335e03ae8caa56f9862526b2490622c197))
+
+### Documentation
+
+- updatd documentation for the new import api - ([87396b8](https://github.com/ArkForgeLabs/Astra/commit/87396b8992f613899a12e8628a4cf7fe409045cb))
+
+### Features
+
+- teal code can now be loaded and even mixed with normal lua code without additional steps - ([6bf04c4](https://github.com/ArkForgeLabs/Astra/commit/6bf04c427f947f6c345210c497ba430522577ccd))
+- [**breaking**] removed import as require is now working safely - ([bf3feac](https://github.com/ArkForgeLabs/Astra/commit/bf3feac564460f38e97bc4536edc24364665c450))
+- teal can now run directly, and script paths are now known during runtime, and debug and jit libraries are now available - ([a9edfba](https://github.com/ArkForgeLabs/Astra/commit/a9edfbaff666227178f10a4ac4677024fe560e5a))
+- better file IO error delegation from Rust to Lua - ([c83c918](https://github.com/ArkForgeLabs/Astra/commit/c83c918b04ab6274b096c8dcb035281f4714b73c))
+- now importing for teal and lua works wonderfully with the standard library folder as well - ([46f7043](https://github.com/ArkForgeLabs/Astra/commit/46f70439b098bcec189e8a6fb09961ff4fed6cdb))
+- added Teal types - ([69bd843](https://github.com/ArkForgeLabs/Astra/commit/69bd8432449aed9230a8a5364899c0327f1428e0))
+- runtime teal checks before runs - ([71e76ba](https://github.com/ArkForgeLabs/Astra/commit/71e76ba100049298399fe631d0b2d97fe471349c))
+- added ability to turn off teal compile checks when running astra - ([e2573e3](https://github.com/ArkForgeLabs/Astra/commit/e2573e3ff8a0afd3460d37504db67efdf5752f88))
+- added teal examples and fixed bugs - ([1b7b3fa](https://github.com/ArkForgeLabs/Astra/commit/1b7b3faa15467d08594d0af0ba7523a0e3312239))
+
+### Refactoring
+
+- moved all the type definition files to their own space - ([bfa7fa2](https://github.com/ArkForgeLabs/Astra/commit/bfa7fa2daaf8e72e0e2ad25968f949e65b0d7165))
+- moved teal from global to behind Astra table - ([b49be8c](https://github.com/ArkForgeLabs/Astra/commit/b49be8c772b9fa8e2ec97e44bb0eb4f2d535f79e))
+- added primitive global Astra function types - ([2db0d51](https://github.com/ArkForgeLabs/Astra/commit/2db0d515986d6b34b22763f050544c9c4836bb13))
+- delegated error check of globals, and cleaned up code elsewhere - ([e4deeaf](https://github.com/ArkForgeLabs/Astra/commit/e4deeafa992923de6ab91f0fd8b682050e6dff6b))
+- now exports teal libraries too and the export folder standardized - ([546d28f](https://github.com/ArkForgeLabs/Astra/commit/546d28feb75c37a3c0fc43f7fe28fb65bab1d47a))
+- renamed `astra_stdlib` to `astra` - ([6b34330](https://github.com/ArkForgeLabs/Astra/commit/6b343303b3b1779662b99820ad6f35d58aaaf0a4))
+- moved away from Astra global namespace in favor of importing needed functionality. - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.dotenv_load` moved to global `dotenv_load` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.regex` moved to global `regex` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.crypto` moved to lib `astra.lua.crypto` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.json` moved to lib `astra.lua.serializer` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.database_connect` moved to lib `astra.lua.database` and `database_connect` renamed to `connect` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.datetime` moved to lib `astra.lua.datetime` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.http` moved to lib `astra.lua.http` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.io` moved to lib `astra.lua.io` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.pubsub`  and `Astra.observable` moved to lib `astra.lua.stores` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.new_templating_engine` moved to lib `astra.lua.jinja2` and `new_templating_engine` renamed to `new_engine` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- `Astra.validate_table` moved to lib `astra.lua.validate_table` - ([1c54ce2](https://github.com/ArkForgeLabs/Astra/commit/1c54ce23361849ffdb54d9ccadd7d33e976310d4))
+- moved the examples to the new api - ([da95232](https://github.com/ArkForgeLabs/Astra/commit/da952325157811087a5ff715aa4184abcd1d6114))
+- renamed `validate_table` to `validation` as there is plans for more validation options in the future - ([da95232](https://github.com/ArkForgeLabs/Astra/commit/da952325157811087a5ff715aa4184abcd1d6114))
+- separated the teal type check from teal loader - ([f42a72a](https://github.com/ArkForgeLabs/Astra/commit/f42a72a3110b49448286308ac575643f44a26334))
+- consistent api for jinja and database - ([fb3733f](https://github.com/ArkForgeLabs/Astra/commit/fb3733fae91a3d0225e42fae98d8c5abc6d983c4))
+
 ## [0.28.1](https://github.com/ArkForgeLabs/Astra/compare/v0.28.0..0.28.1) - 2025-09-03
 
 ### Bug Fixes

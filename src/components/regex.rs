@@ -4,7 +4,7 @@ pub struct LuaRegex {
     re: regex::Regex,
 }
 impl LuaRegex {
-    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<&'static str> {
+    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let function = lua.create_function(|_, regex_string: String| {
             match regex::Regex::new(&regex_string) {
                 Ok(re) => Ok(Self { re }),
@@ -15,7 +15,7 @@ impl LuaRegex {
         })?;
         lua.globals().set("astra_internal__regex", function)?;
 
-        Ok(include_str!("regex.lua"))
+        Ok(())
     }
 }
 impl UserData for LuaRegex {

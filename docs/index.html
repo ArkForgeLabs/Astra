@@ -125,7 +125,7 @@
   <section class="code-section">
     <div class="code-block">
       <pre id="code-block-pre"><code class="language-lua" style="overflow-x: auto;">-- Create a new server
-local server = Astra.http.server.new()
+local server = require("astra.lua.http").server.new()
 
 -- Register a route
 server:get("/", function()

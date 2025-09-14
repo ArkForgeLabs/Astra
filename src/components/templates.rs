@@ -18,7 +18,7 @@ pub struct TemplatingEngine<'a> {
     pub exclusions: Vec<Arc<str>>,
 }
 impl TemplatingEngine<'static> {
-    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<&'static str> {
+    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.globals().set(
             "astra_internal__new_templating_engine",
             lua.create_async_function(|_, dir: Option<String>| async {
@@ -61,7 +61,7 @@ impl TemplatingEngine<'static> {
             })?,
         )?;
 
-        Ok(include_str!("templates.lua"))
+        Ok(())
     }
 }
 impl TemplatingEngine<'_> {
