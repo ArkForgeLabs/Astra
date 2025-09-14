@@ -860,7 +860,9 @@ socket
 <h1 id="templating"><a class="header" href="#templating">Templating</a></h1>
 <p>Astra supports jinja templating through <a href="https://github.com/mitsuhiko/minijinja/blob/main/COMPATIBILITY.md">minijinja</a>. It is incredibly performent, feature rich and easy to use.</p>
 <pre><code class="language-lua">-- can also pass no arguments to make an empty templating engine
-local templates = require("astra.lua.jinja2")("examples/templates/**/*.html")
+local templating_engine = require("astra.lua.jinja2")
+local templates = templating_engine.new("examples/templates/**/*.html")
+
 -- Exclude files
 templates:exclude_templates({ "base.html" })
 
@@ -1363,7 +1365,8 @@ print(decoded)
 <h1 id="sql-driver"><a class="header" href="#sql-driver">SQL Driver</a></h1>
 <p>If your server requires access to an SQL database such as PostgreSQL and SQLite, Astra provides utilities for basic connection and querying.</p>
 <pre><code class="language-lua">-- connect to your db
-local db = require("astra.lua.database")("postgres", "postgres://astra_postgres:password@localhost/astr_database")
+local driver = require("astra.lua.database")
+local db = driver.new("postgres", "postgres://astra_postgres:password@localhost/astr_database")
 
 -- You can execute queries to the database along with optional parameters
 db:execute([[

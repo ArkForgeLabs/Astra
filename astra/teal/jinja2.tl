@@ -109,4 +109,4 @@ local function new_engine(dir: string): TemplateEngine
 	return TemplateEngineWrapper
 end
 
-return new_engine
+return { new = new_engine }

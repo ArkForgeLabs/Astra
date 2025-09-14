@@ -48,15 +48,13 @@ local function new_datetime(differentiator, month, day, hour, min, sec, milli)
 	end
 end
 
-local datetime = {}
-
 ---@type fun(differentiator?: string | number, month: number?, day: number?, hour: number?, min: number?, sec: number?, milli: number?): DateTime
 ---@param differentiator? string | number This field can be used to determine the type of DateTime. On empty it creates a new local DateTime, on number it starts te sequence for letting you define the DateTime by parameters, and on string it allows you to parse a string to DateTime.
 ---@return DateTime
 --- Creates a wrapper for a DateTime-like object
-function datetime.new(differentiator, month, day, hour, min, sec, milli)
+function datetime_new(differentiator, month, day, hour, min, sec, milli)
 	-- Create real DateTime using datetime
 	return new_datetime(differentiator, month, day, hour, min, sec, milli)
 end
 
-return datetime
+return { new = datetime_new }

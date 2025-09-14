@@ -104,4 +104,4 @@ local function new_engine(dir)
 	return TemplateEngineWrapper
 end
 
-return new_engine
+return { new = new_engine }

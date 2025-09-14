@@ -16,4 +16,4 @@ local function connect(database_type: DATABASE_TYPE, url: string, max_connection
     return astra_internal__database_connect(database_type, url, max_connections)
 end
 
-return connect
+return { new = connect }
