@@ -1,16 +1,23 @@
-use crate::{ASTRA_STD_LIBS, LUA, STDLIB_PATH, TEAL_IMPORT_SCRIPT};
+use crate::{ASTRA_STD_LIBS, LUA, RUNTIME_FLAGS, TEAL_IMPORT_SCRIPT};
 use clap::crate_version;
 
 async fn run_command_prerequisite(
     file_path: &str,
     stdlib_path: Option<String>,
+    teal_compile_checks: Option<bool>,
     extra_args: Option<Vec<String>>,
 ) {
     let lua = &LUA;
+
     let stdlib_path = stdlib_path.unwrap_or("astra".to_string());
+    let teal_compile_checks = teal_compile_checks.unwrap_or(true);
+
     #[allow(clippy::expect_used)]
-    STDLIB_PATH
-        .set(std::path::PathBuf::from(stdlib_path.clone()))
+    RUNTIME_FLAGS
+        .set(crate::RuntimeFlags {
+            stdlib_path: std::path::PathBuf::from(stdlib_path.clone()),
+            teal_compile_checks,
+        })
         .expect("Could not set the global STDLIB_PATH");
 
     // Register Lua components.
@@ -40,11 +47,13 @@ async fn run_command_prerequisite(
 pub async fn run_command(
     file_path: String,
     stdlib_path: Option<String>,
+    teal_compile_checks: Option<bool>,
     extra_args: Option<Vec<String>>,
 ) {
     let lua = &LUA;
 
-    run_command_prerequisite(&file_path, stdlib_path, extra_args).await;
+    run_command_prerequisite(&file_path, stdlib_path, teal_compile_checks, extra_args).await;
+    let teal_compile_checks = teal_compile_checks.unwrap_or(true);
 
     // Load and execute the Lua script.
     #[allow(clippy::expect_used)]
@@ -55,6 +64,10 @@ pub async fn run_command(
     {
         user_file = TEAL_IMPORT_SCRIPT
             .replace("@SOURCE", &user_file)
+            .replace(
+                "local teal_compile_checks = true",
+                &format!("local teal_compile_checks = {teal_compile_checks}"),
+            )
             .replace("@FILE_NAME", &file_path);
     }
     #[allow(clippy::expect_used)]

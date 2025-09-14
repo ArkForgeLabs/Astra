@@ -11,8 +11,12 @@ mod components;
 pub static LUA: std::sync::LazyLock<mlua::Lua> =
     std::sync::LazyLock::new(|| unsafe { mlua::Lua::unsafe_new() });
 
-pub static STDLIB_PATH: tokio::sync::OnceCell<std::path::PathBuf> =
-    tokio::sync::OnceCell::const_new();
+#[derive(Debug, Clone)]
+pub struct RuntimeFlags {
+    pub stdlib_path: std::path::PathBuf,
+    pub teal_compile_checks: bool,
+}
+pub static RUNTIME_FLAGS: tokio::sync::OnceCell<RuntimeFlags> = tokio::sync::OnceCell::const_new();
 
 /// Global standard libraries and type definitions from Astra
 pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
@@ -44,6 +48,9 @@ enum AstraCLI {
         /// Path to the standard library folder
         #[arg(short, long)]
         stdlib_path: Option<String>,
+        /// Enable or disable Teal's compile checks before loading the moudles
+        #[arg(short, long)]
+        teal_compile_checks: Option<bool>,
         /// Extra arguments to pass to the script.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         extra_args: Option<Vec<String>>,
@@ -79,8 +86,9 @@ pub async fn main() -> std::io::Result<()> {
         AstraCLI::Run {
             file_path,
             stdlib_path,
+            teal_compile_checks,
             extra_args,
-        } => commands::run_command(file_path, stdlib_path, extra_args).await,
+        } => commands::run_command(file_path, stdlib_path, teal_compile_checks, extra_args).await,
         AstraCLI::ExportBundle { path } => commands::export_bundle_command(path).await?,
         AstraCLI::Upgrade { user_agent } => {
             if let Err(e) = commands::upgrade_command(user_agent).await {
