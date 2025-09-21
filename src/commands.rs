@@ -120,7 +120,8 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
     let folder_path = folder_path.unwrap_or(".".to_string());
     let folder_path = std::path::Path::new(&folder_path);
     let _ = std::fs::remove_dir_all(folder_path.join("astra"));
-    ASTRA_STD_LIBS.extract(folder_path)?;
+    let _ = std::fs::create_dir_all(folder_path.join("astra"));
+    ASTRA_STD_LIBS.extract(folder_path.join("astra"))?;
 
     let runtime = if cfg!(feature = "lua54") {
         "Lua 5.4"
