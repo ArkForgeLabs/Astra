@@ -56,6 +56,51 @@ impl mlua::UserData for BodyLua {
     }
 }
 
+// to capture all types of string literals
+const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
+====================================================";
+pub async fn execute_teal_code(
+    lua: &mlua::Lua,
+    module_name: &str,
+    module_content: &str,
+) -> mlua::Result<mlua::Value> {
+    let runtime_flags = crate::RUNTIME_FLAGS
+        .get_or_init(|| async {
+            crate::RuntimeFlags {
+                stdlib_path: std::path::PathBuf::from("astra"),
+                teal_compile_checks: true,
+            }
+        })
+        .await;
+
+    if runtime_flags.teal_compile_checks {
+        let compile_check_chunk = crate::TEAL_IMPORT_SCRIPT
+            .replace(
+                "@SOURCE",
+                &format!(
+                    "global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{module_name}\";{module_content}"
+                ),
+            )
+            .replace("@FILE_NAME", module_name);
+
+        lua.load(compile_check_chunk)
+            .set_name(module_name)
+            .exec_async()
+            .await?
+    }
+
+    let result = lua
+        .load(
+            format!(
+            "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{module_name}\";{module_content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{module_name}\")()")
+        )
+        .set_name(module_name)
+        .eval_async::<mlua::Value>()
+        .await?;
+
+    Ok(result)
+}
+
 #[allow(unused)]
 pub mod macros {
     macro_rules! impl_deref {

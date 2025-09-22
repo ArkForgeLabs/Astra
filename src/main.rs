@@ -22,7 +22,7 @@ pub static RUNTIME_FLAGS: tokio::sync::OnceCell<RuntimeFlags> = tokio::sync::Onc
 pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
     std::sync::LazyLock::new(|| include_dir::include_dir!("astra"));
 
-pub const TEAL_IMPORT_SCRIPT: &str = include_str!("components/teal_import.lua");
+pub const TEAL_IMPORT_SCRIPT: &str = include_str!("components/teal_check.lua");
 
 /// Command-line interface for Astra.
 #[derive(Parser)]

@@ -1,14 +1,23 @@
 ---@meta
+
+-- this is like { "path" = "content" }
+---@diagnostic disable-next-line: undefined-global
+local stdlib_table = ASTRA_INTERNAL__STDLIB_TABLE
 local original_io_open = io.open
 
 function custom_io_open(filename, mode)
-    if string.find(filename, "astra.d.tl", 1, true) then
+    -- First, try to open the file locally
+    local file = original_io_open(filename, mode)
+    if file then
+        return file
+    end
+    -- If not found locally, check if the filename exists in stdlib_table
+    if stdlib_table and stdlib_table[filename] then
         -- Create a table that mimics a file handle
         local fake_file = {
-            content = [[@ASTRA_TEAL_SOURCE]],
+            content = stdlib_table[filename],
             pointer = 1,
         }
-
         -- Implement the 'read' method
         function fake_file:read(...)
             local args = {...}
@@ -29,20 +38,17 @@ function custom_io_open(filename, mode)
                 return nil
             end
         end
-
         -- Implement the 'close' method
         function fake_file:close()
             -- Do nothing, or add cleanup logic
         end
-
         return fake_file
     else
-        return original_io_open(filename, mode)
+        return nil
     end
 end
 
 io.open = custom_io_open
-
 
 local function teal_source()
 local VERSION = "0.24.7+dev"
@@ -15310,3 +15316,5 @@ return tl
 end
 
 Astra.teal = teal_source()
+
+-- io.open = original_io_open

@@ -1,8 +1,4 @@
-use crate::{RuntimeFlags, ASTRA_STD_LIBS, RUNTIME_FLAGS, TEAL_IMPORT_SCRIPT};
-
-// to capture all types of string literals
-const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
-====================================================";
+use crate::{RuntimeFlags, ASTRA_STD_LIBS, RUNTIME_FLAGS};
 
 pub async fn find_first_lua_match_with_content(
     lua: &mlua::Lua,
@@ -75,38 +71,25 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
     if let Some(key) = cache.get(&path) {
         lua.registry_value::<mlua::Value>(key)
     } else {
-        let runtime_flags = RUNTIME_FLAGS.get_or_init(|| async { RuntimeFlags {
-            stdlib_path: std::path::PathBuf::from("astra"),
-            teal_compile_checks: true
-        } }).await;
-
         let current_script_path: String = lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
         // let is_current_script_teal = std::path::PathBuf::from(&current_script_path).ends_with("tl");
 
         #[allow(clippy::collapsible_else_if)]
         if let Some((file_path, content)) = find_first_lua_match_with_content(&lua, &path).await
-        && let Some(is_teal) = file_path.extension().map(|extension| extension.to_string_lossy().contains("tl")) {
+            && let Some(is_teal) = file_path.extension().map(|extension| extension.to_string_lossy().contains("tl")) {
             let file_path = file_path.to_string_lossy().to_string().replace("./", "").replace(".\\", "");
 
-            if runtime_flags.teal_compile_checks {
-                lua.load(TEAL_IMPORT_SCRIPT
-                    .replace("@SOURCE", &format!("global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}"))
-                    .replace(
-                        "local teal_compile_checks = true",
-                        &format!("local teal_compile_checks = {}", runtime_flags.teal_compile_checks),
-                    )
-                    .replace("@FILE_NAME", &file_path)).exec_async().await?
-            }
-            let result = lua
-            .load(if is_teal {
-                format!(
-                "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{file_path}\")()")
+            let result = if is_teal { 
+                super::execute_teal_code(&lua, &file_path, &content).await?
             } else {
-                format!("ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}")
-            })
-            .set_name(format!("@{file_path}"))
-            .eval_async::<mlua::Value>()
-            .await?;
+                lua
+                    .load(
+                        format!("ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}")
+                    )
+                    .set_name(format!("@{file_path}"))
+                    .eval_async::<mlua::Value>()
+                    .await?
+            };
 
             let key = lua.create_registry_value(&result)?;
             cache.insert(path, key);

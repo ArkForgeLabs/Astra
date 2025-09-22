@@ -1,9 +1,6 @@
-use crate::{ASTRA_STD_LIBS, LUA, RUNTIME_FLAGS, TEAL_IMPORT_SCRIPT};
+use crate::{ASTRA_STD_LIBS, LUA, RUNTIME_FLAGS};
 use clap::crate_version;
-
-// to capture all types of string literals
-const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
-====================================================";
+use std::path::MAIN_SEPARATOR_STR;
 
 async fn run_command_prerequisite(
     file_path: &str,
@@ -25,7 +22,10 @@ async fn run_command_prerequisite(
         .expect("Could not set the global STDLIB_PATH");
 
     // Register Lua components.
-    registration(lua, stdlib_path, teal_compile_checks).await;
+    #[allow(clippy::expect_used)]
+    registration(lua, stdlib_path)
+        .await
+        .expect("Error setting up the standard library");
 
     // Handle extra arguments.
     if let Some(extra_args) = extra_args
@@ -57,37 +57,24 @@ pub async fn run_command(
     let lua = &LUA;
 
     run_command_prerequisite(&file_path, stdlib_path, teal_compile_checks, extra_args).await;
-    let teal_compile_checks = teal_compile_checks.unwrap_or(true);
 
     // Load and execute the Lua script.
     #[allow(clippy::expect_used)]
-    let mut user_file = std::fs::read_to_string(&file_path).expect("Couldn't read file");
+    let user_file = std::fs::read_to_string(&file_path).expect("Couldn't read file");
 
     if let Some(is_teal) = std::path::PathBuf::from(&file_path).extension()
         && is_teal == "tl"
     {
-        if teal_compile_checks
-            && let Err(e) = lua
-                .load(
-                    TEAL_IMPORT_SCRIPT
-                        .replace("@SOURCE", &user_file)
-                        .replace("@FILE_NAME", &file_path),
-                )
-                .set_name(format!("@{file_path}"))
-                .exec_async()
-                .await
-        {
-            tracing::error!("{e}");
-        }
-
-        user_file = format!(
-            "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{user_file}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{file_path}\")()"
-        )
+        #[allow(clippy::expect_used)]
+        crate::components::execute_teal_code(lua, &file_path, &user_file)
+            .await
+            .expect("Couldn't set the script path");
+    } else {
+        #[allow(clippy::expect_used)]
+        lua.globals()
+            .set("ASTRA_INTERNAL__CURRENT_SCRIPT", file_path.clone())
+            .expect("Couldn't set the script path");
     }
-    #[allow(clippy::expect_used)]
-    lua.globals()
-        .set("ASTRA_INTERNAL__CURRENT_SCRIPT", file_path.clone())
-        .expect("Couldn't set the script path");
 
     if let Err(e) = lua
         .load(user_file)
@@ -252,14 +239,34 @@ astra export"#
     Ok(())
 }
 
-async fn registration(lua: &mlua::Lua, stdlib_path: String, teal_compile_checks: bool) {
-    #[allow(clippy::expect_used)]
-    crate::components::register_components(lua)
+static LUA_ASTRA_STDLIB_TABLE: tokio::sync::OnceCell<mlua::Table> =
+    tokio::sync::OnceCell::const_new();
+async fn stdlib_to_lua_table(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
+    LUA_ASTRA_STDLIB_TABLE
+        .get_or_try_init(|| async {
+            let lua_astra_stdlib = lua.create_table()?;
+
+            for dir in crate::ASTRA_STD_LIBS.dirs() {
+                for file in dir.files() {
+                    let file_path = file.path().to_string_lossy().to_string();
+                    let content = file.contents_utf8().unwrap_or("");
+                    lua_astra_stdlib.set(
+                        format!(".{MAIN_SEPARATOR_STR}astra{MAIN_SEPARATOR_STR}{file_path}"),
+                        content,
+                    )?;
+                }
+            }
+
+            Ok(lua_astra_stdlib)
+        })
         .await
-        .expect("Error setting up the standard library");
+        .cloned()
+}
+
+async fn registration(lua: &mlua::Lua, stdlib_path: String) -> mlua::Result<()> {
+    crate::components::register_components(lua).await?;
 
     let stdlib_path = std::path::PathBuf::from(stdlib_path);
-
     async fn read_from_stdlib(
         stdlib_path: &std::path::Path,
         path: std::path::PathBuf,
@@ -277,59 +284,42 @@ async fn registration(lua: &mlua::Lua, stdlib_path: String, teal_compile_checks:
         None
     }
 
+    lua.globals().set(
+        "ASTRA_INTERNAL__STDLIB_TABLE",
+        stdlib_to_lua_table(lua).await?,
+    )?;
+
     // astra.d.lua
     if let Some(content) = read_from_stdlib(
         &stdlib_path,
         std::path::PathBuf::from("lua").join("astra.d.lua"),
     )
     .await
-        && let Err(e) = lua.load(content).set_name("astra.d.lua").exec_async().await
     {
-        tracing::error!("Could not load the astra's lua globals: {e}");
+        lua.load(content)
+            .set_name("astra.d.lua")
+            .exec_async()
+            .await?;
     }
 
     // teal.lua (does not work on luau)
-    if !cfg!(feature = "luau")
-        && let Some(teal_source) = read_from_stdlib(
+    if !cfg!(feature = "luau") {
+        if let Some(content) =
+            read_from_stdlib(&stdlib_path, std::path::PathBuf::from("teal.lua")).await
+        {
+            lua.load(content).set_name("teal.lua").exec_async().await?;
+        }
+
+        // astra.d.tl
+        if let Some(content) = read_from_stdlib(
             &stdlib_path,
             std::path::PathBuf::from("teal").join("astra.d.tl"),
         )
         .await
-    {
-        if let Some(content) =
-            read_from_stdlib(&stdlib_path, std::path::PathBuf::from("teal.lua")).await
-            && let Err(e) = lua
-                .load(content.replace("@ASTRA_TEAL_SOURCE", teal_source.as_str()))
-                .set_name("teal.lua")
-                .exec_async()
-                .await
         {
-            tracing::error!("Could not load the teal: {e}");
-        }
-
-        // astra.d.tl
-        if teal_compile_checks
-            && let Err(e) = lua
-                .load(
-                    TEAL_IMPORT_SCRIPT
-                        .replace("@SOURCE", &teal_source)
-                        .replace("@FILE_NAME", "astra.d.tl"),
-                )
-                .set_name("astra.d.tl")
-                .exec_async()
-                .await
-        {
-            tracing::error!("Could not load the astra's teal globals: {e}");
-        }
-        if let Err(e) = lua
-                .load(
-                format!("Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{teal_source}]{ONE_HUNDRED_EQUAL_SIGNS}], \"astra.d.tl\")()")
-                )
-                .set_name("astra.d.tl")
-                .exec_async()
-                .await
-        {
-            tracing::error!("Could not load the astra's teal globals: {e}");
+            crate::components::execute_teal_code(lua, "astra.d.tl", &content).await?;
         }
     }
+
+    Ok(())
 }
