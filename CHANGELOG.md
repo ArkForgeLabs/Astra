@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.29.1](https://github.com/ArkForgeLabs/Astra/compare/v0.29.0..v0.29.1) - 2025-09-22
+
+### Bug Fixes
+
+- exports now correctly to the appropriate folder - ([388ff2f](https://github.com/ArkForgeLabs/Astra/commit/388ff2f52a7d82fecb8d7f35af6a462d547bb808))
+- teal loading stdlib modules on runtime checks - ([145242b](https://github.com/ArkForgeLabs/Astra/commit/145242bdced96e11912442eb42258ac6311cc7e4))
+
 ## [0.29.0](https://github.com/ArkForgeLabs/Astra/compare/v0.28.1..v0.29.0) - 2025-09-14
 
 ### Bug Fixes
