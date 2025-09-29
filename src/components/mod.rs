@@ -73,7 +73,7 @@ pub async fn execute_teal_code(
         })
         .await;
 
-    if runtime_flags.teal_compile_checks {
+    let module_content = if runtime_flags.teal_compile_checks && module_name.ends_with(".tl") {
         let compile_check_chunk = crate::TEAL_IMPORT_SCRIPT
             .replace(
                 "@SOURCE",
@@ -86,14 +86,17 @@ pub async fn execute_teal_code(
         lua.load(compile_check_chunk)
             .set_name(module_name)
             .exec_async()
-            .await?
-    }
+            .await?;
+
+        format!(
+            "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{module_name}\";{module_content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{module_name}\")()"
+        )
+    } else {
+        module_content.to_string()
+    };
 
     let result = lua
-        .load(
-            format!(
-            "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[global ASTRA_INTERNAL__CURRENT_SCRIPT=\"{module_name}\";{module_content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{module_name}\")()")
-        )
+        .load(module_content)
         .set_name(module_name)
         .eval_async::<mlua::Value>()
         .await?;
