@@ -1,21 +1,25 @@
-use crate::{RuntimeFlags, ASTRA_STD_LIBS, RUNTIME_FLAGS};
+use crate::{ASTRA_STD_LIBS, RUNTIME_FLAGS, RuntimeFlags};
 
 pub async fn find_first_lua_match_with_content(
     lua: &mlua::Lua,
     module_name: &str,
 ) -> Option<(std::path::PathBuf, String)> {
-    let runtime_flags = RUNTIME_FLAGS.get_or_init(|| async { RuntimeFlags {
-        stdlib_path: std::path::PathBuf::from("astra"),
-        teal_compile_checks: true
-    } }).await;
+    let runtime_flags = RUNTIME_FLAGS
+        .get_or_init(|| async {
+            RuntimeFlags {
+                stdlib_path: std::path::PathBuf::from("astra"),
+                teal_compile_checks: true,
+            }
+        })
+        .await;
     let lua_path: String;
     if let Ok(path) = lua.load("return package.path").eval::<String>() {
         lua_path = path
     } else {
         return None;
     }
-    let module_path = module_name.replace(".", std::path::MAIN_SEPARATOR_STR);
-    
+    let module_path = module_name.replace(".", "/");
+
     // check the lua paths if the module exist there
     for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
         let pattern = pattern.replacen('?', &module_path, 1);
@@ -41,16 +45,21 @@ pub async fn find_first_lua_match_with_content(
 
         // Check in packaged libs if it exists
         for candidate in candidates {
-            if let Some(file_name) =  runtime_flags.stdlib_path.file_name()
+            if let Some(file_name) = runtime_flags.stdlib_path.file_name()
                 && let file_name = candidate.to_string_lossy().to_string().replace(
-                        format!(".{}{}{}",
+                    format!(
+                        ".{}{}{}",
                         std::path::MAIN_SEPARATOR_STR,
-                        file_name.to_string_lossy(), 
-                        std::path::MAIN_SEPARATOR_STR).as_str(), ""
+                        file_name.to_string_lossy(),
+                        std::path::MAIN_SEPARATOR_STR
                     )
+                    .as_str(),
+                    "",
+                )
                 // && let _ = println!("{file_name:?}")
                 && let Some(file) = ASTRA_STD_LIBS.get_file(file_name)
-                && let Some(content) = file.contents_utf8() {
+                && let Some(content) = file.contents_utf8()
+            {
                 return Some((candidate, content.to_string()));
             }
         }
@@ -60,46 +69,60 @@ pub async fn find_first_lua_match_with_content(
 }
 
 pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
-    lua.globals().set("require", lua.create_async_function(|lua, path: String| async move {
-        let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
-        
-        let mut cache = lua
-            .globals()
-            .get::<std::collections::HashMap<String, mlua::RegistryKey>>(key_id.as_str())
-            .unwrap_or_default();
+    lua.globals().set(
+        "require",
+        lua.create_async_function(|lua, path: String| async move {
+            let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
 
-    if let Some(key) = cache.get(&path) {
-        lua.registry_value::<mlua::Value>(key)
-    } else {
-        let current_script_path: String = lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
-        // let is_current_script_teal = std::path::PathBuf::from(&current_script_path).ends_with("tl");
+            let mut cache = lua
+                .globals()
+                .get::<std::collections::HashMap<String, mlua::RegistryKey>>(key_id.as_str())
+                .unwrap_or_default();
 
-        #[allow(clippy::collapsible_else_if)]
-        if let Some((file_path, content)) = find_first_lua_match_with_content(&lua, &path).await
-            && let Some(is_teal) = file_path.extension().map(|extension| extension.to_string_lossy().contains("tl")) {
-            let file_path = file_path.to_string_lossy().to_string().replace("./", "").replace(".\\", "");
-
-            let result = if is_teal { 
-                super::execute_teal_code(&lua, &file_path, &content).await?
+            if let Some(key) = cache.get(&path) {
+                lua.registry_value::<mlua::Value>(key)
             } else {
-                lua
-                    .load(
-                        format!("ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}")
-                    )
-                    .set_name(format!("@{file_path}"))
-                    .eval_async::<mlua::Value>()
-                    .await?
-            };
+                let current_script_path: String =
+                    lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
+                // let is_current_script_teal = std::path::PathBuf::from(&current_script_path).ends_with("tl");
 
-            let key = lua.create_registry_value(&result)?;
-            cache.insert(path, key);
-            lua.globals().set(key_id, cache)?;
-            lua.globals().set("ASTRA_INTERNAL__CURRENT_SCRIPT", current_script_path)?;
+                #[allow(clippy::collapsible_else_if)]
+                if let Some((file_path, content)) =
+                    find_first_lua_match_with_content(&lua, &path).await
+                    && let Some(is_teal) = file_path
+                        .extension()
+                        .map(|extension| extension.to_string_lossy().contains("tl"))
+                {
+                    let file_path = file_path
+                        .to_string_lossy()
+                        .to_string()
+                        .replace("./", "")
+                        .replace(".\\", "");
 
-            Ok(result)
-        } else {
-            Err(mlua::Error::runtime(format!("Could not find the module {path}")))
-        }
-    }
-    })?)
+                    let result = if is_teal {
+                        super::execute_teal_code(&lua, &file_path, &content).await?
+                    } else {
+                        lua.load(format!(
+                            "ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}"
+                        ))
+                        .set_name(format!("@{file_path}"))
+                        .eval_async::<mlua::Value>()
+                        .await?
+                    };
+
+                    let key = lua.create_registry_value(&result)?;
+                    cache.insert(path, key);
+                    lua.globals().set(key_id, cache)?;
+                    lua.globals()
+                        .set("ASTRA_INTERNAL__CURRENT_SCRIPT", current_script_path)?;
+
+                    Ok(result)
+                } else {
+                    Err(mlua::Error::runtime(format!(
+                        "Could not find the module {path}"
+                    )))
+                }
+            }
+        })?,
+    )
 }
