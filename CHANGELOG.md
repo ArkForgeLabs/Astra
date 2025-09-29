@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.29.2](https://github.com/ArkForgeLabs/Astra/compare/v0.29.1..v0.29.2) - 2025-09-29
+
+### Bug Fixes
+
+- teal import paths on windows - ([44a47fa](https://github.com/ArkForgeLabs/Astra/commit/44a47fa713a4f0382bac871a214b3ba0154a1b16))
+- run tl check only on teal files - ([d90a509](https://github.com/ArkForgeLabs/Astra/commit/d90a50921c2c5995f44305a1745c922ea3a1e5f8))
+
 ## [0.29.1](https://github.com/ArkForgeLabs/Astra/compare/v0.29.0..v0.29.1) - 2025-09-22
 
 ### Bug Fixes
