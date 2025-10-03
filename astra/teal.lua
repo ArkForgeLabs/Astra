@@ -1,11 +1,52 @@
 ---@meta
 
+local function is_windows()
+  -- E.g. detect by path separator in package.config
+  -- package.config: first character is directory separator
+  local sep = package.config:sub(1,1)
+  return sep == "\\"
+end
+
+local function normalize_path(path)
+  -- 1. Replace all backslashes with forward slashes
+  path = path:gsub("\\", "/")
+  -- 2. Collapse multiple slashes
+  path = path:gsub("/+", "/")
+  -- 3. Resolve “.” and “..” segments (naively)
+  local parts = {}
+  for seg in path:gmatch("[^/]+") do
+    if seg == "." then
+      -- skip
+    elseif seg == ".." then
+      if #parts > 0 then
+        table.remove(parts)
+      else
+        -- Leading .. (you may choose to keep it)
+        table.insert(parts, "..")
+      end
+    else
+      table.insert(parts, seg)
+    end
+  end
+  local normalized = table.concat(parts, "/")
+  -- If path started with slash, preserve it
+  if path:sub(1,1) == "/" then
+    normalized = "/" .. normalized
+  end
+  -- If on Windows and you want native backslashes:
+  if is_windows() then
+    normalized = normalized:gsub("/", "\\")
+  end
+  return normalized
+end
+
 -- this is like { "path" = "content" }
 ---@diagnostic disable-next-line: undefined-global
 local stdlib_table = ASTRA_INTERNAL__STDLIB_TABLE
 local original_io_open = io.open
 
 function custom_io_open(filename, mode)
+    filename = normalize_path(filename)
     -- First, try to open the file locally
     local file = original_io_open(filename, mode)
     if file then

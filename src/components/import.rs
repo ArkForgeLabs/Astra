@@ -1,24 +1,16 @@
-use crate::{ASTRA_STD_LIBS, RUNTIME_FLAGS, RuntimeFlags};
+use crate::ASTRA_STD_LIBS;
 
 pub async fn find_first_lua_match_with_content(
     lua: &mlua::Lua,
     module_name: &str,
 ) -> Option<(std::path::PathBuf, String)> {
-    let runtime_flags = RUNTIME_FLAGS
-        .get_or_init(|| async {
-            RuntimeFlags {
-                stdlib_path: std::path::PathBuf::from("astra"),
-                teal_compile_checks: true,
-            }
-        })
-        .await;
     let lua_path: String;
     if let Ok(path) = lua.load("return package.path").eval::<String>() {
         lua_path = path
     } else {
         return None;
     }
-    let module_path = module_name.replace(".", "/");
+    let module_path = module_name.replace(".", std::path::MAIN_SEPARATOR_STR);
 
     // check the lua paths if the module exist there
     for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
@@ -45,22 +37,17 @@ pub async fn find_first_lua_match_with_content(
 
         // Check in packaged libs if it exists
         for candidate in candidates {
-            if let Some(file_name) = runtime_flags.stdlib_path.file_name()
-                && let file_name = candidate.to_string_lossy().to_string().replace(
-                    format!(
-                        ".{}{}{}",
-                        std::path::MAIN_SEPARATOR_STR,
-                        file_name.to_string_lossy(),
-                        std::path::MAIN_SEPARATOR_STR
-                    )
-                    .as_str(),
-                    "",
-                )
-                // && let _ = println!("{file_name:?}")
-                && let Some(file) = ASTRA_STD_LIBS.get_file(file_name)
+            if let Ok(file_path) = candidate.strip_prefix(format!(
+                ".{}astra{}",
+                std::path::MAIN_SEPARATOR_STR,
+                std::path::MAIN_SEPARATOR_STR
+            )) 
+                // && let _ = println!("FILE TO IMPORT: {:?}", file_path)
+                && let Some(file) =
+                    ASTRA_STD_LIBS.get_file(&file_path.to_string_lossy().replace("\\", "/"))
                 && let Some(content) = file.contents_utf8()
             {
-                return Some((candidate, content.to_string()));
+                return Some((candidate.to_path_buf(), content.to_string()));
             }
         }
     }
@@ -99,15 +86,15 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                         .replace("./", "")
                         .replace(".\\", "");
 
+                    lua.globals()
+                        .set("ASTRA_INTERNAL__CURRENT_SCRIPT", file_path.clone())?;
                     let result = if is_teal {
                         super::execute_teal_code(&lua, &file_path, &content).await?
                     } else {
-                        lua.load(format!(
-                            "ASTRA_INTERNAL__CURRENT_SCRIPT=\"{file_path}\";{content}"
-                        ))
-                        .set_name(format!("@{file_path}"))
-                        .eval_async::<mlua::Value>()
-                        .await?
+                        lua.load( content)
+                            .set_name(file_path)
+                            .eval_async::<mlua::Value>()
+                            .await?
                     };
 
                     let key = lua.create_registry_value(&result)?;
