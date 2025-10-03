@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.29.3](https://github.com/ArkForgeLabs/Astra/compare/v0.29.2..v0.29.3) - 2025-10-03
+
+### Bug Fixes
+
+- further fixes to Astra on windows having path issues - ([4d3e7cb](https://github.com/ArkForgeLabs/Astra/commit/4d3e7cb5c4de3aa649a435513c63d36416a96fc9))
+
 ## [0.29.2](https://github.com/ArkForgeLabs/Astra/compare/v0.29.1..v0.29.2) - 2025-09-29
 
 ### Bug Fixes
