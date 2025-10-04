@@ -128,6 +128,7 @@ global record HTTPServer
     routes: {HTTPRoute}
 
     new: function(self: HTTPServer): HTTPServer
+    shutdown: function(self: HTTPServer)
 end
 
 local server = {}

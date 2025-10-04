@@ -143,6 +143,7 @@ local http = {}
 
 
 ---@class HTTPServer
+---@field shutdown fun(HTTPServer) Shuts down the server
 ---@diagnostic disable-next-line: missing-fields
 local HTTPServer = {
     version = "0.0.0",

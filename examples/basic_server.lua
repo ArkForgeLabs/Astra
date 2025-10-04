@@ -23,5 +23,7 @@ server:get("/headers", function(request)
 	return request:headers()
 end)
 
+pprint("🚀 Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port))
+
 -- Run the server
 server:run()
