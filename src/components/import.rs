@@ -44,7 +44,7 @@ pub async fn find_first_lua_match_with_content(
             )) 
                 // && let _ = println!("FILE TO IMPORT: {:?}", file_path)
                 && let Some(file) =
-                    ASTRA_STD_LIBS.get_file(&file_path.to_string_lossy().replace("\\", "/"))
+                    ASTRA_STD_LIBS.get_file(file_path.to_string_lossy().replace("\\", "/"))
                 && let Some(content) = file.contents_utf8()
             {
                 return Some((candidate.to_path_buf(), content.to_string()));

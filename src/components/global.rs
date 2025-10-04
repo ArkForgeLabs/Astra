@@ -31,7 +31,9 @@ pub fn pprint(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__pretty_print",
         lua.create_function(|_, input: mlua::Value| {
-            if input.is_userdata() {
+            if let Some(input) = input.as_string() {
+                println!("{}", input.to_string_lossy());
+            } else if input.is_userdata() {
                 println!("{input:?}");
             } else {
                 println!("{input:#?}");

@@ -1,6 +1,6 @@
 global interface HTTPBody is userdata
-    text: function(): string
-    json: function(): table
+    text: function(self: HTTPBody): string
+    json: function(self: HTTPBody): table
 end
 
 global interface HTTPClientResponse is userdata
@@ -11,6 +11,15 @@ global interface HTTPClientResponse is userdata
 end
 
 local type http_client_callback = function(response: HTTPClientResponse)
+
+global interface HTTPClientRequestTableType
+    url: string
+    method: string | nil
+    body: any
+    file: string | nil
+    headers: { string: string } | nil
+    form: table | nil
+end
 
 global interface HTTPClientRequest is userdata
     set_method: function(self: HTTPClientRequest, method: string): HTTPClientRequest
@@ -23,6 +32,7 @@ global interface HTTPClientRequest is userdata
     set_file: function(self: HTTPClientRequest, file_path: string): HTTPClientRequest
     execute: function(self: HTTPClientRequest): HTTPClientResponse
     execute_task: function(self: HTTPClientRequest, callback: http_client_callback)
+    execute_streaming: function(self: HTTPClientRequest, callback: http_client_callback)
 end
 
 global type HTTPServerCallback = function(request?: HTTPServerRequest, response?: HTTPServerResponse): any
@@ -118,6 +128,7 @@ global record HTTPServer
     routes: {HTTPRoute}
 
     new: function(self: HTTPServer): HTTPServer
+    shutdown: function(self: HTTPServer)
 end
 
 local server = {}
@@ -233,10 +244,10 @@ function middleware.chain(chain: {function}): function
     end
 end
 
-local type astra_internal__http_request = function(url: string): HTTPClientRequest
+local type astra_internal__http_request = function(details: string | HTTPClientRequestTableType): HTTPClientRequest
 ---Opens a new async HTTP Request. The request is running as a task in parallel
-local function http_request(url: string): HTTPClientRequest
-    return astra_internal__http_request(url)
+local function http_request(details: string | HTTPClientRequestTableType): HTTPClientRequest
+    return astra_internal__http_request(details)
 end
 
 local status_codes = {

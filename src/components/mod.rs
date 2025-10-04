@@ -73,7 +73,7 @@ pub async fn execute_teal_code(
         })
         .await;
 
-    let module_content = if runtime_flags.teal_compile_checks && module_name.ends_with(".tl") {
+    if runtime_flags.teal_compile_checks && module_name.ends_with(".tl") {
         lua.globals()
             .set("ASTRA_INTERNAL__CURRENT_SCRIPT", module_name)?;
         let compile_check_chunk = crate::TEAL_IMPORT_SCRIPT
@@ -84,7 +84,9 @@ pub async fn execute_teal_code(
             .set_name(module_name)
             .exec_async()
             .await?;
+    }
 
+    let module_content = if module_name.ends_with(".tl") {
         let module_name = module_name.replace("\\", "/");
         format!(
             "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{module_content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{module_name}\")()"
@@ -140,4 +142,38 @@ pub mod macros {
 
     pub(crate) use impl_deref;
     pub(crate) use impl_deref_field;
+}
+
+fn is_table_json(table: &mlua::Table) -> mlua::Result<bool> {
+    let mut has_string_key = false;
+    let mut has_non_sequential_integer_key = false;
+    let mut max_int_key = 0;
+
+    for pair in table.pairs::<mlua::Value, mlua::Value>() {
+        let (key, _) = pair?;
+        match key {
+            mlua::Value::String(_) => has_string_key = true,
+            mlua::Value::Integer(i) => {
+                if i <= 0 || i > max_int_key + 1 {
+                    has_non_sequential_integer_key = true;
+                }
+                max_int_key = max_int_key.max(i);
+            }
+            _ => return Ok(true), // Other key types (e.g., floats, booleans) are JSON-like
+        }
+    }
+
+    Ok(has_string_key || has_non_sequential_integer_key)
+}
+
+fn is_table_byte_array(table: &mlua::Table) -> mlua::Result<bool> {
+    let mut i = 1;
+    for pair in table.pairs::<i64, i64>() {
+        let (key, value) = pair?;
+        if key != i || !(0..=255).contains(&value) {
+            return Ok(false);
+        }
+        i += 1;
+    }
+    Ok(true)
 }

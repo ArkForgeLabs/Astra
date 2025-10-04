@@ -1,6 +1,6 @@
 [package]
 name = "lua-astra"
-version = "0.29.3"
+version = "0.30.0"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
 description = "🔥 Blazingly Fast 🔥 web server runtime for Lua"
 documentation = "https://astra.arkforge.net/docs/latest"
@@ -31,7 +31,7 @@ lua53 = ["mlua/lua53"]
 lua54 = ["mlua/lua54"]
 
 [dependencies]
-mlua = { version = "0.10.3", features = [
+mlua = { version = "0.11.4", features = [
   "serialize",
   "vendored",
   "async",
@@ -42,9 +42,9 @@ mlua = { version = "0.10.3", features = [
 ] }
 
 # http
-axum = { version = "0.8.3", features = ["macros", "multipart", "http2", "ws"] }
-axum-extra = { version = "0.10.1", features = ["cookie"] }
-reqwest = { version = "0.12.15", features = [
+axum = { version = "0.8.6", features = ["macros", "multipart", "http2", "ws"] }
+axum-extra = { version = "0.10.3", features = ["cookie"] }
+reqwest = { version = "0.12.23", features = [
   "json",
   "rustls-tls",
   "charset",
@@ -54,46 +54,43 @@ reqwest = { version = "0.12.15", features = [
   "macos-system-configuration",
 ], default-features = false }
 tower = { version = "0.5.2" }
-tower-http = { version = "0.6.2", features = [
+tower-http = { version = "0.6.6", features = [
   "fs",
   "trace",
   "compression-full",
   "decompression-full",
 ] }
 time = "0.3.41"
-
-# templating
-tera = { version = "1.20.0" }
-minijinja = { version = "2.10.2", features = [
+minijinja = { version = "2.12.0", features = [
   "loader",
   "urlencode",
   "loop_controls",
   "speedups",
 ] }
-glob = "0.3.2"
+glob = "0.3.3"
 
 # data formats
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = { version = "1.0.140" }
-uuid = { version = "1.16.0", features = ["serde", "v4"] }
-sha2 = "0.10.8"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.145" }
+uuid = { version = "1.18.1", features = ["serde", "v4"] }
+sha2 = "0.10.9"
 sha3 = "0.10.8"
 base64 = "0.22.1"
 bytes = { version = "1.10.1", features = ["serde"] }
-chrono = { version = "0.4.41", features = ["serde"] }
+chrono = { version = "0.4.42", features = ["serde"] }
 
 # runtime
-tokio = { version = "1.44.1", features = ["macros", "rt-multi-thread"] }
-pollster = "0.4.0"
-clap = { version = "4.5.34", features = ["cargo", "derive"] }
+tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
+futures = "0.3.31"
+clap = { version = "4.5.48", features = ["cargo", "derive"] }
 dotenvy = "0.15.7"
 tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
 version-compare = "0.2.0"
-regex = "1.11.1"
+regex = "1.11.3"
 
 # database
-sqlx = { version = "0.8.3", features = [
+sqlx = { version = "0.8.6", features = [
   "runtime-tokio",
   "tls-rustls",
   "postgres",

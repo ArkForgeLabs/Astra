@@ -11,7 +11,7 @@ local response = http.request("https://example.com/"):execute()
 pprint(response:status_code())
 pprint(response:headers())
 pprint(response:remote_address())
-pprint(response:body():text())
+pprint(response:body():text()) -- or response:body():json() for json content
 ```
 
 The `http.request` function returns a `HTTPClientRequest` object which can be further modified to the needs before execution. The way to do these modification is through chained setters.
@@ -33,6 +33,30 @@ local request_client = http.request("https://example.com")
   :set_body("THE CONTENT OF THE BODY")
   :set_json({ key = "value" })
   :set_file("/path/to/file")
-  -- You can also execute as an async task
-  :execute_task(function (result) end)
+```
+
+You can also instead of chaining functions, just pass a table containing these values as such:
+
+```lua
+local request_client = http.request({
+  url = "https://example.com",
+  method = "POST",
+  headers = {},
+  body = {
+    keys = "body accepts string, table (json), or even byte array"
+  }
+})
+```
+
+finally, you can execute the request to obtain the result:
+
+```lua
+-- returns the result
+local response = request_client:execute()
+
+-- execute in async manner, and run a callback when the response arrives
+request_client:execute_task( function(response) end )
+
+-- or execute in streaming manner and get response chunks
+request_client:execute_streaming( function(response) end )
 ```
