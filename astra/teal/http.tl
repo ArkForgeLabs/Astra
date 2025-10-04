@@ -32,6 +32,7 @@ global interface HTTPClientRequest is userdata
     set_file: function(self: HTTPClientRequest, file_path: string): HTTPClientRequest
     execute: function(self: HTTPClientRequest): HTTPClientResponse
     execute_task: function(self: HTTPClientRequest, callback: http_client_callback)
+    execute_streaming: function(self: HTTPClientRequest, callback: http_client_callback)
 end
 
 global type HTTPServerCallback = function(request?: HTTPServerRequest, response?: HTTPServerResponse): any

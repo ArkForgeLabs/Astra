@@ -37,6 +37,7 @@ local http = {}
 ---@field set_file fun(http_request: HTTPClientRequest, file_path: string): HTTPClientRequest Sets the for-upload file path
 ---@field execute fun(): HTTPClientResponse Executes the request and returns the response
 ---@field execute_task fun(http_request: HTTPClientRequest, callback: http_client_callback) Executes the request as an async task
+---@field execute_streaming fun(http_request: HTTPClientRequest, callback: http_client_callback) Executes the request in a streaming manner
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias callback fun(request: HTTPServerRequest, response: HTTPServerResponse): any

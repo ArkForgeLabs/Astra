@@ -1,7 +1,8 @@
 use crate::components::BodyLua;
+use futures::StreamExt;
 use mlua::{LuaSerdeExt, UserData};
 use reqwest::{Client, RequestBuilder};
-use std::collections::HashMap;
+use std::collections::HashMap; // Add this for stream support
 
 #[derive(Debug, Clone)]
 pub enum HTTPClientRequestBodyTypes {
@@ -19,6 +20,7 @@ pub struct HTTPClientRequest {
     pub file: Option<String>,
     pub form: HashMap<String, String>,
 }
+
 impl HTTPClientRequest {
     pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let function = lua.create_function(|lua, details: mlua::Value| match details {
@@ -75,7 +77,6 @@ impl HTTPClientRequest {
                         .unwrap_or_default(),
                 })
             }
-
             _ => Err(mlua::Error::runtime(
                 "Bad argument, expected string or table",
             )),
@@ -92,7 +93,6 @@ impl HTTPClientRequest {
             "HEAD" => Client::new().head(&self.url),
             _ => Client::new().get(&self.url),
         };
-
         client = if let Some(HTTPClientRequestBodyTypes::String(body)) = &self.body {
             client.body(body.clone())
         } else if let Some(HTTPClientRequestBodyTypes::Bytes(body)) = &self.body {
@@ -102,7 +102,6 @@ impl HTTPClientRequest {
         } else if let Some(file_body) = &self.file {
             let path = std::path::PathBuf::from(&file_body);
             let path_filename = path.clone();
-
             let file_form = reqwest::multipart::Form::new();
             if let Ok(file_form) = file_form
                 .file(
@@ -125,17 +124,14 @@ impl HTTPClientRequest {
         } else {
             client
         };
-
         if !self.headers.is_empty() {
             for (key, value) in self.headers.iter() {
                 client = client.header(key, value);
             }
         }
-
         if !self.form.is_empty() {
             client = client.form(&self.form);
         }
-
         client
     }
 
@@ -155,13 +151,11 @@ impl HTTPClientRequest {
                 )
             })
             .collect::<std::collections::HashMap<String, String>>();
-
         let body = if let Ok(bytes) = response.bytes().await {
             BodyLua::new(bytes)
         } else {
             BodyLua::new(bytes::Bytes::new())
         };
-
         HTTPClientResponse {
             url,
             status_code,
@@ -171,46 +165,37 @@ impl HTTPClientRequest {
         }
     }
 }
+
 impl UserData for HTTPClientRequest {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("set_method", |_, this, method: String| {
             let mut request = this.clone();
             request.method = method;
-
             Ok(request)
         });
-
         methods.add_method_mut("set_header", |_, this, (key, value): (String, String)| {
             let mut request = this.clone();
             request.headers.insert(key, value);
-
             Ok(request)
         });
-
         methods.add_method_mut(
             "set_headers",
             |_, this, headers: HashMap<String, String>| {
                 let mut request = this.clone();
                 request.headers = headers;
-
                 Ok(request)
             },
         );
-
         methods.add_method_mut("set_form", |_, this, (key, value): (String, String)| {
             let mut request = this.clone();
             request.form.insert(key, value);
-
             Ok(request)
         });
-
         methods.add_method_mut("set_forms", |_, this, form: HashMap<String, String>| {
             let mut request = this.clone();
             request.form = form;
-
             Ok(request)
         });
-
         methods.add_method_mut("set_body", |_, this, body: String| {
             let mut request = this.clone();
             request.body = Some(HTTPClientRequestBodyTypes::String(body));
@@ -219,19 +204,15 @@ impl UserData for HTTPClientRequest {
                     .headers
                     .insert("Content-Type".to_string(), "text/plain".to_string());
             }
-
             Ok(request)
         });
-
         methods.add_method_mut("set_bytes", |lua, this, body: mlua::Value| {
             let mut request = this.clone();
             request.body = Some(HTTPClientRequestBodyTypes::Bytes(
                 lua.from_value::<Vec<u8>>(body)?,
             ));
-
             Ok(request)
         });
-
         methods.add_method_mut("set_json", |lua, this, body: mlua::Value| {
             let mut request = this.clone();
             request.body = Some(HTTPClientRequestBodyTypes::Json(
@@ -242,17 +223,13 @@ impl UserData for HTTPClientRequest {
                     .headers
                     .insert("Content-Type".to_string(), "application/json".to_string());
             }
-
             Ok(request)
         });
-
         methods.add_method_mut("set_file", |_, this, file_path: String| {
             let mut request = this.clone();
             request.file = Some(file_path);
-
             Ok(request)
         });
-
         methods.add_async_method("execute", |_, this, ()| async move {
             let request = this.request_builder().await;
             match request.send().await {
@@ -262,7 +239,6 @@ impl UserData for HTTPClientRequest {
                 ))),
             }
         });
-
         methods.add_async_method(
             "execute_task",
             |_, this, callback: mlua::Function| async move {
@@ -273,19 +249,76 @@ impl UserData for HTTPClientRequest {
                             if let Err(e) = callback
                                 .call::<()>(Self::response_to_http_client_response(response).await)
                             {
-                                println!("Error running a task: {e}");
+                                tracing::error!("Error running a task: {e}");
                             }
                         }
-                        Err(e) => eprintln!("HTTP Request did not execute successfully: {e}"),
+                        Err(e) => tracing::error!("HTTP Request did not execute successfully: {e}"),
                     };
                 });
+                Ok(())
+            },
+        );
+        // Add the new streaming method
+        methods.add_async_method(
+            "execute_streaming",
+            |_, this, callback: mlua::Function| async move {
+                tokio::spawn(async move {
+                    // Build and send request
+                    let response = match this.request_builder().await.send().await {
+                        Ok(r) => r,
+                        Err(e) => {
+                            tracing::error!("HTTP Request did not execute successfully: {e}");
+                            return;
+                        }
+                    };
 
+                    // Create initial response with headers
+                    let headers = response
+                        .headers()
+                        .iter()
+                        .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or_default().to_string()))
+                        .collect();
+
+                    let initial_response = HTTPClientResponse {
+                        url: response.url().to_string(),
+                        status_code: response.status().as_u16(),
+                        remote_address: response.remote_addr().map(|i| i.to_string()),
+                        body: BodyLua::new(bytes::Bytes::new()),
+                        headers,
+                    };
+
+                    // Initial callback
+                    if let Err(e) = callback.call::<()>(initial_response.clone()) {
+                        tracing::error!("Error running initial callback: {e}");
+                        return;
+                    }
+
+                    // Process chunks
+                    let mut stream = response.bytes_stream();
+                    while let Some(chunk) = stream.next().await {
+                        match chunk {
+                            Ok(chunk) => {
+                                let mut chunk_response = initial_response.clone();
+                                chunk_response.body = BodyLua::new(chunk);
+                                if let Err(e) = callback.call::<()>(chunk_response) {
+                                    tracing::error!("Error running chunk callback: {e}");
+                                    break;
+                                }
+                            }
+                            Err(e) => {
+                                tracing::error!("Error receiving chunk: {e}");
+                                break;
+                            }
+                        }
+                    }
+                });
                 Ok(())
             },
         );
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct HTTPClientResponse {
     pub url: String,
     pub status_code: u16,
@@ -293,6 +326,7 @@ pub struct HTTPClientResponse {
     pub body: BodyLua,
     pub headers: HashMap<String, String>,
 }
+
 impl UserData for HTTPClientResponse {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("url", |_, this, ()| Ok(this.url.clone()));

@@ -163,7 +163,7 @@ impl UserData for TemplatingEngine<'_> {
             |_, this, (name, func): (String, mlua::Function)| {
                 let function = move |args: minijinja::Value|
                                                                             -> Result<minijinja::Value, minijinja::Error> {
-                    pollster::block_on(async {
+                    futures::executor::block_on(async {
                         match LUA.to_value(&args) {
                             Ok(val) =>  match func.call_async::<mlua::Value>(val).await {
                                 Ok(val) =>  match LUA.from_value::<minijinja::Value>(val) {
