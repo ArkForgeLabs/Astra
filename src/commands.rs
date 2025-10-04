@@ -72,12 +72,7 @@ pub async fn run_command(
         if let Err(e) = crate::components::execute_teal_code(lua, &file_path, &user_file).await {
             tracing::error!("{e:?}");
         };
-    } else if let Err(e) = lua
-        .load(user_file)
-        .set_name(format!("@{file_path}"))
-        .exec_async()
-        .await
-    {
+    } else if let Err(e) = lua.load(user_file).set_name(file_path).exec_async().await {
         tracing::error!("{e}");
     }
 
