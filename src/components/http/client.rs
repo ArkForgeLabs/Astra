@@ -4,27 +4,81 @@ use reqwest::{Client, RequestBuilder};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
+pub enum HTTPClientRequestBodyTypes {
+    String(String),
+    Json(serde_json::Value),
+    Bytes(Vec<u8>),
+}
+
+#[derive(Debug, Clone)]
 pub struct HTTPClientRequest {
     pub url: String,
     pub method: String,
     pub headers: HashMap<String, String>,
-    pub body: Option<String>,
-    pub body_json: Option<serde_json::Value>,
-    pub body_file: Option<String>,
+    pub body: Option<HTTPClientRequestBodyTypes>,
+    pub file: Option<String>,
     pub form: HashMap<String, String>,
 }
 impl HTTPClientRequest {
     pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
-        let function = lua.create_function(|_, url: String| {
-            Ok(Self {
-                url,
+        let function = lua.create_function(|lua, details: mlua::Value| match details {
+            mlua::Value::String(details) => Ok(Self {
+                url: details.to_string_lossy(),
                 method: "GET".to_string(),
                 headers: HashMap::new(),
                 body: None,
-                body_json: None,
-                body_file: None,
+                file: None,
                 form: HashMap::new(),
-            })
+            }),
+            mlua::Value::Table(details) => {
+                let mut headers: HashMap<String, String> = details.get("headers")?;
+                let body = details.get::<mlua::Value>("body")?;
+                let body = match body.clone() {
+                    mlua::Value::String(value) => {
+                        if !headers.contains_key("Content-Type") {
+                            headers.insert("Content-Type".to_string(), "text/plain".to_string());
+                        }
+                        Some(HTTPClientRequestBodyTypes::String(value.to_string_lossy()))
+                    }
+                    mlua::Value::Table(value) => {
+                        if crate::components::is_table_json(&value)? {
+                            if !headers.contains_key("Content-Type") {
+                                headers.insert(
+                                    "Content-Type".to_string(),
+                                    "application/json".to_string(),
+                                );
+                            }
+                            Some(HTTPClientRequestBodyTypes::Json(
+                                lua.from_value::<serde_json::Value>(body.clone())?,
+                            ))
+                        } else if crate::components::is_table_byte_array(&value)? {
+                            Some(HTTPClientRequestBodyTypes::Bytes(
+                                lua.from_value::<Vec<u8>>(body.clone())?,
+                            ))
+                        } else {
+                            None
+                        }
+                    }
+                    _ => None,
+                };
+                Ok(Self {
+                    url: details.get("url")?,
+                    method: details
+                        .get::<String>("method")
+                        .map(|method| method.to_uppercase())
+                        .unwrap_or("GET".to_string()),
+                    headers,
+                    body,
+                    file: details.get::<String>("file").ok(),
+                    form: details
+                        .get::<HashMap<String, String>>("form")
+                        .unwrap_or_default(),
+                })
+            }
+
+            _ => Err(mlua::Error::runtime(
+                "Bad argument, expected string or table",
+            )),
         })?;
         lua.globals().set("astra_internal__http_request", function)
     }
@@ -39,12 +93,14 @@ impl HTTPClientRequest {
             _ => Client::new().get(&self.url),
         };
 
-        client = if let Some(body) = &self.body {
+        client = if let Some(HTTPClientRequestBodyTypes::String(body)) = &self.body {
             client.body(body.clone())
-        } else if let Some(body) = &self.body_json {
+        } else if let Some(HTTPClientRequestBodyTypes::Bytes(body)) = &self.body {
+            client.body(body.clone())
+        } else if let Some(HTTPClientRequestBodyTypes::Json(body)) = &self.body {
             client.json(&body)
-        } else if let Some(body) = &self.body_file {
-            let path = std::path::PathBuf::from(body);
+        } else if let Some(file_body) = &self.file {
+            let path = std::path::PathBuf::from(&file_body);
             let path_filename = path.clone();
 
             let file_form = reqwest::multipart::Form::new();
@@ -157,21 +213,42 @@ impl UserData for HTTPClientRequest {
 
         methods.add_method_mut("set_body", |_, this, body: String| {
             let mut request = this.clone();
-            request.body = Some(body);
+            request.body = Some(HTTPClientRequestBodyTypes::String(body));
+            if !request.headers.contains_key("Content-Type") {
+                request
+                    .headers
+                    .insert("Content-Type".to_string(), "text/plain".to_string());
+            }
+
+            Ok(request)
+        });
+
+        methods.add_method_mut("set_bytes", |lua, this, body: mlua::Value| {
+            let mut request = this.clone();
+            request.body = Some(HTTPClientRequestBodyTypes::Bytes(
+                lua.from_value::<Vec<u8>>(body)?,
+            ));
 
             Ok(request)
         });
 
         methods.add_method_mut("set_json", |lua, this, body: mlua::Value| {
             let mut request = this.clone();
-            request.body_json = lua.from_value::<serde_json::Value>(body).ok();
+            request.body = Some(HTTPClientRequestBodyTypes::Json(
+                lua.from_value::<serde_json::Value>(body)?,
+            ));
+            if !request.headers.contains_key("Content-Type") {
+                request
+                    .headers
+                    .insert("Content-Type".to_string(), "application/json".to_string());
+            }
 
             Ok(request)
         });
 
         methods.add_method_mut("set_file", |_, this, file_path: String| {
             let mut request = this.clone();
-            request.body_file = Some(file_path);
+            request.file = Some(file_path);
 
             Ok(request)
         });
