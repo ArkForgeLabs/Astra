@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.30.0](https://github.com/ArkForgeLabs/Astra/compare/v0.29.3..v0.30.0) - 2025-10-04
+
+### Bug Fixes
+
+- teal code runs now fine with teal check disabled - ([2dbff33](https://github.com/ArkForgeLabs/Astra/commit/2dbff334fa394e0f23d1b0824dfda29651d25e97))
+
+### Documentation
+
+- updated http server and client docs - ([4d4eae8](https://github.com/ArkForgeLabs/Astra/commit/4d4eae896f65cfa44e92350a1b59dbbe64c5bbe8))
+
+### Features
+
+- http client now has streaming capabilities - ([28fec06](https://github.com/ArkForgeLabs/Astra/commit/28fec062ec17248bc3e317e03fb4995ec11ace15))
+- http servers now got ability to be shut down - ([66e5b7e](https://github.com/ArkForgeLabs/Astra/commit/66e5b7e28ea9c118daf34ba9a825068438693af8))
+
+### Refactoring
+
+- clean up http client path - ([f4edf81](https://github.com/ArkForgeLabs/Astra/commit/f4edf814f4276bb1dbfffb85b1a9c19681321a64))
+- revamped the HTTP Request module for better user experience - ([909953e](https://github.com/ArkForgeLabs/Astra/commit/909953efa4f1409f09ee823afb6a0c12d01dc9a3))
+
 ## [0.29.3](https://github.com/ArkForgeLabs/Astra/compare/v0.29.2..v0.29.3) - 2025-10-03
 
 ### Bug Fixes
