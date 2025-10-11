@@ -8,7 +8,7 @@ end
 
 ---Represents an async task
 global interface TaskHandler is userdata
-    abord: function()
+    abort: function()
     await: function()
 end
 
