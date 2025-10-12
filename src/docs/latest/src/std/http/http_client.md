@@ -29,10 +29,17 @@ local request_client = http.request("https://example.com")
   :set_header("key", "value")
   :set_headers({ key = "value" })
   :set_form("key", "value")
-  :set_forms({ key = "value" })
+  :set_forms({ key = "value" })  -- Set multiple form values at once
   :set_body("THE CONTENT OF THE BODY")
   :set_json({ key = "value" })
   :set_file("/path/to/file")
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+  -- You can also execute as an async task
+  :execute_task(function (result) end)
+=======
+>>>>>>> Stashed changes
 ```
 
 You can also instead of chaining functions, just pass a table containing these values as such:
@@ -41,13 +48,46 @@ You can also instead of chaining functions, just pass a table containing these v
 local request_client = http.request({
   url = "https://example.com",
   method = "POST",
+<<<<<<< Updated upstream
   headers = {},
+=======
+>>>>>>> Stashed changes
   body = {
     keys = "body accepts string, table (json), or even byte array"
   }
 })
 ```
 
+<<<<<<< Updated upstream
+=======
+For more complex requests, such as API calls with authentication and JSON payloads:
+
+```lua
+local http = require("astra.lua.http")
+
+http.request({
+    url = "https://example-ai-company.com",
+    method = "POST",
+    headers = {
+        ["Authorization"] = "Bearer " .. os.getenv("TOKEN")
+    },
+    body = {
+        model = "CoolCodeAI/CoolModel-3B-Instruct",
+        stream = true,
+        messages = {
+            {
+                role = "user",
+                content = "Hello!"
+            }
+        }
+    },
+}):execute_streaming(function(response)
+    -- Handle streaming response chunks
+    pprint(response:body():json())
+end)
+```
+
+>>>>>>> Stashed changes
 finally, you can execute the request to obtain the result:
 
 ```lua
@@ -59,4 +99,8 @@ request_client:execute_task( function(response) end )
 
 -- or execute in streaming manner and get response chunks
 request_client:execute_streaming( function(response) end )
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 ```
