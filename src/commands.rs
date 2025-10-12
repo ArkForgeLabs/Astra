@@ -114,11 +114,8 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
     } else {
         "LuaJIT"
     };
-    let luarc_file = include_str!("../.luarc.json")
-        .replace("astra", folder_path.to_string_lossy().as_ref())
-        .replace("LuaJIT", runtime);
-    let tlconfig_file =
-        include_str!("../tlconfig.lua").replace("astra", folder_path.to_string_lossy().as_ref());
+    let luarc_file = include_str!("../.luarc.json").replace("LuaJIT", runtime);
+    let tlconfig_file = include_str!("../tlconfig.lua");
 
     std::fs::exists(".luarc.json")
         .map(|exists| !exists)
