@@ -61,8 +61,8 @@ global interface HTTPServerRequest is userdata
     queries: function(self: HTTPServerRequest): table
     params: function(self: HTTPServerRequest): table
     headers: function(self: HTTPServerRequest): table
-    body: function(self: HTTPServerRequest): HTTPBody | nil
-    multipart: function(self: HTTPServerRequest): HTTPMultipart | nil
+    body: function(self: HTTPServerRequest): HTTPBody
+    multipart: function(self: HTTPServerRequest): HTTPMultipart
     get_cookie: function(self: HTTPServerRequest, name: string): Cookie
     new_cookie: function(self: HTTPServerRequest, name: string, value: string): Cookie
 end
@@ -107,7 +107,7 @@ global interface WebSocketMessage
 end
 
 global interface WebSocket is userdata
-    recv: function(self: WebSocket): WebSocketMessage | nil
+    recv: function(self: WebSocket): WebSocketMessage
     send: function(self: WebSocket, message_type: WebSocketMessageType, message: any)
     send_text: function(self: WebSocket, message: string)
     send_bytes: function(self: WebSocket, bytes: table)
