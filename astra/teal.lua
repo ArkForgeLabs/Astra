@@ -92,7 +92,14 @@ end
 io.open = custom_io_open
 
 local function teal_source()
-local VERSION = "0.24.7+dev"
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local debug = _tl_compat and _tl_compat.debug or debug; local io = _tl_compat and _tl_compat.io or io; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local load = _tl_compat and _tl_compat.load or load; local math = _tl_compat and _tl_compat.math or math; local _tl_math_maxinteger = math.maxinteger or math.pow(2, 53); local os = _tl_compat and _tl_compat.os or os; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local type = type; local utf8 = _tl_compat and _tl_compat.utf8 or utf8
+local VERSION = "0.24.8+dev"
+
+
+
+
+
+
 
 local prelude = [=====[
 do
@@ -172,40 +179,6 @@ do
       "a" "l" "L" "*a" "*l" "*L" "n" "*n"
    end
 
-   global record FILE
-      is userdata
-
-      enum SeekWhence
-         "set" "cur" "end"
-      end
-
-      enum SetVBufMode
-         "no" "full" "line"
-      end
-
-      close: function(FILE): boolean, string, integer
-      flush: function(FILE)
-
-      lines: function(FILE): (function(): (string))
-      lines: function(FILE, FileNumberMode...): (function(): (number...))
-      lines: function(FILE, (number | FileStringMode)...): (function(): (string...))
-      lines: function(FILE, (number | FileMode)...): (function(): ((string | number)...))
-      lines: function(FILE, (number | string)...): (function(): (string...))
-
-      read: function(FILE): string
-      read: function(FILE, FileNumberMode...): number...
-      read: function(FILE, (number | FileStringMode)...): string...
-      read: function(FILE, (number | FileMode)...): ((string | number)...)
-      read: function(FILE, (number | string)...): (string...)
-
-      seek: function(FILE, ? SeekWhence, ? integer): integer, string
-      setvbuf: function(FILE, SetVBufMode, ? integer)
-
-      write: function(FILE, (string | number)...): FILE, string
-
-      metamethod __close: function(FILE)
-   end
-
    global record coroutine
       type Function = function(any...): any...
 
@@ -235,6 +208,8 @@ do
          isvararg: boolean
          func: any
          activelines: {integer:boolean}
+         ftransfer: integer -- TODO: what should compat be for these? (5.4+)
+         ntransfer: integer
       end
 
       enum HookEvent
@@ -248,9 +223,8 @@ do
       debug: function()
       gethook: function(? thread): HookFunction, integer
 
-      getinfo: function(AnyFunction | integer): GetInfoTable
-      getinfo: function(AnyFunction | integer, string): GetInfoTable
-      getinfo: function(thread, AnyFunction | integer, string): GetInfoTable
+      getinfo: function(thread, AnyFunction | integer, ? string): GetInfoTable
+      getinfo: function(        AnyFunction | integer, ? string): GetInfoTable
 
       getlocal: function(thread, AnyFunction, integer): string
       getlocal: function(thread, integer, integer): string, any
@@ -259,8 +233,8 @@ do
 
       getmetatable: function<T>(T): metatable<T>
       getregistry: function(): {any:any}
-      getupvalue: function(AnyFunction, integer): any
-      getuservalue: function(userdata, integer): any
+      getupvalue: function(AnyFunction, integer): string, any
+      getuservalue: function(userdata, ? integer): any, boolean
 
       sethook: function(thread, HookFunction, string, ? integer)
       sethook: function(HookFunction, string, ? integer)
@@ -274,6 +248,7 @@ do
 
       traceback: function(thread, ? string, ? integer): string
       traceback: function(? string, ? integer): string
+      traceback: function(any): any
 
       upvalueid: function(AnyFunction, integer): userdata
       upvaluejoin: function(AnyFunction, integer, AnyFunction, integer)
@@ -281,10 +256,15 @@ do
 
    global record io
       enum OpenMode
-         "r" "w" "a" "r+" "w+" "a+"
-         "rb" "wb" "ab" "r+b" "w+b" "a+b"
-         "*r" "*w" "*a" "*r+" "*w+" "*a+"
+          "r"   "w"   "a"   "r+"   "w+"   "a+"
+          "rb"  "wb"  "ab"  "r+b"  "w+b"  "a+b"
+         "*r"  "*w"  "*a"  "*r+"  "*w+"  "*a+"
          "*rb" "*wb" "*ab" "*r+b" "*w+b" "*a+b"
+      end
+
+      enum FileType
+         "file"
+         "closed file"
       end
 
       close: function(? FILE)
@@ -311,8 +291,43 @@ do
       stdin: FILE
       stdout: FILE
       tmpfile: function(): FILE
-      type: function(any): string
-      write: function((string | number)...): FILE, string
+      type: function(any): FileType
+      write: function((string | number)...): FILE, string, integer
+   end
+
+   global record FILE
+      is userdata
+      where io.type(self)
+
+      enum SeekWhence
+         "set" "cur" "end"
+      end
+
+      enum SetVBufMode
+         "no" "full" "line"
+      end
+
+      close: function(FILE): boolean, string, integer
+      flush: function(FILE): boolean, string, integer
+
+      lines: function(FILE): (function(): (string))
+      lines: function(FILE, FileNumberMode...): (function(): (number...))
+      lines: function(FILE, (number | FileStringMode)...): (function(): (string...))
+      lines: function(FILE, (number | FileMode)...): (function(): ((string | number)...))
+      lines: function(FILE, (number | string)...): (function(): (string...))
+
+      read: function(FILE): string
+      read: function(FILE, FileNumberMode...): number...
+      read: function(FILE, (number | FileStringMode)...): string...
+      read: function(FILE, (number | FileMode)...): ((string | number)...)
+      read: function(FILE, (number | string)...): (string...)
+
+      seek: function(FILE, ? SeekWhence, ? integer): integer, string, integer
+      setvbuf: function(FILE, SetVBufMode, ? integer): boolean, string, integer
+
+      write: function(FILE, (string | number)...): FILE, string, integer
+
+      metamethod __close: function(FILE)
    end
 
    global record math
@@ -410,10 +425,10 @@ do
       cpath: string
       loaded: {string:any}
       loadlib: function(string, string): (function)
-      loaders: { function(string): any, any }
+      loaders: { (function(string): (function(? string, ? any): (any), any)) }
       path: string
-      preload: {any:any}
-      searchers: { function(string): any }
+      preload: {string : function(? string, ? any): (any) }
+      searchers: { (function(string): (function(? string, ? any): (any), any)) }
       searchpath: function(string, string, ? string, ? string): string, string
    end
 
@@ -476,10 +491,10 @@ do
    global record utf8
       char: function(number...): string
       charpattern: string
-      codepoint: function(string, ? number, ? number, ? boolean): number...
-      codes: function(string, ? boolean): (function(string, ? number): (number, number))
-      len: function(string, ? number, ? number, ? boolean): number
-      offset: function(string, number, ? number): number
+      codepoint: function(string, ? number, ? number, ? boolean): integer...
+      codes: function(string, ? boolean): (function(string, ? integer): (integer, integer), string, integer)
+      len: function(string, ? number, ? number, ? boolean): integer, integer
+      offset: function(string, number, ? number): integer
    end
 
    local record StandardLibrary
@@ -506,7 +521,7 @@ do
          "b" "t" "bt"
       end
 
-      type XpcallMsghFunction = function(...: any): ()
+      type XpcallMsghFunction = function(any): any...
 
       arg: {string}
       assert: function<A, B>(A, ? B, ...: any): A --[[special_function]]
@@ -520,17 +535,18 @@ do
 
       error: function(? any, ? integer)
       getmetatable: function<T>(T): metatable<T>
-      ipairs: function<A>({A}): (function():(integer, A)) --[[special_function]]
+      ipairs: function<A>({A}): (function({A}, integer): (integer, A), {A}, integer) --[[special_function]]
 
-      load: function((string | LoadFunction), ? string, ? LoadMode, ? table): (function, string)
-      load: function((string | LoadFunction), ? string, ? string, ? table): (function, string)
+      load: function((string | LoadFunction), ? string, ? LoadMode, ? {any:any}): (function, string)
+      load: function((string | LoadFunction), ? string, ? string,   ? {any:any}): (function, string)
 
-      loadfile: function(? string, ? string, ? {any:any}): (function, string)
+      loadfile: function(? string, ? LoadMode, ? {any:any}): (function, string)
+      loadfile: function(? string, ? string,   ? {any:any}): (function, string)
 
       next: function<K, V>({K:V}, ? K): (K, V)
       next: function<A>({A}, ? integer): (integer, A)
 
-      pairs: function<K, V>({K:V}): (function():(K, V)) --[[special_function]]
+      pairs: function<K, V>({K:V}): (function({K:V}, ? K):(K, V), {K:V}, K) --[[special_function]]
       pcall: function(function(any...):(any...), any...): boolean, any... --[[special_function]]
       print: function(any...)
       rawequal: function(any, any): boolean
@@ -7607,7 +7623,10 @@ local function add_compat_entries(program, used_set, gen_compat)
       elseif name == "type" then
          load_code(name, "local type = type")
       else
-         
+         if not compat_loaded then
+            load_code("compat", "local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = " .. req("compat53.module") .. "; if p then _tl_compat = m end")
+            compat_loaded = true
+         end
          load_code(name, (("local $NAME = _tl_compat and _tl_compat.$NAME or $NAME"):gsub("$NAME", name)))
       end
    end
@@ -11153,7 +11172,7 @@ a.types[i], b.types[i]), }
          return old
       end
 
-      if new.fields then
+      if new.fields and (old.typename == "map" or old.fields) then
          local keys
          local values
          if old.typename == "map" then
@@ -11690,7 +11709,7 @@ a.types[i], b.types[i]), }
          local msgh_type = a_function(arg2, {
             min_arity = self.feat_arity and 1 or 0,
             args = a_type(arg2, "tuple", { tuple = { a_type(arg2, "any", {}) } }),
-            rets = a_type(arg2, "tuple", { tuple = {} }),
+            rets = a_vararg(arg2, { a_type(arg2, "any", {}) }),
          })
          self:assert_is_a(arg2, msgh, msgh_type, "in message handler")
       end
@@ -14184,6 +14203,15 @@ self:expand_type(node, values, elements) })
                local tn = types_op[ra.typename]
                local t = tn and a_type(node, tn, {})
 
+
+               local meta_on_operator
+               if not t then
+                  local mt_name = unop_to_metamethod[node.op.op]
+                  if mt_name then
+                     t, meta_on_operator = self:check_metamethod(node, mt_name, ra, nil, ua, nil)
+                  end
+               end
+
                if not t and ra.fields then
                   if ra.interface_list then
                      for _, iface in ipairs(ra.interface_list) do
@@ -14192,14 +14220,6 @@ self:expand_type(node, values, elements) })
                            break
                         end
                      end
-                  end
-               end
-
-               local meta_on_operator
-               if not t then
-                  local mt_name = unop_to_metamethod[node.op.op]
-                  if mt_name then
-                     t, meta_on_operator = self:check_metamethod(node, mt_name, ra, nil, ua, nil)
                   end
                end
 
