@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.30.1](https://github.com/ArkForgeLabs/Astra/compare/v0.30.0..v0.30.1) - 2025-10-14
+
+### Bug Fixes
+
+- typo change from abord to abort - ([18c631c](https://github.com/ArkForgeLabs/Astra/commit/18c631c4d935dabce3863501678786c61c560de2))
+- astra path in config files being messed up - ([54a14ca](https://github.com/ArkForgeLabs/Astra/commit/54a14caceca5ab8bc7d310c6c64ffba77fc3abdf))
+
+### Features
+
+- added table validation to teal by @KhushMehta - ([5882db4](https://github.com/ArkForgeLabs/Astra/commit/5882db4910bbac0eddbac02fee8088224590f017))
+- updated Teal source - ([c9f2ae3](https://github.com/ArkForgeLabs/Astra/commit/c9f2ae3f6474da99d3c6d63466ed8f79ce4bf40e))
+
+### Refactoring
+
+- removed nullability from some return types of HTTP in teal - ([f709d83](https://github.com/ArkForgeLabs/Astra/commit/f709d838891e423d6a13322c15f66afdf5d831c8))
+- better errors for json - ([134829d](https://github.com/ArkForgeLabs/Astra/commit/134829dfe53c94cc91b372fd4ff67dd7bc82ef36))
+
 ## [0.30.0](https://github.com/ArkForgeLabs/Astra/compare/v0.29.3..v0.30.0) - 2025-10-04
 
 ### Bug Fixes
