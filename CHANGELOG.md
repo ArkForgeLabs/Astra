@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.31.0](https://github.com/ArkForgeLabs/Astra/compare/v0.30.1..v0.31.0) - 2025-10-14
+
+### Features
+
+- HTTP Server multipart now have fields that can be read - ([23d58eb](https://github.com/ArkForgeLabs/Astra/commit/23d58eb561fe8e99ae1ac8c87c68503b780d2021))
+- added some examples for the multipart - ([0791394](https://github.com/ArkForgeLabs/Astra/commit/079139445d2a8c3425c8af29d46267a43325e354))
+
 ## [0.30.1](https://github.com/ArkForgeLabs/Astra/compare/v0.30.0..v0.30.1) - 2025-10-14
 
 ### Bug Fixes
