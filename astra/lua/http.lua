@@ -53,7 +53,19 @@ local http = {}
 ---@field static_file string?
 ---@field config HTTPRouteConfiguration?
 
+---@class HTTPMultipartField
+---@field name fun(): string
+---@field file_name fun(): string|nil
+---@field content_type fun(): string|nil
+---@field headers fun(): table
+---@field data fun(): table Returns the field data as bytes (table of numbers)
+---@field text fun(): string
+---@field bytes fun(): table Returns the field data as bytes (table of numbers)
+
 ---@class HTTPMultipart
+---@field fields fun(): table Returns all multipart fields as an array
+---@field get_field fun(name: string): HTTPMultipartField|nil Returns a specific field by name
+---@field file_name fun(): string|nil Returns the first filename found in the multipart data
 ---@field save_file fun(multipart: HTTPMultipart, file_path: string | nil): string | nil Saves the multipart into disk
 
 ---@class HTTPServerRequest

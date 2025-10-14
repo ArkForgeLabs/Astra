@@ -51,8 +51,21 @@ global interface HTTPRoute
     config: HTTPRouteConfiguration | nil
 end
 
+global interface HTTPMultipartField is userdata
+    name: function(self: HTTPMultipartField): string
+    file_name: function(self: HTTPMultipartField): string | nil
+    content_type: function(self: HTTPMultipartField): string | nil
+    headers: function(self: HTTPMultipartField): {string: string}
+    data: function(self: HTTPMultipartField): {number}
+    text: function(self: HTTPMultipartField): string
+    bytes: function(self: HTTPMultipartField): {number}
+end
+
 global interface HTTPMultipart is userdata
-    save_file: function(self: HTTPMultipart, file_path: string | nil): string | nil
+    fields: function(self: HTTPMultipart): {HTTPMultipartField}
+    get_field: function(self: HTTPMultipart, name: string): HTTPMultipartField | nil
+    file_name: function(self: HTTPMultipart): string | nil
+    save_file: function(self: HTTPMultipart, file_path?: string)
 end
 
 global interface HTTPServerRequest is userdata
