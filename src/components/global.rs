@@ -1,4 +1,4 @@
-use mlua::{LuaSerdeExt, UserData};
+use mlua::{ExternalError, LuaSerdeExt, UserData};
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     dotenv_function(lua)?;
@@ -71,10 +71,8 @@ pub fn json_encode(lua: &mlua::Lua) -> mlua::Result<()> {
 
             let json_value = lua.from_value::<serde_json::Value>(input)?;
             match serde_json::to_string(&json_value) {
-                Ok(serialized) => Ok(serialized),
-                Err(e) => Err(mlua::Error::runtime(format!(
-                    "Could not serialize the input into a valid JSON string: {e:?}"
-                ))),
+                Ok(serialized) => Ok(lua.to_value(&serialized)?),
+                Err(e) => Err(e.into_lua_err()),
             }
         })?,
     )
@@ -85,10 +83,8 @@ pub fn json_decode(lua: &mlua::Lua) -> mlua::Result<()> {
         "astra_internal__json_decode",
         lua.create_function(|lua, input: String| {
             match serde_json::from_str::<serde_json::Value>(&input) {
-                Ok(deserialized) => Ok(lua.to_value(&deserialized)),
-                Err(e) => Err(mlua::Error::runtime(format!(
-                    "Could not deserialize the input into a valid Lua value: {e:?}"
-                ))),
+                Ok(deserialized) => lua.to_value(&deserialized),
+                Err(e) => Err(e.into_lua_err()),
             }
         })?,
     )

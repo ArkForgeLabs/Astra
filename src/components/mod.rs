@@ -1,4 +1,4 @@
-use mlua::LuaSerdeExt;
+use mlua::{ExternalError, LuaSerdeExt};
 
 mod crypto;
 mod database;
@@ -47,10 +47,8 @@ impl mlua::UserData for BodyLua {
 
         methods.add_method("json", |lua, this, ()| {
             match serde_json::from_str::<serde_json::Value>(&this.body_string) {
-                Ok(body_json) => Ok(lua.to_value(&body_json)?),
-                Err(e) => Err(mlua::Error::runtime(format!(
-                    "Could not parse the body as JSON: {e:#?}"
-                ))),
+                Ok(body_json) => lua.to_value(&body_json),
+                Err(e) => Err(e.into_lua_err()),
             }
         });
     }
