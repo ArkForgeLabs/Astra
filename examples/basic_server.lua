@@ -1,4 +1,5 @@
-local server = require("astra.lua.http").server.new()
+local http = require("astra.lua.http")
+local server = http.server.new()
 
 -- A simple GET index route with text return
 server:get("/", function()
@@ -21,6 +22,20 @@ end)
 -- The request parameter is optional but contains useful information
 server:get("/headers", function(request)
 	return request:headers()
+end)
+
+-- Or accept files with multipart
+server:post("/upload", function(request, response)
+	local multipart = request:multipart()
+	if multipart == nil then
+		response:set_status_code(http.status_codes.BAD_REQUEST)
+		return
+	end
+
+	-- You can access its fields
+	local file_name = multipart:file_name() or "Myfile"
+	-- optionally set name for the file you want to save
+	multipart:save_file(file_name)
 end)
 
 pprint("🚀 Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port))
