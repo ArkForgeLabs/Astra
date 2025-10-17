@@ -49,3 +49,13 @@ local number_of_replaces = 1 -- can omit it and not add it at all as argument
 local new_string = my_re:replace(content, to_replace_with, number_of_replaces)
 pprint(new_string)
 ```
+
+## Graceful Shutdowns
+
+In Astra, you can run a piece of code when the runtime receives SIGTERM or SIGINT signals. This can be helpful for cases of cleanups or closing database connections. To add this code, you simply need to assign a function to the `ASTRA_SHUTDOWN_CODE` global variable. Make sure to have it as a global variable and not a local.
+
+```lua
+ASTRA_SHUTDOWN_CODE = function ()
+    pprint("EXITING!!!")
+end
+```

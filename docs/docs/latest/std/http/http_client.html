@@ -251,22 +251,72 @@ pprint(response:body():text()) -- or response:body():json() for json content
   :set_header("key", "value")
   :set_headers({ key = "value" })
   :set_form("key", "value")
-  :set_forms({ key = "value" })
+  :set_forms({ key = "value" })  -- Set multiple form values at once
   :set_body("THE CONTENT OF THE BODY")
   :set_json({ key = "value" })
   :set_file("/path/to/file")
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream
+=======
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream
+  -- You can also execute as an async task
+  :execute_task(function (result) end)
+=======
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; Stashed changes
 </code></pre>
 <p>You can also instead of chaining functions, just pass a table containing these values as such:</p>
 <pre><code class="language-lua">local request_client = http.request({
   url = "https://example.com",
   method = "POST",
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream
   headers = {},
+=======
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; Stashed changes
   body = {
     keys = "body accepts string, table (json), or even byte array"
   }
 })
 </code></pre>
-<p>finally, you can execute the request to obtain the result:</p>
+<h1 id="updated-upstream"><a class="header" href="#updated-upstream">&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream</a></h1>
+<p>For more complex requests, such as API calls with authentication and JSON payloads:</p>
+<pre><code class="language-lua">local http = require("astra.lua.http")
+
+http.request({
+    url = "https://example-ai-company.com",
+    method = "POST",
+    headers = {
+        ["Authorization"] = "Bearer " .. os.getenv("TOKEN")
+    },
+    body = {
+        model = "CoolCodeAI/CoolModel-3B-Instruct",
+        stream = true,
+        messages = {
+            {
+                role = "user",
+                content = "Hello!"
+            }
+        }
+    },
+}):execute_streaming(function(response)
+    -- Handle streaming response chunks
+    pprint(response:body():json())
+end)
+</code></pre>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>Stashed changes
+finally, you can execute the request to obtain the result:</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
 <pre><code class="language-lua">-- returns the result
 local response = request_client:execute()
 
@@ -275,6 +325,10 @@ request_client:execute_task( function(response) end )
 
 -- or execute in streaming manner and get response chunks
 request_client:execute_streaming( function(response) end )
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream
+=======
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; Stashed changes
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; Stashed changes
 </code></pre>
 
                     </main>
