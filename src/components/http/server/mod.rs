@@ -49,7 +49,21 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
                 crate::components::http::server::routes::load_routes(server),
             )
             .with_graceful_shutdown(async move {
-                let _ = shutdown_rx.recv().await;
+                let sigint = tokio::signal::ctrl_c();
+                if let Ok(mut sigterm) =
+                    tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+                {
+                    tokio::select! {
+                        _ = sigterm.recv() => {}
+                        _ = sigint => {}
+                        _ = shutdown_rx.recv() => {}
+                    }
+                } else {
+                    tokio::select! {
+                        _ = sigint => {}
+                        _ = shutdown_rx.recv() => {}
+                    }
+                }
             })
             .await
             .expect("Could not start the HTTP server");

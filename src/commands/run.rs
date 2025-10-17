@@ -68,24 +68,24 @@ pub async fn run_command(
         .expect("Couldn't set the script path");
 
     tokio::spawn(async {
-        let sigint = tokio::signal::ctrl_c();
-        if let Ok(mut sigterm) =
-            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-        {
-            tokio::select! {
-                _ = sigterm.recv() => {}
-                _ = sigint => {}
+        if let Ok(exit_function) = LUA.globals().get::<mlua::Function>("ASTRA_SHUTDOWN_CODE") {
+            let sigint = tokio::signal::ctrl_c();
+            if let Ok(mut sigterm) =
+                tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            {
+                tokio::select! {
+                    _ = sigterm.recv() => {}
+                    _ = sigint => {}
+                }
+            } else {
+                tokio::select! {
+                    _ = sigint => {}
+                }
             }
-        } else {
-            tokio::select! {
-                _ = sigint => {}
-            }
-        }
 
-        if let Ok(exit_function) = LUA.globals().get::<mlua::Function>("ASTRA_SHUTDOWN_CODE")
-            && let Err(e) = exit_function.call_async::<()>(()).await
-        {
-            error!("{e}");
+            if let Err(e) = exit_function.call_async::<()>(()).await {
+                error!("{e}");
+            }
         }
     });
 
