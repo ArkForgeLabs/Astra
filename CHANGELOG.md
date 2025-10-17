@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.32.1](https://github.com/ArkForgeLabs/Astra/compare/v0.32.0..v0.32.1) - 2025-10-17
+
+### Bug Fixes
+
+- windows fix for the sigterm - ([7979824](https://github.com/ArkForgeLabs/Astra/commit/79798247613806c721a36803ea64e51b9b4383aa))
+
 ## [0.32.0](https://github.com/ArkForgeLabs/Astra/compare/v0.31.0..v0.32.0) - 2025-10-17
 
 ### Bug Fixes
