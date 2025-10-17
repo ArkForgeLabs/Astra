@@ -70,6 +70,8 @@ pub async fn run_command(
     tokio::spawn(async {
         if let Ok(exit_function) = LUA.globals().get::<mlua::Function>("ASTRA_SHUTDOWN_CODE") {
             let sigint = tokio::signal::ctrl_c();
+
+            #[cfg(unix)]
             if let Ok(mut sigterm) =
                 tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
             {
@@ -77,7 +79,10 @@ pub async fn run_command(
                     _ = sigterm.recv() => {}
                     _ = sigint => {}
                 }
-            } else {
+            }
+
+            #[cfg(not(unix))]
+            {
                 tokio::select! {
                     _ = sigint => {}
                 }

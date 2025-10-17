@@ -50,6 +50,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
             )
             .with_graceful_shutdown(async move {
                 let sigint = tokio::signal::ctrl_c();
+                #[cfg(unix)]
                 if let Ok(mut sigterm) =
                     tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
                 {
@@ -58,7 +59,10 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
                         _ = sigint => {}
                         _ = shutdown_rx.recv() => {}
                     }
-                } else {
+                }
+
+                #[cfg(not(unix))]
+                {
                     tokio::select! {
                         _ = sigint => {}
                         _ = shutdown_rx.recv() => {}
