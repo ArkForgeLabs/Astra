@@ -1,3 +1,7 @@
+use std::path::PathBuf;
+
+use tracing::error;
+
 use crate::{LUA, RUNTIME_FLAGS};
 
 async fn run_command_prerequisite(
@@ -12,15 +16,15 @@ async fn run_command_prerequisite(
     let teal_compile_checks = teal_compile_checks.unwrap_or(true);
 
     if let Err(e) = RUNTIME_FLAGS.set(crate::RuntimeFlags {
-        stdlib_path: std::path::PathBuf::from(stdlib_path.clone()),
+        stdlib_path: PathBuf::from(stdlib_path.clone()),
         teal_compile_checks,
     }) {
-        tracing::error!("Could not set the global STDLIB_PATH: {e:?}");
+        error!("Could not set the global STDLIB_PATH: {e:?}");
     }
 
     // Register Lua components.
     if let Err(e) = super::registration(lua, stdlib_path).await {
-        tracing::error!("Error setting up the standard library: {e:?}");
+        error!("Error setting up the standard library: {e:?}");
     }
 
     // Handle extra arguments.
@@ -28,17 +32,17 @@ async fn run_command_prerequisite(
         && let Ok(args) = lua.create_table()
     {
         if let Err(e) = args.set(0, file_path) {
-            tracing::error!("Error adding arg to the args list: {e:?}");
+            error!("Error adding arg to the args list: {e:?}");
         }
 
         for (index, value) in extra_args.into_iter().enumerate() {
             if let Err(e) = args.set((index + 1) as i32, value) {
-                tracing::error!("Error adding arg to the args list: {e:?}");
+                error!("Error adding arg to the args list: {e:?}");
             }
         }
 
         if let Err(e) = lua.globals().set("arg", args) {
-            tracing::error!("Error setting the global variable ARGS: {e:?}");
+            error!("Error setting the global variable ARGS: {e:?}");
         }
     }
 }
@@ -63,16 +67,35 @@ pub async fn run_command(
         .set("ASTRA_INTERNAL__CURRENT_SCRIPT", file_path.clone())
         .expect("Couldn't set the script path");
 
-    if let Some(is_teal) = std::path::PathBuf::from(&file_path).extension()
+    tokio::spawn(async {
+        let sigint = tokio::signal::ctrl_c();
+        if let Ok(mut sigterm) =
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+        {
+            tokio::select! {
+                _ = sigterm.recv() => {}
+                _ = sigint => {}
+            }
+        } else {
+            tokio::select! {
+                _ = sigint => {}
+            }
+        }
+
+        if let Ok(exit_function) = LUA.globals().get::<mlua::Function>("ASTRA_SHUTDOWN_CODE")
+            && let Err(e) = exit_function.call_async::<()>(()).await
+        {
+            error!("{e}");
+        }
+    });
+
+    if let Some(is_teal) = PathBuf::from(&file_path).extension()
         && is_teal == "tl"
+        && let Err(e) = crate::components::execute_teal_code(lua, &file_path, &user_file).await
     {
-        // TODO: move this below
-        #[allow(clippy::expect_used)]
-        if let Err(e) = crate::components::execute_teal_code(lua, &file_path, &user_file).await {
-            tracing::error!("{e:?}");
-        };
+        error!("{e}");
     } else if let Err(e) = lua.load(user_file).set_name(file_path).exec_async().await {
-        tracing::error!("{e}");
+        error!("{e}");
     }
 
     // TODO: JOIN ALL TASKS HERE, AND EXIT IN CASE OF ERROR
