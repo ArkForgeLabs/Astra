@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.32.0](https://github.com/ArkForgeLabs/Astra/compare/v0.31.0..v0.32.0) - 2025-10-17
+
+### Bug Fixes
+
+- bugs with HTTP not shutting down properly - ([5504a5f](https://github.com/ArkForgeLabs/Astra/commit/5504a5fb121273b504a095bdc092e0cf476e24df))
+
+### Documentation
+
+- added documentation for shutdown code - ([b84e540](https://github.com/ArkForgeLabs/Astra/commit/b84e54087dd4440aef942450756bee82ff3ac489))
+
+### Features
+
+- shutdown or termination code accessible from Lua for graceful shutdown - ([9d4876f](https://github.com/ArkForgeLabs/Astra/commit/9d4876f38a2d940fdca479f4a11dc85cb8e9ca54))
+
+### Refactoring
+
+- broken down the commands into smaller chunks - ([6a60282](https://github.com/ArkForgeLabs/Astra/commit/6a6028284c21f6a2c48077bab579ba63e727e719))
+
 ## [0.31.0](https://github.com/ArkForgeLabs/Astra/compare/v0.30.1..v0.31.0) - 2025-10-14
 
 ### Features
