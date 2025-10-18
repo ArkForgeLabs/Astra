@@ -53,9 +53,12 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
                 #[cfg(unix)]
                 if let Ok(mut sigterm) =
                     tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+                    && let Ok(mut sigquit) =
+                        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::quit())
                 {
                     tokio::select! {
                         _ = sigterm.recv() => {}
+                        _ = sigquit.recv() => {}
                         _ = sigint => {}
                         _ = shutdown_rx.recv() => {}
                     }
