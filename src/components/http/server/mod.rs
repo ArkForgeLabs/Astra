@@ -71,6 +71,8 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
                         _ = shutdown_rx.recv() => {}
                     }
                 }
+
+                // let _ = shutdown_rx.recv().await;
             })
             .await
             .expect("Could not start the HTTP server");

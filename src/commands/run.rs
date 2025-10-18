@@ -1,8 +1,6 @@
-use std::path::PathBuf;
-
-use tracing::error;
-
 use crate::{LUA, RUNTIME_FLAGS};
+use std::path::PathBuf;
+use tracing::error;
 
 async fn run_command_prerequisite(
     file_path: &str,
@@ -95,6 +93,13 @@ pub async fn run_command(
         {
             error!("{e}");
         }
+
+        std::process::exit(
+            #[cfg(unix)]
+            0,
+            #[cfg(not(unix))]
+            256,
+        );
     });
 
     if let Some(is_teal) = PathBuf::from(&file_path).extension()
@@ -112,7 +117,7 @@ pub async fn run_command(
     let metrics = tokio::runtime::Handle::current().metrics();
     loop {
         let alive_tasks = metrics.num_alive_tasks();
-        if alive_tasks == 0 {
+        if alive_tasks == 1 {
             break;
         }
     }
