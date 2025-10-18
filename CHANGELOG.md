@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.32.2](https://github.com/ArkForgeLabs/Astra/compare/v0.32.1..v0.32.2) - 2025-10-18
+
+### Bug Fixes
+
+- obtaining the function for quit before the signal returning Nil for Teal slow loading - ([ee3afd9](https://github.com/ArkForgeLabs/Astra/commit/ee3afd9b68739e0620b742ff360d1ab022cad420))
+- task keeps hanging the system on termination signal - ([1fef66a](https://github.com/ArkForgeLabs/Astra/commit/1fef66afb33a973d40d3764d7bf238d35ac7107a))
+
+### Features
+
+- Database connections now automatically closed on program closing - ([5b5b528](https://github.com/ArkForgeLabs/Astra/commit/5b5b5286373a4bc39471739cfd910c2e82893365))
+
 ## [0.32.1](https://github.com/ArkForgeLabs/Astra/compare/v0.32.0..v0.32.1) - 2025-10-17
 
 ### Bug Fixes
