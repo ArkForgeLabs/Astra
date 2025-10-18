@@ -1,7 +1,7 @@
 use mlua::{ExternalError, LuaSerdeExt};
 
 mod crypto;
-mod database;
+pub mod database;
 mod datetime;
 pub mod global;
 pub mod http;

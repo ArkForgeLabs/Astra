@@ -1,4 +1,4 @@
-use crate::{LUA, RUNTIME_FLAGS};
+use crate::{LUA, RUNTIME_FLAGS, components::database::DATABASE_POOLS};
 use std::path::PathBuf;
 use tracing::error;
 
@@ -92,6 +92,14 @@ pub async fn run_command(
             && let Err(e) = exit_function.call_async::<()>(()).await
         {
             error!("{e}");
+        }
+
+        let database_pools = DATABASE_POOLS.lock().await.clone();
+        for i in database_pools {
+            match i {
+                crate::components::database::DatabaseType::Postgres(pool) => pool.close().await,
+                crate::components::database::DatabaseType::Sqlite(pool) => pool.close().await,
+            }
         }
 
         std::process::exit(

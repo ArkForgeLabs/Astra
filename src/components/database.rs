@@ -1,5 +1,10 @@
 use mlua::{LuaSerdeExt, UserData};
 use sqlx::{Pool, Postgres, Row, Sqlite, migrate::MigrateDatabase};
+use std::sync::LazyLock;
+use tokio::sync::Mutex;
+
+pub static DATABASE_POOLS: LazyLock<Mutex<Vec<DatabaseType>>> =
+    LazyLock::new(|| Mutex::new(Vec::new()));
 
 #[derive(Debug, Clone)]
 pub enum DatabaseType {
@@ -39,9 +44,14 @@ impl Database {
                             .connect(format!("sqlite:{url}").as_str())
                             .await
                         {
-                            Ok(pool) => Ok(Database {
-                                db: Some(DatabaseType::Sqlite(pool)),
-                            }),
+                            Ok(pool) => {
+                                let pool = DatabaseType::Sqlite(pool);
+
+                                let mut database_pools = DATABASE_POOLS.lock().await;
+                                database_pools.push(pool.clone());
+
+                                Ok(Database { db: Some(pool) })
+                            }
                             Err(e) => Err(mlua::Error::runtime(format!(
                                 "Error connecting to Sqlite: {e:#?}"
                             ))),
@@ -52,9 +62,14 @@ impl Database {
                         .connect(url.as_str())
                         .await
                     {
-                        Ok(pool) => Ok(Database {
-                            db: Some(DatabaseType::Postgres(pool)),
-                        }),
+                        Ok(pool) => {
+                            let pool = DatabaseType::Postgres(pool);
+
+                            let mut database_pools = DATABASE_POOLS.lock().await;
+                            database_pools.push(pool.clone());
+
+                            Ok(Database { db: Some(pool) })
+                        }
                         Err(e) => Err(mlua::Error::runtime(format!(
                             "Error connecting to Postgres: {e:#?}"
                         ))),
