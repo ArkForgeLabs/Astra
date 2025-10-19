@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.32.3](https://github.com/ArkForgeLabs/Astra/compare/v0.32.2..0.32.3) - 2025-10-19
+
+### Bug Fixes
+
+- Abort needing itself for task handler - ([8f99419](https://github.com/ArkForgeLabs/Astra/commit/8f9941955bd2288af6178bb263b5ee6c6ab01938))
+
 ## [0.32.2](https://github.com/ArkForgeLabs/Astra/compare/v0.32.1..v0.32.2) - 2025-10-18
 
 ### Bug Fixes
