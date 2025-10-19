@@ -8,8 +8,8 @@ end
 
 ---Represents an async task
 global interface TaskHandler is userdata
-    abort: function()
-    await: function()
+    abort: function(self: TaskHandler)
+    await: function(self: TaskHandler)
 end
 
 local type astra_internal__spawn_task = function(callback: function()): TaskHandler
