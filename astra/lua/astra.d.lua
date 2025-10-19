@@ -20,8 +20,8 @@ end
 
 ---Represents an async task
 ---@class TaskHandler
----@field abort fun() Aborts the running task
----@field await fun() Waits for the task to finish
+---@field abort fun(self: TaskHandler) Aborts the running task
+---@field await fun(self: TaskHandler) Waits for the task to finish
 
 ---Starts a new async task
 ---@param callback fun() The callback to run the content of the async task
