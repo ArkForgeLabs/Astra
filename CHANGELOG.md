@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.32.4](https://github.com/ArkForgeLabs/Astra/compare/v0.32.3..0.32.4) - 2025-10-20
+
+### Bug Fixes
+
+- HTTP Multipart not saving binary zip archives correctly - ([026bb8c](https://github.com/ArkForgeLabs/Astra/commit/026bb8cde67120f57d60a51987322e9a5036f88f))
+
 ## [0.32.3](https://github.com/ArkForgeLabs/Astra/compare/v0.32.2..0.32.3) - 2025-10-19
 
 ### Bug Fixes
