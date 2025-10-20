@@ -121,7 +121,7 @@ impl UserData for RequestLua {
 #[derive(Debug, Clone)]
 pub struct LuaMultipartField {
     pub name: String,
-    pub data: Vec<u8>,
+    pub data: bytes::Bytes,
     pub file_name: Option<String>,
     pub content_type: Option<String>,
     pub headers: HashMap<String, String>,
@@ -132,11 +132,10 @@ impl UserData for LuaMultipartField {
         methods.add_method("file_name", |_, this, ()| Ok(this.file_name.clone()));
         methods.add_method("content_type", |_, this, ()| Ok(this.content_type.clone()));
         methods.add_method("headers", |_, this, ()| Ok(this.headers.clone()));
-        methods.add_method("data", |_, this, ()| Ok(this.data.clone()));
         methods.add_method("text", |_, this, ()| {
-            String::from_utf8(this.data.clone()).map_err(|e| e.into_lua_err())
+            String::from_utf8(this.data.to_vec().clone()).map_err(|e| e.into_lua_err())
         });
-        methods.add_method("bytes", |_, this, ()| Ok(this.data.clone()));
+        methods.add_method("bytes", |_, this, ()| Ok(this.data.to_vec()));
     }
 }
 
@@ -166,7 +165,7 @@ impl LuaMultipart {
 
             fields.push(LuaMultipartField {
                 name,
-                data: bytes.to_vec(),
+                data: bytes,
                 file_name: filename,
                 content_type,
                 headers,

@@ -58,7 +58,6 @@ local http = {}
 ---@field file_name fun(): string|nil
 ---@field content_type fun(): string|nil
 ---@field headers fun(): table
----@field data fun(): table Returns the field data as bytes (table of numbers)
 ---@field text fun(): string
 ---@field bytes fun(): table Returns the field data as bytes (table of numbers)
 

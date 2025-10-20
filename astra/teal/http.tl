@@ -56,7 +56,6 @@ global interface HTTPMultipartField is userdata
     file_name: function(self: HTTPMultipartField): string | nil
     content_type: function(self: HTTPMultipartField): string | nil
     headers: function(self: HTTPMultipartField): {string: string}
-    data: function(self: HTTPMultipartField): {number}
     text: function(self: HTTPMultipartField): string
     bytes: function(self: HTTPMultipartField): {number}
 end
