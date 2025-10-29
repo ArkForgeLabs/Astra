@@ -66,12 +66,12 @@ pub async fn execute_teal_code(
         .get_or_init(|| async {
             crate::RuntimeFlags {
                 stdlib_path: std::path::PathBuf::from("astra"),
-                teal_compile_checks: true,
+                check_teal_code: false,
             }
         })
         .await;
 
-    if runtime_flags.teal_compile_checks && module_name.ends_with(".tl") {
+    if runtime_flags.check_teal_code && module_name.ends_with(".tl") {
         lua.globals()
             .set("ASTRA_INTERNAL__CURRENT_SCRIPT", module_name)?;
         let compile_check_chunk = crate::TEAL_IMPORT_SCRIPT

@@ -5,17 +5,16 @@ use tracing::error;
 async fn run_command_prerequisite(
     file_path: &str,
     stdlib_path: Option<String>,
-    teal_compile_checks: Option<bool>,
+    check_teal_code: bool,
     extra_args: Option<Vec<String>>,
 ) {
     let lua = &LUA;
 
     let stdlib_path = stdlib_path.unwrap_or("astra".to_string());
-    let teal_compile_checks = teal_compile_checks.unwrap_or(true);
 
     if let Err(e) = RUNTIME_FLAGS.set(crate::RuntimeFlags {
         stdlib_path: PathBuf::from(stdlib_path.clone()),
-        teal_compile_checks,
+        check_teal_code,
     }) {
         error!("Could not set the global STDLIB_PATH: {e:?}");
     }
@@ -49,12 +48,12 @@ async fn run_command_prerequisite(
 pub async fn run_command(
     file_path: String,
     stdlib_path: Option<String>,
-    teal_compile_checks: Option<bool>,
+    check_teal_code: bool,
     extra_args: Option<Vec<String>>,
 ) {
     let lua = &LUA;
 
-    run_command_prerequisite(&file_path, stdlib_path, teal_compile_checks, extra_args).await;
+    run_command_prerequisite(&file_path, stdlib_path, check_teal_code, extra_args).await;
 
     // Load and execute the Lua script.
     #[allow(clippy::expect_used)]
@@ -112,9 +111,10 @@ pub async fn run_command(
 
     if let Some(is_teal) = PathBuf::from(&file_path).extension()
         && is_teal == "tl"
-        && let Err(e) = crate::components::execute_teal_code(lua, &file_path, &user_file).await
     {
-        error!("{e}");
+        if let Err(e) = crate::components::execute_teal_code(lua, &file_path, &user_file).await {
+            error!("ASD {e}");
+        }
     } else if let Err(e) = lua.load(user_file).set_name(file_path).exec_async().await {
         error!("{e}");
     }
