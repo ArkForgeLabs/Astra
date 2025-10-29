@@ -18,12 +18,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Restore cache
+        id: cache-cargo-restore
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo
 
       - run: |
           rustup toolchain install 1.88.0
           rustup override set 1.88.0
           rustup show
+
+      - run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: LuaJIT
         run: cross build --release --target x86_64-unknown-linux-gnu --features default
@@ -89,6 +102,15 @@ jobs:
           environment-url: https://github.com/ArkForgeLabs/Astra
           environment: production
 
+      - name: Save Cache
+        id: cache-cargo-save
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            path/to/dependencies
+            some/other/dependencies
+          key: ${{ runner.os }}-cargo
+
       - name: Update deployment status (success)
         if: success()
         uses: chrnorm/deployment-status@v2
@@ -106,3 +128,4 @@ jobs:
           environment-url: ${{ steps.deployment.outputs.environment_url }}
           deployment-id: ${{ steps.deployment.outputs.deployment_id }}
           state: "failure"
+
