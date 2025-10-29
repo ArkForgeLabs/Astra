@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.33.0](https://github.com/ArkForgeLabs/Astra/compare/v0.32.4..v0.33.0) - 2025-10-29
+
+### Features
+
+- added cache to workflows - ([79d3e84](https://github.com/ArkForgeLabs/Astra/commit/79d3e84de250014d69be64d2c0a48e7d2449c284))
+
+### Refactoring
+
+- Teal now do not check by default. Moved `--teal-compile-checks` to `--check-teal-code` - ([f595e8e](https://github.com/ArkForgeLabs/Astra/commit/f595e8e2f2a72356006e9bfc3abd929264dccc29))
+
 ## [0.32.4](https://github.com/ArkForgeLabs/Astra/compare/v0.32.3..0.32.4) - 2025-10-20
 
 ### Bug Fixes
