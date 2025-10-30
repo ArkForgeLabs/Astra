@@ -135,7 +135,7 @@ try {
     Move-Item -Path $TempFile -Destination $InstallPath -ErrorAction Stop
     Write-Host "Successfully installed Astra to: $InstallPath"
 } catch {
-    Write-Error "Error: Failed to move binary to $InstallPath: $($_.Exception.Message)"
+    Write-Error ("Error: Failed to move binary to " + $InstallPath + ": " + $_.Exception.Message)
     exit 1
 }
 
