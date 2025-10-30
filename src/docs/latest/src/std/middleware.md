@@ -29,7 +29,7 @@ end
 --- sets `"Content-Type": "text/html"` response header
 local function html(next_handler)
     return function(request, response, ctx)
-        result = next_handler(request, response, ctx)
+        local result = next_handler(request, response, ctx)
         response:set_header("Content-Type", "text/html")
         return result
     end
@@ -85,7 +85,7 @@ end
 --- sets `"Content-Type": "text/html"` response header
 local function html(next_handler)
     return function(request, response, ctx)
-        result = next_handler(request, response, ctx)
+        local result = next_handler(request, response, ctx)
         response:set_header("Content-Type", "text/html")
         return result
     end
@@ -211,7 +211,7 @@ end
 --- sets `"Content-Type": "text/html"` response header
 local function html(next_handler)
     return function(request, response, ctx)
-        result = next_handler(request, response, ctx)
+        local result = next_handler(request, response, ctx)
         response:set_header("Content-Type", "text/html")
         return result
     end
