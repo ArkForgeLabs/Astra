@@ -59,7 +59,7 @@ function Test-Admin {
 
 # Default runtime
 if ($Runtime -eq "") {
-    $Runtime = "luajit"
+    Select-Runtime
 }
 
 # If help is requested, show usage and exit
