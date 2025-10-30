@@ -41,7 +41,7 @@ local function execute_command_in_subdirectories(directory, ignore, command)
 
             if is_dir then
                 print("Executing command in directory: " .. full_path)
-                if not ignore then
+                if ignore then
                     ---@diagnostic disable-next-line: param-type-mismatch
                     if not contains(ignore, file) then
                         os.execute("cd " .. full_path .. " && " .. command)

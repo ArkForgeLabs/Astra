@@ -1,10 +1,11 @@
 local lust = require("tests.lust")
+local datetime = require("astra.lua.datetime")
 local describe, it, expect = lust.describe, lust.it, lust.expect
 
 -- helper functions
 local function expect_invalid_datetime(args)
 	expect(function()
-		Astra.datetime.new(unpack(args))
+		datetime.new(unpack(args))
 	end).to.fail()
 end
 
@@ -18,7 +19,7 @@ end
 
 -- test cases
 describe("NewDatetimeFullArgs", function()
-	local dt = Astra.datetime.new(2025, 7, 8, 0, 24, 48, 241)
+	local dt = datetime.new(2025, 7, 8, 0, 24, 48, 241)
 	it("get_year()", function()
 		expect(dt:get_year()).to.equal(2025)
 	end)
@@ -53,7 +54,7 @@ describe("NewDatetimeFullArgs", function()
 
 	it("invalid-type", function()
 		expect(function()
-			Astra.datetime.new("2025")
+			datetime.new("2025")
 		end).to.fail()
 	end)
 
@@ -92,7 +93,7 @@ describe("NewDatetimeFullArgs", function()
 end)
 
 describe("NewDatetimeDefault", function()
-	local dt = Astra.datetime.new(2025)
+	local dt = datetime.new(2025)
 	it("getter-methods", function()
 		expect(dt:get_year()).to.equal(2025)
 		expect(dt:get_month()).to.equal(1)
@@ -106,7 +107,7 @@ describe("NewDatetimeDefault", function()
 end)
 
 describe("NewDatetimeByStr", function()
-	local dt = Astra.datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
+	local dt = datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
 	it("getter-methods", function()
 		expect(dt:get_year()).to.equal(2003)
 		expect(dt:get_month()).to.equal(7)
@@ -121,14 +122,14 @@ describe("NewDatetimeByStr", function()
 	it("invalid-format", function()
 		for _, str in ipairs({ "Tue, 1 Jul 2003", "2003", "2003, 7, 8" }) do
 			expect(function()
-				Astra.datetime.new(str)
+				datetime.new(str)
 			end).to.fail()
 		end
 	end)
 end)
 
 describe("Setters", function()
-	local dt = Astra.datetime.new(2024)
+	local dt = datetime.new(2024)
 	it("set_year()", function()
 		dt:set_year(2025)
 		expect(dt:get_year()).to.equal(2025)
@@ -177,7 +178,7 @@ describe("Setters", function()
 end)
 
 describe("ToString", function()
-	local dt = Astra.datetime.new(2020, 12, 25, 10, 30, 45, 500)
+	local dt = datetime.new(2020, 12, 25, 10, 30, 45, 500)
 	it("to_date_string()", function()
 		expect(dt:to_date_string()).to.equal("2020-12-25")
 	end)
@@ -208,7 +209,7 @@ describe("ToString", function()
 end)
 
 describe("EpochMillisecond", function()
-	local dt = Astra.datetime.new(1970)
+	local dt = datetime.new(1970)
 
 	it("get_epoch_milliseconds()", function()
 		expect(dt:get_epoch_milliseconds()).to.equal(21600000)
@@ -222,11 +223,11 @@ describe("EpochMillisecond", function()
 
 	it("invalid-set_epoch_milliseconds()", function()
 		expect(function()
-			---@diagnostic disable-next-line: param-type-mismatch
+			---@diagnostic disable-next-line: param-type-mismatch, param-type-not-match
 			dt:set_epoch_milliseconds("str")
 		end).to.fail()
 		expect(function()
-			---@diagnostic disable-next-line: param-type-mismatch
+			---@diagnostic disable-next-line: param-type-mismatch, param-type-not-match
 			dt:set_epoch_milliseconds(nil)
 		end).to.fail()
 	end)

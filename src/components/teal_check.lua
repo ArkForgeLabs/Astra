@@ -4,9 +4,8 @@ local file_name = [[@FILE_NAME]]
 
 local tlconfig = { global_env_def = "astra/teal/astra" }
 tlconfig._init_env_modules = tlconfig._init_env_modules or {}
-if tlconfig.global_env_def then
-    table.insert(tlconfig._init_env_modules, 1, tlconfig.global_env_def)
-end
+table.insert(tlconfig._init_env_modules, 1, tlconfig.global_env_def)
+
 
 local opts = {
     defaults = {
@@ -38,6 +37,6 @@ if check_errors ~= nil then
             end
         end
         print("----------------------------------------")
-        os.exit()
+        os.exit(-1)
     end
 end

@@ -2,7 +2,7 @@
 
 ## Dev environment
 
-For development, we recommend [visual studio code](https://code.visualstudio.com/) (or [alternative](https://vscodium.com/)) along with the [lua extension](https://marketplace.visualstudio.com/items?itemName=sumneko.lua).
+For development, we recommend [Emmylua Analyzer](https://github.com/EmmyLuaLs/emmylua-analyzer-rust?tab=readme-ov-file#-installation).
 
 After your setup is complete, you will want to obtain a prebuilt binary of the runtime from the [releases page](https://github.com/ArkForgeLabs/Astra/releases). Alternatively you can get it with `wget` as well. For example for the latest version with LuaJIT VM:
 
