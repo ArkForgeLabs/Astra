@@ -6,18 +6,18 @@ All notable changes to this project will be documented in this file. See [conven
 
 ### Bug Fixes
 
-- fix for windows: avoid colon variable parse error in PowerShell Write-Error - ([d4913f7](https://github.com/ArkForgeLabs/Astra/commit/d4913f7db927bb30f57a11e2e1a2df3280dec2cd))
 - fix for runtime selection from user, adding the function(Select-Runtime) call to handle the selection - ([46e7215](https://github.com/ArkForgeLabs/Astra/commit/46e7215690c41e77ee5c4054cbd74db3e0d8bf90))
 - fix for windows: avoid colon variable parse error in PowerShell Write… (#110) - ([ef92a92](https://github.com/ArkForgeLabs/Astra/commit/ef92a928cd11e70fbd629ab6293afcd142ad57e9))
 - windows updates being broken - ([4ac2e23](https://github.com/ArkForgeLabs/Astra/commit/4ac2e23203d5426e290a2dd742fa43a8c6917af9))
-
-### Fix
-
 - don't use global variable `result` in middleware docs (#109) - ([094a308](https://github.com/ArkForgeLabs/Astra/commit/094a3088866384db4943692bafa7e2005388211b))
 
 ### Refactoring
 
 - moved from luals to emmylua for language server. Added install scripts for different platforms - ([6878e0c](https://github.com/ArkForgeLabs/Astra/commit/6878e0cc7e81d0459f9dcc0e52b15e53e1ab004d))
+
+## New Contributors
+
+- @sweet-nes5 made their first contribution in https://github.com/ArkForgeLabs/Astra/pull/110
 
 ## [0.33.0](https://github.com/ArkForgeLabs/Astra/compare/v0.32.4..v0.33.0) - 2025-10-29
 
