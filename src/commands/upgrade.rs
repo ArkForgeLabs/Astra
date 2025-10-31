@@ -100,7 +100,9 @@ astra export"#
 
 pub fn remove_old_runtime() -> Result<(), Box<dyn std::error::Error>> {
     let current_file_name = std::env::current_exe()?.to_string_lossy().to_string();
-    std::fs::remove_file(format!("{current_file_name}_old"))?;
+    if std::fs::exists(format!("{current_file_name}_old"))? {
+        std::fs::remove_file(format!("{current_file_name}_old"))?;
+    }
 
     Ok(())
 }
