@@ -75,7 +75,6 @@ pub async fn upgrade_command(user_agent: Option<String>) -> Result<(), Box<dyn s
             format!("{file_name}-{latest_tag}"),
             current_file_name.clone(),
         )?;
-        std::fs::remove_file(format!("{current_file_name}_old"))?;
 
         #[cfg(target_os = "linux")]
         {
@@ -95,6 +94,13 @@ astra export"#
     } else {
         println!("Already up to date!")
     }
+
+    Ok(())
+}
+
+pub fn remove_old_runtime() -> Result<(), Box<dyn std::error::Error>> {
+    let current_file_name = std::env::current_exe()?.to_string_lossy().to_string();
+    std::fs::remove_file(format!("{current_file_name}_old"))?;
 
     Ok(())
 }

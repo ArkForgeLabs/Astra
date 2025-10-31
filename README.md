@@ -6,11 +6,15 @@
 [![Static Badge](https://img.shields.io/badge/Join-The_Discord-blue?style=flat&logo=discord&color=blue)](https://discord.com/invite/6PMjUx8x3b)
 [![Static Badge](https://img.shields.io/badge/Read_The_Docs-blue?style=flat&logo=docsdotrs&color=%23000000)](https://astra.arkforge.net/docs/latest)
 
-Astra is a web server runtime for Lua (5.1-5.4), Luau and LuaJIT written in Rust. The goal is to get as much performance as possible while writing the web server logic in Lua instead for faster iteration, fault-tolerance and no-build requirements. This project is internally used here at [ArkForge](https://arkforge.net) and many others.
+Astra is a web server runtime for Lua (5.1-5.4), Luau and LuaJIT written in Rust with native support for Teal. The goal is to get as much performance as possible while writing the web server logic in Lua instead for faster iteration, fault-tolerance and no-build requirements. This project is internally used here at [ArkForge](https://arkforge.net) and many others.
+
+> MSRV: 1.88+
 
 ## Installation
 
-You can either get the binaries at [github releases](https://github.com/ArkForgeLabs/Astra/releases) or using `cargo` if you have it installed:
+You can either get the binaries at [github releases](https://github.com/ArkForgeLabs/Astra/releases) or
+
+### Using `cargo`:
 
 ```bash
 cargo install lua-astra
@@ -22,7 +26,17 @@ To install with differet Lua VM, e.g. Lua 5.4:
 cargo install lua-astra --no-default-features --features lua54
 ```
 
-> MSRV: 1.88+
+### Linux install script
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ArkForgeLabs/Astra/refs/heads/main/linux_install.sh | bash
+```
+
+### Windows install script
+
+```powershell
+powershell -c "irm https://raw.githubusercontent.com/ArkForgeLabs/Astra/refs/heads/main/windows_install.ps1 | iex"
+```
 
 ## Example
 

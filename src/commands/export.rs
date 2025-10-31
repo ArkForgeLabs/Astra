@@ -14,10 +14,14 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
     ASTRA_STD_LIBS.extract(folder_path.join("astra"))?;
 
     let tlconfig_file = include_str!("../../tlconfig.lua");
+    let emmyrc_file = include_str!("../../.emmyrc.json");
 
     std::fs::exists("tlconfig.lua")
         .map(|exists| !exists)
         .map(|_| std::fs::write("tlconfig.lua", tlconfig_file))??;
+    std::fs::exists(".emmyrc.json")
+        .map(|exists| !exists)
+        .map(|_| std::fs::write(".emmyrc.json", emmyrc_file))??;
 
     println!("🚀 Successfully exported the bundled library!");
     Ok(())
