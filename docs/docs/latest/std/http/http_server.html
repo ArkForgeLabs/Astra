@@ -29,6 +29,7 @@
         <link rel="stylesheet" href="../../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../theme/pagetoc.css">
 
 
         <!-- Provide site root to javascript -->
@@ -359,13 +360,302 @@ get_expiration(cookie: Cookie): number?
 get_http_only(cookie: Cookie): boolean?
 get_max_age(cookie: Cookie): number?
 </code></pre>
+<h2 id="websocket"><a class="header" href="#websocket">WebSocket</a></h2>
+<p>Astra offers a WebSocket server powered by axum. Server creation takes a route similar to any other normal routes:</p>
+<pre><code class="language-lua">local server = require("astra.http").server:new()
+
+local function handle_socket(socket)
+  print("Connection opened!")
+end
+
+server:websocket("/", handle_socket)
+
+server:run()
+</code></pre>
+<p>After creating our Astra server, we have to create a function to handle WebSocket behaviour, this function is then used as a callback by the <code>server:websocket()</code> function, which first takes the route for our websocket server, then the callback function.</p>
+<p>We can print out received messages from our client like this:</p>
+<pre><code class="language-lua">
+local function handle_socket(socket)
+  print("Connection opened!")
+
+  while true do
+    pprint(socket:recv())
+  end
+end
+
+</code></pre>
+<p>You can send 5 types of messages from a WebSocket: text, bytes, ping, pong, and a close frame. The first 4 all take a string as their message, with bytes, ping, and pong also being able to take a table of 8-bit unsigned bytes, a close frame takes a <a href="https://websocket.org/reference/websocket-api/#websocket-close-codes">close code</a> and a reason, which is an optional string, both of which should be places inside a lua table.</p>
+<pre><code class="language-lua">-- The first parameter is a type:
+  -- text
+  -- bytes
+  -- ping
+  -- pong
+  -- close
+
+socket:send("text", "hey there, this is a very informative message.")
+
+-- There are also specialized functions for each type, which skip a lot of type checking to be more direct and concise:
+socket:send_text("yet another informative message")
+
+-- I can send a string of bytes:
+socket:send_bytes("this will be illegible soon")
+-- Or a table of them:
+socket:send_ping({0, 88, 14, 67, 45})
+socket:send_pong({17, 38, 80, 0, 85})
+
+-- I can also send a close frame, first with the close code, and then the reason:
+socket:send_close({code = 1000, reason = "finally, done with everything"})
+-- The reason is optional, so you can also just go with this:
+socket:send_close(1000)
+-- If you're in a rush, you can close it uncleanly too, like this:
+socket:send_close()
+socket
+</code></pre>
+<h2 id="middleware"><a class="header" href="#middleware">Middleware</a></h2>
+<p>Middleware modifies the way a request is processed.</p>
+<p>Since Lua is a very flexible language, there are lots of ways to implement middlewares.</p>
+<p>We decided to take an advantage of Lua functions being a <a href="https://www.lua.org/pil/6.html">first-class values</a>.</p>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>If you are familiar with this concept, feel free to go to the <strong>Full example</strong> at the bottom of the page.</p>
+</div>
+<p>Astra has several built-in middlewares. You can modify or extend middlewares directly in <code>.astra/middleware.lua</code> (after running <code>astra export</code>) or in your own files. We are opened to PRs.</p>
+<p>For more details, see the <a href="https://github.com/ArkForgeLabs/Astra/blob/main/src/components/http/middleware.lua">middleware.lua</a> and the <a href="https://github.com/ArkForgeLabs/Astra/tree/main/examples/middleware.lua">middleware_example.lua</a>.</p>
+<h3 id="basic-middleware"><a class="header" href="#basic-middleware">Basic middleware</a></h3>
+<p>The following example shows the most basic middleware that changes the response headers.</p>
+<pre><code class="language-lua">local http = require("astra.lua.http")
+local server = http.server:new()
+
+local function sunny_day(request, response)
+    return "What a great sunny day!"
+end
+
+--- `on Leave:`
+--- sets `"Content-Type": "text/html"` response header
+local function html(next_handler)
+    return function(request, response, ctx)
+        local result = next_handler(request, response, ctx)
+        response:set_header("Content-Type", "text/html")
+        return result
+    end
+end
+
+server:get("/sunny-day-plain-text", sunny_day)
+server:get("/sunny-day-html", html(sunny_day))
+
+server:run()
+</code></pre>
+<h3 id="context"><a class="header" href="#context">Context</a></h3>
+<p>When we want to pass data through middleware, we can use the third argument and treat it as a context table.</p>
+<pre><code class="language-lua">local datetime = require("astra.lua.datetime")
+local server = http.server:new()
+
+---@param ctx { datetime: DateTime }
+local function favourite_day(_request, _response, ctx)
+    local today = string.format(
+        "%d/%d/%d",
+        ctx.datetime:get_day(),
+        ctx.datetime:get_month(),
+        ctx.datetime:get_year()
+    )
+    return "My favourite day is " .. today
+end
+
+--- `on Entry:`
+--- Inserts `datetime.new()` into `ctx.datetime`
+---
+--- `Depends on:`
+--- `ctx`
+local function insert_datetime(next_handler)
+    return function(request, response, ctx)
+        ctx.datetime = datetime.new()
+        return next_handler(request, response, ctx)
+    end
+end
+
+--- `on Entry:`
+--- Creates a new `ctx` table and passes it as a third argument into the `next_handler`
+local function ctx(next_handler)
+    return function(request, response)
+        local ctx = {}
+        return next_handler(request, response, ctx)
+    end
+end
+
+--- `on Leave:`
+--- sets `"Content-Type": "text/html"` response header
+local function html(next_handler)
+    return function(request, response, ctx)
+        local result = next_handler(request, response, ctx)
+        response:set_header("Content-Type", "text/html")
+        return result
+    end
+end
+
+server:get("/favourite-day", ctx(insert_datetime(html(favourite_day))))
+
+server:run()
+</code></pre>
+<h3 id="chaining-middlewares"><a class="header" href="#chaining-middlewares">Chaining middlewares</a></h3>
+<p>To make it less tedious to compose middleware, we introduced the <code>chain</code> function, which combines all provided middleware into a single middleware.</p>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>Read more about why we can drop parenthesis while calling <code>chain</code> function here: <a href="https://leafo.net/guides/dsl-in-lua.html">Writing a DSL in Lua</a></p>
+</div>
+<pre><code class="language-lua">local chain = http.middleware.chain
+
+-- This will behave exactly the same as ctx(insert_datetime(html(favourite_day)))
+server:get("/favourite-day", chain {ctx, insert_datetime, html} (favourite_day) )
+
+-- We can create a common middlewares and reuse them
+local composed_middleware = chain {ctx, insert_datetime, html}
+server:get("/favourite-day-again", composed_middleware(favourite_day))
+
+server:run()
+</code></pre>
+<h3 id="complex-middleware"><a class="header" href="#complex-middleware">Complex middleware</a></h3>
+<p>We can use Lua <a href="https://www.lua.org/pil/6.1.html">closures</a> to create more complex middlewares.</p>
+<p>This example shows how to create a file logger:</p>
+<pre><code class="language-lua">--- `on Entry:`
+--- Logs request method and uri into the file
+---@param file_handler file* A file handler opened with an append mode `io.open("filepath", "a")`
+---@param flush_interval number? The number of log entries after which the file handler will be flushed
+local function file_logger(file_handler, flush_interval)
+    local flush_interval = flush_interval or 1
+    local flush_countdown = flush_interval
+    return function(next_handler)
+        return function(request, response, ctx)
+            local str = string.format("[New Request %s] %s %s\n", os.date(), request:method(), request:uri())
+            file_handler:write(str)
+
+            flush_countdown = flush_countdown - 1
+            if flush_countdown == 0 then
+                file_handler:flush()
+                flush_countdown = flush_interval
+            end
+            return next_handler(request, response, ctx)
+        end
+    end
+end
+local file_handler, err = io.open("logs.txt", "a")
+if not file_handler then error(err) end
+local logger = file_logger(file_handler)
+
+local common = chain { ctx, logger, html }
+
+server:get("/sunny-day", common(sunny_day))
+server:get("/normal-day", common(normal_day))
+server:get("/favourite-day", chain { common, insert_datetime } (favourite_day))
+
+server:run()
+</code></pre>
+<p>The <code>logger</code> we got from the <code>file_logger</code> is gonna be used in all routes we pass it as a middleware.</p>
+<h3 id="full-example"><a class="header" href="#full-example">Full example</a></h3>
+<pre><code class="language-lua">local http = require("astra.lua.http")
+local datetime = require("astra.lua.datetime")
+local server = http.server:new()
+local chain = http.middleware.chain
+
+local function sunny_day(_request, _response)
+    return "What a great sunny day!"
+end
+
+local function normal_day(_request, _response)
+    return "It's a normal day... I guess..."
+end
+
+---@param ctx { datetime: DateTime }
+local function favourite_day(_request, _response, ctx)
+    local today = string.format(
+        "%d/%d/%d",
+        ctx.datetime:get_day(),
+        ctx.datetime:get_month(),
+        ctx.datetime:get_year()
+    )
+    return "My favourite day is " .. today
+end
+
+--- `on Entry:`
+--- Creates a new `ctx` table and passes it as a third argument into the `next_handler`
+local function ctx(next_handler)
+    return function(request, response)
+        local ctx = {}
+        return next_handler(request, response, ctx)
+    end
+end
+
+--- `on Entry:`
+--- Inserts `datetime.new()` into `ctx.datetime`
+---
+--- `Depends on:`
+--- `ctx`
+local function insert_datetime(next_handler)
+    return function(request, response, ctx)
+        ctx.datetime = datetime.new()
+        return next_handler(request, response, ctx)
+    end
+end
+
+--- `on Leave:`
+--- sets `"Content-Type": "text/html"` response header
+local function html(next_handler)
+    return function(request, response, ctx)
+        local result = next_handler(request, response, ctx)
+        response:set_header("Content-Type", "text/html")
+        return result
+    end
+end
+
+--- `on Entry:`
+--- Logs request method and uri into the file
+---@param file_handler file* A file handler opened with an append mode `io.open("filepath", "a")`
+---@param flush_interval number? The number of log entries after which the file handler will be flushed
+local function file_logger(file_handler, flush_interval)
+    local flush_interval = flush_interval or 1
+    local flush_countdown = flush_interval
+    return function(next_handler)
+        return function(request, response, ctx)
+            local str = string.format("[New Request %s] %s %s\n", os.date(), request:method(), request:uri())
+            file_handler:write(str)
+
+            flush_countdown = flush_countdown - 1
+            if flush_countdown == 0 then
+                file_handler:flush()
+                flush_countdown = flush_interval
+            end
+            return next_handler(request, response, ctx)
+        end
+    end
+end
+local file_handler, err = io.open("logs.txt", "a")
+if not file_handler then error(err) end
+local logger = file_logger(file_handler)
+
+server:get("/sunny-day", logger(html(sunny_day)))
+server:get("/normal-day", chain { logger, html } (normal_day))
+server:get("/favourite-day", chain { ctx, logger, insert_datetime, html } (favourite_day))
+
+server:run()
+</code></pre>
 <h2 id="deployment"><a class="header" href="#deployment">Deployment</a></h2>
 <p>You can follow the steps covered in <a href="./configuration.html">Configuration</a> to setup the Astra itself.</p>
 <p>Astra does not support TLS/SSL as of yet, but may support by the 1.0 release. However generally a reverse proxy service is recommended for deployment. We recommend <a href="https://caddyserver.com/">Caddy</a> as it is easy to setup and use, especially for majority of our, and hopefully your, usecases. What caddy also does is automatically fetching TLS certificates for your domain as well which is always a good idea. You can install caddy through your system's package manager.</p>
 <p>Then open a new file with the name <code>Caddyfile</code> with the following content:</p>
 <pre><code class="language-caddy">your_domain.tld {
     encode zstd gzip
-    reverse_proxy :8080
+    reverse_proxy :8080 {
+        # Can also pass extra details such as IP addresses
+        header_up X-Forwarded-For {client_ip}
+        header_up X-Real-IP {client_ip}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+    }
 }
 </code></pre>
 <p>and change <code>your_domain.tld</code> to your domain, and <code>:8080</code> to the port you have set for your server. After this, make sure your <code>443</code> and <code>80</code> ports are open through your firewall. For a linux server running ufw you can open them by:</p>
@@ -387,7 +677,7 @@ sudo ufw allow 443
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../../getting_started.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../../std/http/main.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -401,7 +691,7 @@ sudo ufw allow 443
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../../getting_started.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../../std/http/main.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
@@ -429,6 +719,7 @@ sudo ufw allow 443
         <script src="../../book.js"></script>
 
         <!-- Custom JS scripts -->
+        <script src="../../theme/pagetoc.js"></script>
 
 
     </div>

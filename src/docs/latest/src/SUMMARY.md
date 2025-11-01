@@ -5,26 +5,20 @@
 
 # API
 
-- [HTTP Server](./std/http/http_server.md)
-- [HTTP Client](./std/http/http_client.md)
-- [WebSocket Server](./std/websocket/websocket_server.md)
+- [HTTP](./std/http/main.md)
+  - [HTTP Server](./std/http/http_server.md)
+  - [HTTP Client](./std/http/http_client.md)
 - [Templating](./std/templating.md)
-- [Importing](./std/importing.md)
-- [File IO](./std/file_io.md)
-- [Schema Validation](./std/schema_validation.md)
-- [Crypto](./std/crypto.md)
+- [Validation](./std/validation.md)
 - [SQL Driver](./std/sql_driver.md)
-- [Async Tasks](./std/async_tasks.md)
+- [File IO](./std/file_io.md)
+- [Crypto](./std/crypto.md)
+- [Serialization & Deserialization](./std/serde.md)
 - [DateTime](./std/datetime.md)
-- [Middleware](./std/middleware.md)
 - [Utilities](./std/utilities.md)
+- [In-Memory Stores](./std/mem_stores.md)
 
-# Data Stores
-
-- [Observer Pattern](./std/observer_pattern.md)
-- [Pub/Sub Pattern](./std/pubsub_pattern.md)
-
-# Internals
+# Extending Astra
 
 - [Structure](./internals/structure.md)
-- [Extending Astra](./internals/extending_astra.md)
+- [Adding Components](./internals/adding_components.md)

@@ -25,9 +25,3 @@ print(encoded)
 local decoded = crypto.base64.decode(encoded)
 print(decoded)
 ```
-
-## JSON
-
-Often you will have to deal with a medium of structured data between your server and the clients. This could be in form of JSON, YAML, e.t.c. Astra includes some utilities to serialize and deserialize these with native Lua structures.
-
-For JSON, you can import the serializer package (`require("astra.lua.serde")`), and then use `json.encode()` and `json.decode()` methods which converts JSON data from and into Lua tables.

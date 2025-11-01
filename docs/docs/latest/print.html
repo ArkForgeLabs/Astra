@@ -30,6 +30,7 @@
         <link rel="stylesheet" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/pagetoc.css">
 
 
         <!-- Provide site root to javascript -->
@@ -391,6 +392,75 @@
 }
 
 </style>
+<h1 id="http"><a class="header" href="#http">HTTP</a></h1>
+<p>Astra have support for both HTTP Servers and HTTP Clients</p>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
 <h1 id="http-server"><a class="header" href="#http-server">HTTP Server</a></h1>
 <p>Astra offers HTTP1/2 web server through the <a href="https://github.com/tokio-rs/axum">axum</a> project. On the Lua's side, the server holds configuration and route details, which are then sent to the Rust for running them. Since it is running on Tokio, it can take advantage of all available resources automatically, making it easy for vertical scaling. Throughout this documentation, the word <code>server</code> is used to describe an HTTP web server table on the Lua's side. You can create one as such:</p>
 <pre><code class="language-lua">-- create a new server with
@@ -524,13 +594,302 @@ get_expiration(cookie: Cookie): number?
 get_http_only(cookie: Cookie): boolean?
 get_max_age(cookie: Cookie): number?
 </code></pre>
+<h2 id="websocket"><a class="header" href="#websocket">WebSocket</a></h2>
+<p>Astra offers a WebSocket server powered by axum. Server creation takes a route similar to any other normal routes:</p>
+<pre><code class="language-lua">local server = require("astra.http").server:new()
+
+local function handle_socket(socket)
+  print("Connection opened!")
+end
+
+server:websocket("/", handle_socket)
+
+server:run()
+</code></pre>
+<p>After creating our Astra server, we have to create a function to handle WebSocket behaviour, this function is then used as a callback by the <code>server:websocket()</code> function, which first takes the route for our websocket server, then the callback function.</p>
+<p>We can print out received messages from our client like this:</p>
+<pre><code class="language-lua">
+local function handle_socket(socket)
+  print("Connection opened!")
+
+  while true do
+    pprint(socket:recv())
+  end
+end
+
+</code></pre>
+<p>You can send 5 types of messages from a WebSocket: text, bytes, ping, pong, and a close frame. The first 4 all take a string as their message, with bytes, ping, and pong also being able to take a table of 8-bit unsigned bytes, a close frame takes a <a href="https://websocket.org/reference/websocket-api/#websocket-close-codes">close code</a> and a reason, which is an optional string, both of which should be places inside a lua table.</p>
+<pre><code class="language-lua">-- The first parameter is a type:
+  -- text
+  -- bytes
+  -- ping
+  -- pong
+  -- close
+
+socket:send("text", "hey there, this is a very informative message.")
+
+-- There are also specialized functions for each type, which skip a lot of type checking to be more direct and concise:
+socket:send_text("yet another informative message")
+
+-- I can send a string of bytes:
+socket:send_bytes("this will be illegible soon")
+-- Or a table of them:
+socket:send_ping({0, 88, 14, 67, 45})
+socket:send_pong({17, 38, 80, 0, 85})
+
+-- I can also send a close frame, first with the close code, and then the reason:
+socket:send_close({code = 1000, reason = "finally, done with everything"})
+-- The reason is optional, so you can also just go with this:
+socket:send_close(1000)
+-- If you're in a rush, you can close it uncleanly too, like this:
+socket:send_close()
+socket
+</code></pre>
+<h2 id="middleware"><a class="header" href="#middleware">Middleware</a></h2>
+<p>Middleware modifies the way a request is processed.</p>
+<p>Since Lua is a very flexible language, there are lots of ways to implement middlewares.</p>
+<p>We decided to take an advantage of Lua functions being a <a href="https://www.lua.org/pil/6.html">first-class values</a>.</p>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>If you are familiar with this concept, feel free to go to the <strong>Full example</strong> at the bottom of the page.</p>
+</div>
+<p>Astra has several built-in middlewares. You can modify or extend middlewares directly in <code>.astra/middleware.lua</code> (after running <code>astra export</code>) or in your own files. We are opened to PRs.</p>
+<p>For more details, see the <a href="https://github.com/ArkForgeLabs/Astra/blob/main/src/components/http/middleware.lua">middleware.lua</a> and the <a href="https://github.com/ArkForgeLabs/Astra/tree/main/examples/middleware.lua">middleware_example.lua</a>.</p>
+<h3 id="basic-middleware"><a class="header" href="#basic-middleware">Basic middleware</a></h3>
+<p>The following example shows the most basic middleware that changes the response headers.</p>
+<pre><code class="language-lua">local http = require("astra.lua.http")
+local server = http.server:new()
+
+local function sunny_day(request, response)
+    return "What a great sunny day!"
+end
+
+--- `on Leave:`
+--- sets `"Content-Type": "text/html"` response header
+local function html(next_handler)
+    return function(request, response, ctx)
+        local result = next_handler(request, response, ctx)
+        response:set_header("Content-Type", "text/html")
+        return result
+    end
+end
+
+server:get("/sunny-day-plain-text", sunny_day)
+server:get("/sunny-day-html", html(sunny_day))
+
+server:run()
+</code></pre>
+<h3 id="context"><a class="header" href="#context">Context</a></h3>
+<p>When we want to pass data through middleware, we can use the third argument and treat it as a context table.</p>
+<pre><code class="language-lua">local datetime = require("astra.lua.datetime")
+local server = http.server:new()
+
+---@param ctx { datetime: DateTime }
+local function favourite_day(_request, _response, ctx)
+    local today = string.format(
+        "%d/%d/%d",
+        ctx.datetime:get_day(),
+        ctx.datetime:get_month(),
+        ctx.datetime:get_year()
+    )
+    return "My favourite day is " .. today
+end
+
+--- `on Entry:`
+--- Inserts `datetime.new()` into `ctx.datetime`
+---
+--- `Depends on:`
+--- `ctx`
+local function insert_datetime(next_handler)
+    return function(request, response, ctx)
+        ctx.datetime = datetime.new()
+        return next_handler(request, response, ctx)
+    end
+end
+
+--- `on Entry:`
+--- Creates a new `ctx` table and passes it as a third argument into the `next_handler`
+local function ctx(next_handler)
+    return function(request, response)
+        local ctx = {}
+        return next_handler(request, response, ctx)
+    end
+end
+
+--- `on Leave:`
+--- sets `"Content-Type": "text/html"` response header
+local function html(next_handler)
+    return function(request, response, ctx)
+        local result = next_handler(request, response, ctx)
+        response:set_header("Content-Type", "text/html")
+        return result
+    end
+end
+
+server:get("/favourite-day", ctx(insert_datetime(html(favourite_day))))
+
+server:run()
+</code></pre>
+<h3 id="chaining-middlewares"><a class="header" href="#chaining-middlewares">Chaining middlewares</a></h3>
+<p>To make it less tedious to compose middleware, we introduced the <code>chain</code> function, which combines all provided middleware into a single middleware.</p>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>Read more about why we can drop parenthesis while calling <code>chain</code> function here: <a href="https://leafo.net/guides/dsl-in-lua.html">Writing a DSL in Lua</a></p>
+</div>
+<pre><code class="language-lua">local chain = http.middleware.chain
+
+-- This will behave exactly the same as ctx(insert_datetime(html(favourite_day)))
+server:get("/favourite-day", chain {ctx, insert_datetime, html} (favourite_day) )
+
+-- We can create a common middlewares and reuse them
+local composed_middleware = chain {ctx, insert_datetime, html}
+server:get("/favourite-day-again", composed_middleware(favourite_day))
+
+server:run()
+</code></pre>
+<h3 id="complex-middleware"><a class="header" href="#complex-middleware">Complex middleware</a></h3>
+<p>We can use Lua <a href="https://www.lua.org/pil/6.1.html">closures</a> to create more complex middlewares.</p>
+<p>This example shows how to create a file logger:</p>
+<pre><code class="language-lua">--- `on Entry:`
+--- Logs request method and uri into the file
+---@param file_handler file* A file handler opened with an append mode `io.open("filepath", "a")`
+---@param flush_interval number? The number of log entries after which the file handler will be flushed
+local function file_logger(file_handler, flush_interval)
+    local flush_interval = flush_interval or 1
+    local flush_countdown = flush_interval
+    return function(next_handler)
+        return function(request, response, ctx)
+            local str = string.format("[New Request %s] %s %s\n", os.date(), request:method(), request:uri())
+            file_handler:write(str)
+
+            flush_countdown = flush_countdown - 1
+            if flush_countdown == 0 then
+                file_handler:flush()
+                flush_countdown = flush_interval
+            end
+            return next_handler(request, response, ctx)
+        end
+    end
+end
+local file_handler, err = io.open("logs.txt", "a")
+if not file_handler then error(err) end
+local logger = file_logger(file_handler)
+
+local common = chain { ctx, logger, html }
+
+server:get("/sunny-day", common(sunny_day))
+server:get("/normal-day", common(normal_day))
+server:get("/favourite-day", chain { common, insert_datetime } (favourite_day))
+
+server:run()
+</code></pre>
+<p>The <code>logger</code> we got from the <code>file_logger</code> is gonna be used in all routes we pass it as a middleware.</p>
+<h3 id="full-example"><a class="header" href="#full-example">Full example</a></h3>
+<pre><code class="language-lua">local http = require("astra.lua.http")
+local datetime = require("astra.lua.datetime")
+local server = http.server:new()
+local chain = http.middleware.chain
+
+local function sunny_day(_request, _response)
+    return "What a great sunny day!"
+end
+
+local function normal_day(_request, _response)
+    return "It's a normal day... I guess..."
+end
+
+---@param ctx { datetime: DateTime }
+local function favourite_day(_request, _response, ctx)
+    local today = string.format(
+        "%d/%d/%d",
+        ctx.datetime:get_day(),
+        ctx.datetime:get_month(),
+        ctx.datetime:get_year()
+    )
+    return "My favourite day is " .. today
+end
+
+--- `on Entry:`
+--- Creates a new `ctx` table and passes it as a third argument into the `next_handler`
+local function ctx(next_handler)
+    return function(request, response)
+        local ctx = {}
+        return next_handler(request, response, ctx)
+    end
+end
+
+--- `on Entry:`
+--- Inserts `datetime.new()` into `ctx.datetime`
+---
+--- `Depends on:`
+--- `ctx`
+local function insert_datetime(next_handler)
+    return function(request, response, ctx)
+        ctx.datetime = datetime.new()
+        return next_handler(request, response, ctx)
+    end
+end
+
+--- `on Leave:`
+--- sets `"Content-Type": "text/html"` response header
+local function html(next_handler)
+    return function(request, response, ctx)
+        local result = next_handler(request, response, ctx)
+        response:set_header("Content-Type", "text/html")
+        return result
+    end
+end
+
+--- `on Entry:`
+--- Logs request method and uri into the file
+---@param file_handler file* A file handler opened with an append mode `io.open("filepath", "a")`
+---@param flush_interval number? The number of log entries after which the file handler will be flushed
+local function file_logger(file_handler, flush_interval)
+    local flush_interval = flush_interval or 1
+    local flush_countdown = flush_interval
+    return function(next_handler)
+        return function(request, response, ctx)
+            local str = string.format("[New Request %s] %s %s\n", os.date(), request:method(), request:uri())
+            file_handler:write(str)
+
+            flush_countdown = flush_countdown - 1
+            if flush_countdown == 0 then
+                file_handler:flush()
+                flush_countdown = flush_interval
+            end
+            return next_handler(request, response, ctx)
+        end
+    end
+end
+local file_handler, err = io.open("logs.txt", "a")
+if not file_handler then error(err) end
+local logger = file_logger(file_handler)
+
+server:get("/sunny-day", logger(html(sunny_day)))
+server:get("/normal-day", chain { logger, html } (normal_day))
+server:get("/favourite-day", chain { ctx, logger, insert_datetime, html } (favourite_day))
+
+server:run()
+</code></pre>
 <h2 id="deployment"><a class="header" href="#deployment">Deployment</a></h2>
 <p>You can follow the steps covered in <a href="std/http/./configuration.html">Configuration</a> to setup the Astra itself.</p>
 <p>Astra does not support TLS/SSL as of yet, but may support by the 1.0 release. However generally a reverse proxy service is recommended for deployment. We recommend <a href="https://caddyserver.com/">Caddy</a> as it is easy to setup and use, especially for majority of our, and hopefully your, usecases. What caddy also does is automatically fetching TLS certificates for your domain as well which is always a good idea. You can install caddy through your system's package manager.</p>
 <p>Then open a new file with the name <code>Caddyfile</code> with the following content:</p>
 <pre><code class="language-caddy">your_domain.tld {
     encode zstd gzip
-    reverse_proxy :8080
+    reverse_proxy :8080 {
+        # Can also pass extra details such as IP addresses
+        header_up X-Forwarded-For {client_ip}
+        header_up X-Real-IP {client_ip}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+    }
 }
 </code></pre>
 <p>and change <code>your_domain.tld</code> to your domain, and <code>:8080</code> to the port you have set for your server. After this, make sure your <code>443</code> and <code>80</code> ports are open through your firewall. For a linux server running ufw you can open them by:</p>
@@ -643,28 +1002,19 @@ pprint(response:body():text()) -- or response:body():json() for json content
   :set_body("THE CONTENT OF THE BODY")
   :set_json({ key = "value" })
   :set_file("/path/to/file")
-&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream
-=======
-&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream
   -- You can also execute as an async task
   :execute_task(function (result) end)
-=======
-&gt;&gt;&gt;&gt;&gt;&gt;&gt; Stashed changes
 </code></pre>
 <p>You can also instead of chaining functions, just pass a table containing these values as such:</p>
 <pre><code class="language-lua">local request_client = http.request({
   url = "https://example.com",
   method = "POST",
-&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream
   headers = {},
-=======
-&gt;&gt;&gt;&gt;&gt;&gt;&gt; Stashed changes
   body = {
     keys = "body accepts string, table (json), or even byte array"
   }
 })
 </code></pre>
-<h1 id="updated-upstream"><a class="header" href="#updated-upstream">&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream</a></h1>
 <p>For more complex requests, such as API calls with authentication and JSON payloads:</p>
 <pre><code class="language-lua">local http = require("astra.lua.http")
 
@@ -713,156 +1063,6 @@ request_client:execute_task( function(response) end )
 
 -- or execute in streaming manner and get response chunks
 request_client:execute_streaming( function(response) end )
-&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream
-=======
-&gt;&gt;&gt;&gt;&gt;&gt;&gt; Stashed changes
-&gt;&gt;&gt;&gt;&gt;&gt;&gt; Stashed changes
-</code></pre>
-<div style="break-before: page; page-break-before: always;"></div><style>
-.mdbook-alerts {
-  padding: 8px 16px;
-  margin-bottom: 16px;
-  border-left: 0.25em solid var(--mdbook-alerts-color);
-}
-
-.mdbook-alerts > *:first-child {
-  margin-top: 0;
-}
-
-.mdbook-alerts > *:last-child {
-  margin-bottom: 0;
-}
-
-.mdbook-alerts-title {
-  display: flex;
-  font-weight: 600;
-  align-items: center;
-  line-height: 1;
-  color: var(--mdbook-alerts-color);
-  text-transform: capitalize;
-}
-
-.mdbook-alerts-icon {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  margin-right: 0.2em;
-  background-color: currentColor;
-  -webkit-mask: no-repeat center / 100%;
-  mask: no-repeat center / 100%;
-  -webkit-mask-image: var(--mdbook-alerts-icon);
-  mask-image: var(--mdbook-alerts-icon);
-}
-
-.mdbook-alerts-note {
-  --mdbook-alerts-color: rgb(9, 105, 218);
-  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-tip {
-  --mdbook-alerts-color: rgb(26, 127, 55);
-  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-important {
-  --mdbook-alerts-color: rgb(130, 80, 223);
-  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-warning {
-  --mdbook-alerts-color: rgb(154, 103, 0);
-  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-caution {
-  --mdbook-alerts-color: rgb(207, 34, 46);
-  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
-}
-
-</style>
-<h1 id="websocket-server"><a class="header" href="#websocket-server">WebSocket Server</a></h1>
-<p>Astra offers a WebSocket server powered by axum. Server creation takes a route similar to any other normal routes:</p>
-<pre><code class="language-lua">local server = require("astra.http").server:new()
-
-local function handle_socket(socket)
-  print("Connection opened!")
-end
-
-server:websocket("/", handle_socket)
-
-server:run()
-</code></pre>
-<p>After creating our Astra server, we have to create a function to handle WebSocket behaviour, this function is then used as a callback by the <code>server:websocket()</code> function, which first takes the route for our websocket server, then the callback function.</p>
-<p>We can print out received messages from our client like this:</p>
-<pre><code class="language-lua">
-local function handle_socket(socket)
-  print("Connection opened!")
-
-  while true do
-    pprint(socket:recv())
-  end
-end
-
-</code></pre>
-<p>For a minimal websocket client, you can paste this code in your browser's console.</p>
-<pre><code class="language-js">// Replace this with your appropriate address and route
-const socket = new WebSocket("http://localhost:8080/");
-
-socket.addEventListener("open", (event) =&gt; {
-  console.log("WebSocket connection opened");
-
-  // Example: send a greeting or trigger a ping behavior
-  socket.send("Hello from JS client!");
-});
-
-// Listen for messages
-socket.addEventListener("message", (event) =&gt; {
-  console.log("Message from server:", event.data);
-  // You can add your logic here to handle incoming messages
-});
-
-// Optional: Listen for errors
-socket.addEventListener("error", (event) =&gt; {
-  console.error("WebSocket error:", event);
-});
-
-// Optional: Listen for connection close
-socket.addEventListener("close", (event) =&gt; {
-  console.log("WebSocket connection closed:", event.code, event.reason);
-});
-</code></pre>
-<p><strong>NOTE</strong>: All further example code will be placed inside the while loop of our callback function</p>
-<p>You can send 5 types of messages from a WebSocket: text, bytes, ping, pong, and a close frame. The first 4 all take a string as their message, with bytes, ping, and pong also being able to take a table of 8-bit unsigned bytes, a close frame takes a <a href="https://websocket.org/reference/websocket-api/#websocket-close-codes">close code</a> and a reason, which is an optional string, both of which should be places inside a lua table.</p>
-<pre><code class="language-lua">-- The first parameter is a type:
-  -- text
-  -- bytes
-  -- ping
-  -- pong
-  -- close
-
-socket:send("text", "hey there, this is a very informative message.")
-
--- There are also specialized functions for each type, which skip a lot of type checking to be more direct and concise:
-socket:send_text("yet another informative message")
-
--- I can send a string of bytes:
-socket:send_bytes("this will be illegible soon")
--- Or a table of them:
-socket:send_ping({0, 88, 14, 67, 45})
-socket:send_pong({17, 38, 80, 0, 85})
-
--- I can also send a close frame, first with the close code, and then the reason:
-socket:send_close({code = 1000, reason = "finally, done with everything"})
--- The reason is optional, so you can also just go with this:
-socket:send_close(1000)
--- If you're in a rush, you can close it uncleanly too, like this:
-socket:send_close()
-socket
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -969,175 +1169,6 @@ server:get("/hydrate", function(request, response)
     -- render the template
     return template_engine:render("index.html", { count = count })
 end)
-</code></pre>
-<div style="break-before: page; page-break-before: always;"></div><style>
-.mdbook-alerts {
-  padding: 8px 16px;
-  margin-bottom: 16px;
-  border-left: 0.25em solid var(--mdbook-alerts-color);
-}
-
-.mdbook-alerts > *:first-child {
-  margin-top: 0;
-}
-
-.mdbook-alerts > *:last-child {
-  margin-bottom: 0;
-}
-
-.mdbook-alerts-title {
-  display: flex;
-  font-weight: 600;
-  align-items: center;
-  line-height: 1;
-  color: var(--mdbook-alerts-color);
-  text-transform: capitalize;
-}
-
-.mdbook-alerts-icon {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  margin-right: 0.2em;
-  background-color: currentColor;
-  -webkit-mask: no-repeat center / 100%;
-  mask: no-repeat center / 100%;
-  -webkit-mask-image: var(--mdbook-alerts-icon);
-  mask-image: var(--mdbook-alerts-icon);
-}
-
-.mdbook-alerts-note {
-  --mdbook-alerts-color: rgb(9, 105, 218);
-  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-tip {
-  --mdbook-alerts-color: rgb(26, 127, 55);
-  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-important {
-  --mdbook-alerts-color: rgb(130, 80, 223);
-  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-warning {
-  --mdbook-alerts-color: rgb(154, 103, 0);
-  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-caution {
-  --mdbook-alerts-color: rgb(207, 34, 46);
-  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
-}
-
-</style>
-<h1 id="importing"><a class="header" href="#importing">Importing</a></h1>
-<p>The Lua's default module and importing system has proven to have some issues with our approaches, namely async. Because of this, the <code>import</code> function have been introduced. The <code>import</code> function, imports the given module relative to the runtime binary, similar to how GOlang and Python imports work. The import order of the modules also affect the imported data, in case the module data is shared across. For example:</p>
-<pre><code class="language-lua">-- module A.lua:
-return { value = 0 }
-
--- module B.lua:
-local a = import("A")
-a.value = 2
-
--- main.lua
-local a = import("A")
-print(a.value) -- value = 0
-local b = import("B")
-print(a.value) -- value = 2
-</code></pre>
-<div style="break-before: page; page-break-before: always;"></div><style>
-.mdbook-alerts {
-  padding: 8px 16px;
-  margin-bottom: 16px;
-  border-left: 0.25em solid var(--mdbook-alerts-color);
-}
-
-.mdbook-alerts > *:first-child {
-  margin-top: 0;
-}
-
-.mdbook-alerts > *:last-child {
-  margin-bottom: 0;
-}
-
-.mdbook-alerts-title {
-  display: flex;
-  font-weight: 600;
-  align-items: center;
-  line-height: 1;
-  color: var(--mdbook-alerts-color);
-  text-transform: capitalize;
-}
-
-.mdbook-alerts-icon {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  margin-right: 0.2em;
-  background-color: currentColor;
-  -webkit-mask: no-repeat center / 100%;
-  mask: no-repeat center / 100%;
-  -webkit-mask-image: var(--mdbook-alerts-icon);
-  mask-image: var(--mdbook-alerts-icon);
-}
-
-.mdbook-alerts-note {
-  --mdbook-alerts-color: rgb(9, 105, 218);
-  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-tip {
-  --mdbook-alerts-color: rgb(26, 127, 55);
-  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-important {
-  --mdbook-alerts-color: rgb(130, 80, 223);
-  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-warning {
-  --mdbook-alerts-color: rgb(154, 103, 0);
-  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-caution {
-  --mdbook-alerts-color: rgb(207, 34, 46);
-  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
-}
-
-</style>
-<h1 id="file-io"><a class="header" href="#file-io">File IO</a></h1>
-<p>Astra provides some File IO functionality to help extend the standard library. Which contains the IO functions. The current list is as follows:</p>
-<ul>
-<li><code>get_metadata</code></li>
-<li><code>read_dir</code></li>
-<li><code>get_current_dir</code></li>
-<li><code>get_script_path</code></li>
-<li><code>get_separator</code></li>
-<li><code>change_dir</code></li>
-<li><code>exists</code></li>
-<li><code>create_dir</code></li>
-<li><code>create_dir_all</code></li>
-<li><code>remove</code></li>
-<li><code>remove_dir</code></li>
-<li><code>remove_dir_all</code></li>
-</ul>
-<p>They are fairly self explanitory and does not require further details. Example usage:</p>
-<pre><code class="language-lua">local io = require("astra.lua.io")
-pprint(Astra.io.get_script_path())
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
@@ -1348,94 +1379,6 @@ assert(is_valid, "Validation failed: " .. tostring(err))
 }
 
 </style>
-<h1 id="crypto"><a class="header" href="#crypto">Crypto</a></h1>
-<p>During development of your web servers, you might need some cryptography functionality such as hashing and encoding. For these cases, Astra provides commonly used cryptographic functions to ease up development.</p>
-<h2 id="hashing"><a class="header" href="#hashing">Hashing</a></h2>
-<p>Currently Astra provides SHA2 and SHA3 (both 256 and 512 variants) hashing functions.</p>
-<pre><code class="language-lua">local crypto = require("astra.lua.crypto")
-
-crypto.hash("sha2_512", "MY INPUT")
-</code></pre>
-<h2 id="base64"><a class="header" href="#base64">Base64</a></h2>
-<p>Astra also provides encoding and decoding of base64 strings, including URL safe variants:</p>
-<pre><code class="language-lua">local input = "MY VERY COOL STRING"
-
-local encoded = crypto.base64.encode(input)
-print(encoded)
-
-local decoded = crypto.base64.decode(encoded)
-print(decoded)
-</code></pre>
-<h2 id="json"><a class="header" href="#json">JSON</a></h2>
-<p>Often you will have to deal with a medium of structured data between your server and the clients. This could be in form of JSON, YAML, e.t.c. Astra includes some utilities to serialize and deserialize these with native Lua structures.</p>
-<p>For JSON, you can import the serializer package (<code>require("astra.lua.serde")</code>), and then use <code>json.encode()</code> and <code>json.decode()</code> methods which converts JSON data from and into Lua tables.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-.mdbook-alerts {
-  padding: 8px 16px;
-  margin-bottom: 16px;
-  border-left: 0.25em solid var(--mdbook-alerts-color);
-}
-
-.mdbook-alerts > *:first-child {
-  margin-top: 0;
-}
-
-.mdbook-alerts > *:last-child {
-  margin-bottom: 0;
-}
-
-.mdbook-alerts-title {
-  display: flex;
-  font-weight: 600;
-  align-items: center;
-  line-height: 1;
-  color: var(--mdbook-alerts-color);
-  text-transform: capitalize;
-}
-
-.mdbook-alerts-icon {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  margin-right: 0.2em;
-  background-color: currentColor;
-  -webkit-mask: no-repeat center / 100%;
-  mask: no-repeat center / 100%;
-  -webkit-mask-image: var(--mdbook-alerts-icon);
-  mask-image: var(--mdbook-alerts-icon);
-}
-
-.mdbook-alerts-note {
-  --mdbook-alerts-color: rgb(9, 105, 218);
-  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-tip {
-  --mdbook-alerts-color: rgb(26, 127, 55);
-  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-important {
-  --mdbook-alerts-color: rgb(130, 80, 223);
-  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-warning {
-  --mdbook-alerts-color: rgb(154, 103, 0);
-  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-caution {
-  --mdbook-alerts-color: rgb(207, 34, 46);
-  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
-}
-
-</style>
 <h1 id="sql-driver"><a class="header" href="#sql-driver">SQL Driver</a></h1>
 <p>If your server requires access to an SQL database such as PostgreSQL and SQLite, Astra provides utilities for basic connection and querying.</p>
 <pre><code class="language-lua">-- connect to your db
@@ -1526,38 +1469,190 @@ pprint(result)
 }
 
 </style>
-<h1 id="async-tasks"><a class="header" href="#async-tasks">Async Tasks</a></h1>
-<p>The <code>spawn_task</code> function spawns a new Async Task internally within Astra. An async task is a non-blocking block of code that runs until completion without affecting the rest of the software's control flow. Internally Astra runs these tasks as <a href="https://tokio.rs/tokio/tutorial/spawning#tasks">Tokio</a> tasks which are asynchronous green threads. There are no return values as they are not awaited until completion nor joined. The tasks accept a callback function that will be run.</p>
-<p>These are useful for when you do not wish to wait for something to be completed, such as making an HTTP request to an API that may or may not fail but you do not want to make sure of either. For example, telemetry or marketing APIs where it can have delays because of volume.</p>
-<p>An example of async task:</p>
-<pre><code class="language-lua">spawn_task(function ()
-    print("RUNNING ON ASYNC GREENTHREAD")
-end)
-
-print("RUNNING ON MAIN SYNC THREAD")
+<h1 id="file-io"><a class="header" href="#file-io">File IO</a></h1>
+<p>Astra provides some File IO functionality to help extend the standard library. Which contains the IO functions. The current list is as follows:</p>
+<ul>
+<li><code>get_metadata</code></li>
+<li><code>read_dir</code></li>
+<li><code>get_current_dir</code></li>
+<li><code>get_script_path</code></li>
+<li><code>get_separator</code></li>
+<li><code>change_dir</code></li>
+<li><code>exists</code></li>
+<li><code>create_dir</code></li>
+<li><code>create_dir_all</code></li>
+<li><code>remove</code></li>
+<li><code>remove_dir</code></li>
+<li><code>remove_dir_all</code></li>
+</ul>
+<p>They are fairly self explanitory and does not require further details. Example usage:</p>
+<pre><code class="language-lua">local io = require("astra.lua.io")
+pprint(Astra.io.get_script_path())
 </code></pre>
-<p>The tasks return a <code>TaskHandler</code> as well which has a single method: <code>abort</code>. This will kill the running task, even if it isn't finished.</p>
-<p>Additionally two more task types are also available:</p>
-<pre><code class="language-lua">-- Runs in a loop with a delay
-local task_id = spawn_interval(function ()
-    print("I AM LOOPING");
-end, 2000)
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
 
--- Runs once after the given delay in milliseconds
-spawn_timeout(function ()
-    print("I AM RUNNING ONLY ONCE.")
-    print("Time to abort the interval above")
-    -- cancel the interval task
-    task_id:abort()
-end, 5000)
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="crypto"><a class="header" href="#crypto">Crypto</a></h1>
+<p>During development of your web servers, you might need some cryptography functionality such as hashing and encoding. For these cases, Astra provides commonly used cryptographic functions to ease up development.</p>
+<h2 id="hashing"><a class="header" href="#hashing">Hashing</a></h2>
+<p>Currently Astra provides SHA2 and SHA3 (both 256 and 512 variants) hashing functions.</p>
+<pre><code class="language-lua">local crypto = require("astra.lua.crypto")
+
+crypto.hash("sha2_512", "MY INPUT")
 </code></pre>
-<div class="mdbook-alerts mdbook-alerts-note">
-<p class="mdbook-alerts-title">
-  <span class="mdbook-alerts-icon"></span>
-  note
-</p>
-<p>The interval code runs immediately and then the delay happens before the loop starts again. In contrast the timeout's delay happen first before the code runs.</p>
-</div>
+<h2 id="base64"><a class="header" href="#base64">Base64</a></h2>
+<p>Astra also provides encoding and decoding of base64 strings, including URL safe variants:</p>
+<pre><code class="language-lua">local input = "MY VERY COOL STRING"
+
+local encoded = crypto.base64.encode(input)
+print(encoded)
+
+local decoded = crypto.base64.decode(encoded)
+print(decoded)
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="serialization--deserialization"><a class="header" href="#serialization--deserialization">Serialization &amp; Deserialization</a></h1>
+<h2 id="json"><a class="header" href="#json">JSON</a></h2>
+<p>Often you will have to deal with a medium of structured data between your server and the clients. This could be in form of JSON, YAML, e.t.c. Astra includes some utilities to serialize and deserialize these with native Lua structures.</p>
+<p>For JSON, you can import the serializer package (<code>require("astra.lua.serde")</code>), and then use <code>json.encode()</code> and <code>json.decode()</code> methods which converts JSON data from and into Lua tables.</p>
+<pre><code class="language-lua">local serde = require("astra.lua.serde")
+
+local value = { key = 1.23 }
+local to_json = serde.json.encode(value) -- Returns JSON string
+local from_json = serde.json.decode(to_json) -- Returns back the original value
+
+assert(from_json, value)
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -1743,306 +1838,6 @@ local dt = datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
 }
 
 </style>
-<h1 id="middleware"><a class="header" href="#middleware">Middleware</a></h1>
-<p>Middleware modifies the way a request is processed.</p>
-<p>Since Lua is a very flexible language, there are lots of ways to implement middlewares.</p>
-<p>We decided to take an advantage of Lua functions being a <a href="https://www.lua.org/pil/6.html">first-class values</a>.</p>
-<div class="mdbook-alerts mdbook-alerts-note">
-<p class="mdbook-alerts-title">
-  <span class="mdbook-alerts-icon"></span>
-  note
-</p>
-<p>If you are familiar with this concept, feel free to go to the <strong>Full example</strong> at the bottom of the page.</p>
-</div>
-<p>Astra has several built-in middlewares. You can modify or extend middlewares directly in <code>.astra/middleware.lua</code> (after running <code>astra export</code>) or in your own files. We are opened to PRs.</p>
-<p>For more details, see the <a href="https://github.com/ArkForgeLabs/Astra/blob/main/src/components/http/middleware.lua">middleware.lua</a> and the <a href="https://github.com/ArkForgeLabs/Astra/tree/main/examples/middleware.lua">middleware_example.lua</a>.</p>
-<h2 id="basic-middleware"><a class="header" href="#basic-middleware">Basic middleware</a></h2>
-<p>The following example shows the most basic middleware that changes the response headers.</p>
-<pre><code class="language-lua">local http = require("astra.lua.http")
-local server = http.server:new()
-
-local function sunny_day(request, response)
-    return "What a great sunny day!"
-end
-
---- `on Leave:`
---- sets `"Content-Type": "text/html"` response header
-local function html(next_handler)
-    return function(request, response, ctx)
-        local result = next_handler(request, response, ctx)
-        response:set_header("Content-Type", "text/html")
-        return result
-    end
-end
-
-server:get("/sunny-day-plain-text", sunny_day)
-server:get("/sunny-day-html", html(sunny_day))
-
-server:run()
-</code></pre>
-<h2 id="context"><a class="header" href="#context">Context</a></h2>
-<p>When we want to pass data through middleware, we can use the third argument and treat it as a context table.</p>
-<pre><code class="language-lua">local datetime = require("astra.lua.datetime")
-local server = http.server:new()
-
----@param ctx { datetime: DateTime }
-local function favourite_day(_request, _response, ctx)
-    local today = string.format(
-        "%d/%d/%d",
-        ctx.datetime:get_day(),
-        ctx.datetime:get_month(),
-        ctx.datetime:get_year()
-    )
-    return "My favourite day is " .. today
-end
-
---- `on Entry:`
---- Inserts `datetime.new()` into `ctx.datetime`
----
---- `Depends on:`
---- `ctx`
-local function insert_datetime(next_handler)
-    return function(request, response, ctx)
-        ctx.datetime = datetime.new()
-        return next_handler(request, response, ctx)
-    end
-end
-
---- `on Entry:`
---- Creates a new `ctx` table and passes it as a third argument into the `next_handler`
-local function ctx(next_handler)
-    return function(request, response)
-        local ctx = {}
-        return next_handler(request, response, ctx)
-    end
-end
-
---- `on Leave:`
---- sets `"Content-Type": "text/html"` response header
-local function html(next_handler)
-    return function(request, response, ctx)
-        local result = next_handler(request, response, ctx)
-        response:set_header("Content-Type", "text/html")
-        return result
-    end
-end
-
-server:get("/favourite-day", ctx(insert_datetime(html(favourite_day))))
-
-server:run()
-</code></pre>
-<h2 id="chaining-middlewares"><a class="header" href="#chaining-middlewares">Chaining middlewares</a></h2>
-<p>To make it less tedious to compose middleware, we introduced the <code>chain</code> function, which combines all provided middleware into a single middleware.</p>
-<div class="mdbook-alerts mdbook-alerts-note">
-<p class="mdbook-alerts-title">
-  <span class="mdbook-alerts-icon"></span>
-  note
-</p>
-<p>Read more about why we can drop parenthesis while calling <code>chain</code> function here: <a href="https://leafo.net/guides/dsl-in-lua.html">Writing a DSL in Lua</a></p>
-</div>
-<pre><code class="language-lua">local chain = http.middleware.chain
-
--- This will behave exactly the same as ctx(insert_datetime(html(favourite_day)))
-server:get("/favourite-day", chain {ctx, insert_datetime, html} (favourite_day) )
-
--- We can create a common middlewares and reuse them
-local composed_middleware = chain {ctx, insert_datetime, html}
-server:get("/favourite-day-again", composed_middleware(favourite_day))
-
-server:run()
-</code></pre>
-<h2 id="complex-middleware"><a class="header" href="#complex-middleware">Complex middleware</a></h2>
-<p>We can use Lua <a href="https://www.lua.org/pil/6.1.html">closures</a> to create more complex middlewares.</p>
-<p>This example shows how to create a file logger:</p>
-<pre><code class="language-lua">--- `on Entry:`
---- Logs request method and uri into the file
----@param file_handler file* A file handler opened with an append mode `io.open("filepath", "a")`
----@param flush_interval number? The number of log entries after which the file handler will be flushed
-local function file_logger(file_handler, flush_interval)
-    local flush_interval = flush_interval or 1
-    local flush_countdown = flush_interval
-    return function(next_handler)
-        return function(request, response, ctx)
-            local str = string.format("[New Request %s] %s %s\n", os.date(), request:method(), request:uri())
-            file_handler:write(str)
-
-            flush_countdown = flush_countdown - 1
-            if flush_countdown == 0 then
-                file_handler:flush()
-                flush_countdown = flush_interval
-            end
-            return next_handler(request, response, ctx)
-        end
-    end
-end
-local file_handler, err = io.open("logs.txt", "a")
-if not file_handler then error(err) end
-local logger = file_logger(file_handler)
-
-local common = chain { ctx, logger, html }
-
-server:get("/sunny-day", common(sunny_day))
-server:get("/normal-day", common(normal_day))
-server:get("/favourite-day", chain { common, insert_datetime } (favourite_day))
-
-server:run()
-</code></pre>
-<p>The <code>logger</code> we got from the <code>file_logger</code> is gonna be used in all routes we pass it as a middleware.</p>
-<h2 id="full-example"><a class="header" href="#full-example">Full example</a></h2>
-<pre><code class="language-lua">local http = require("astra.lua.http")
-local datetime = require("astra.lua.datetime")
-local server = http.server:new()
-local chain = http.middleware.chain
-
-local function sunny_day(_request, _response)
-    return "What a great sunny day!"
-end
-
-local function normal_day(_request, _response)
-    return "It's a normal day... I guess..."
-end
-
----@param ctx { datetime: DateTime }
-local function favourite_day(_request, _response, ctx)
-    local today = string.format(
-        "%d/%d/%d",
-        ctx.datetime:get_day(),
-        ctx.datetime:get_month(),
-        ctx.datetime:get_year()
-    )
-    return "My favourite day is " .. today
-end
-
---- `on Entry:`
---- Creates a new `ctx` table and passes it as a third argument into the `next_handler`
-local function ctx(next_handler)
-    return function(request, response)
-        local ctx = {}
-        return next_handler(request, response, ctx)
-    end
-end
-
---- `on Entry:`
---- Inserts `datetime.new()` into `ctx.datetime`
----
---- `Depends on:`
---- `ctx`
-local function insert_datetime(next_handler)
-    return function(request, response, ctx)
-        ctx.datetime = datetime.new()
-        return next_handler(request, response, ctx)
-    end
-end
-
---- `on Leave:`
---- sets `"Content-Type": "text/html"` response header
-local function html(next_handler)
-    return function(request, response, ctx)
-        local result = next_handler(request, response, ctx)
-        response:set_header("Content-Type", "text/html")
-        return result
-    end
-end
-
---- `on Entry:`
---- Logs request method and uri into the file
----@param file_handler file* A file handler opened with an append mode `io.open("filepath", "a")`
----@param flush_interval number? The number of log entries after which the file handler will be flushed
-local function file_logger(file_handler, flush_interval)
-    local flush_interval = flush_interval or 1
-    local flush_countdown = flush_interval
-    return function(next_handler)
-        return function(request, response, ctx)
-            local str = string.format("[New Request %s] %s %s\n", os.date(), request:method(), request:uri())
-            file_handler:write(str)
-
-            flush_countdown = flush_countdown - 1
-            if flush_countdown == 0 then
-                file_handler:flush()
-                flush_countdown = flush_interval
-            end
-            return next_handler(request, response, ctx)
-        end
-    end
-end
-local file_handler, err = io.open("logs.txt", "a")
-if not file_handler then error(err) end
-local logger = file_logger(file_handler)
-
-server:get("/sunny-day", logger(html(sunny_day)))
-server:get("/normal-day", chain { logger, html } (normal_day))
-server:get("/favourite-day", chain { ctx, logger, insert_datetime, html } (favourite_day))
-
-server:run()
-
-</code></pre>
-<div style="break-before: page; page-break-before: always;"></div><style>
-.mdbook-alerts {
-  padding: 8px 16px;
-  margin-bottom: 16px;
-  border-left: 0.25em solid var(--mdbook-alerts-color);
-}
-
-.mdbook-alerts > *:first-child {
-  margin-top: 0;
-}
-
-.mdbook-alerts > *:last-child {
-  margin-bottom: 0;
-}
-
-.mdbook-alerts-title {
-  display: flex;
-  font-weight: 600;
-  align-items: center;
-  line-height: 1;
-  color: var(--mdbook-alerts-color);
-  text-transform: capitalize;
-}
-
-.mdbook-alerts-icon {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  margin-right: 0.2em;
-  background-color: currentColor;
-  -webkit-mask: no-repeat center / 100%;
-  mask: no-repeat center / 100%;
-  -webkit-mask-image: var(--mdbook-alerts-icon);
-  mask-image: var(--mdbook-alerts-icon);
-}
-
-.mdbook-alerts-note {
-  --mdbook-alerts-color: rgb(9, 105, 218);
-  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-tip {
-  --mdbook-alerts-color: rgb(26, 127, 55);
-  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-important {
-  --mdbook-alerts-color: rgb(130, 80, 223);
-  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-warning {
-  --mdbook-alerts-color: rgb(154, 103, 0);
-  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-caution {
-  --mdbook-alerts-color: rgb(207, 34, 46);
-  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
-}
-
-</style>
 <h1 id="utilities"><a class="header" href="#utilities">Utilities</a></h1>
 <p>These are some of the smaller utilities and functionality that are usually globally available regardless of the <code>Astra</code> namespace:</p>
 <h2 id="pretty-print"><a class="header" href="#pretty-print">Pretty Print</a></h2>
@@ -2089,6 +1884,38 @@ pprint(new_string)
     pprint("EXITING!!!")
 end
 </code></pre>
+<h2 id="async-tasks"><a class="header" href="#async-tasks">Async Tasks</a></h2>
+<p>The <code>spawn_task</code> function spawns a new Async Task internally within Astra. An async task is a non-blocking block of code that runs until completion without affecting the rest of the software's control flow. Internally Astra runs these tasks as <a href="https://tokio.rs/tokio/tutorial/spawning#tasks">Tokio</a> tasks which are asynchronous green threads. There are no return values as they are not awaited until completion nor joined. The tasks accept a callback function that will be run.</p>
+<p>These are useful for when you do not wish to wait for something to be completed, such as making an HTTP request to an API that may or may not fail but you do not want to make sure of either. For example, telemetry or marketing APIs where it can have delays because of volume.</p>
+<p>An example of async task:</p>
+<pre><code class="language-lua">spawn_task(function ()
+    print("RUNNING ON ASYNC GREENTHREAD")
+end)
+
+print("RUNNING ON MAIN SYNC THREAD")
+</code></pre>
+<p>The tasks return a <code>TaskHandler</code> as well which has a single method: <code>abort</code>. This will kill the running task, even if it isn't finished.</p>
+<p>Additionally two more task types are also available:</p>
+<pre><code class="language-lua">-- Runs in a loop with a delay
+local task_id = spawn_interval(function ()
+    print("I AM LOOPING");
+end, 2000)
+
+-- Runs once after the given delay in milliseconds
+spawn_timeout(function ()
+    print("I AM RUNNING ONLY ONCE.")
+    print("Time to abort the interval above")
+    -- cancel the interval task
+    task_id:abort()
+end, 5000)
+</code></pre>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>The interval code runs immediately and then the delay happens before the loop starts again. In contrast the timeout's delay happen first before the code runs.</p>
+</div>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
@@ -2156,7 +1983,8 @@ end
 }
 
 </style>
-<h1 id="observer-pattern"><a class="header" href="#observer-pattern">Observer Pattern</a></h1>
+<h1 id="in-memory-stores"><a class="header" href="#in-memory-stores">In-Memory Stores</a></h1>
+<h2 id="observer-pattern"><a class="header" href="#observer-pattern">Observer Pattern</a></h2>
 <p>Astra provides you with an observable object which can have functions subcribe and unsubscribe to it, to which you can publish a desired data payload.</p>
 <pre><code class="language-lua">local stores = require("astra.lua.stores")
 
@@ -2274,74 +2102,7 @@ print("")
 counter:unsubscribe(simply_notify)
 counter:publish(add_to_counter(4))
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><style>
-.mdbook-alerts {
-  padding: 8px 16px;
-  margin-bottom: 16px;
-  border-left: 0.25em solid var(--mdbook-alerts-color);
-}
-
-.mdbook-alerts > *:first-child {
-  margin-top: 0;
-}
-
-.mdbook-alerts > *:last-child {
-  margin-bottom: 0;
-}
-
-.mdbook-alerts-title {
-  display: flex;
-  font-weight: 600;
-  align-items: center;
-  line-height: 1;
-  color: var(--mdbook-alerts-color);
-  text-transform: capitalize;
-}
-
-.mdbook-alerts-icon {
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  margin-right: 0.2em;
-  background-color: currentColor;
-  -webkit-mask: no-repeat center / 100%;
-  mask: no-repeat center / 100%;
-  -webkit-mask-image: var(--mdbook-alerts-icon);
-  mask-image: var(--mdbook-alerts-icon);
-}
-
-.mdbook-alerts-note {
-  --mdbook-alerts-color: rgb(9, 105, 218);
-  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-tip {
-  --mdbook-alerts-color: rgb(26, 127, 55);
-  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-important {
-  --mdbook-alerts-color: rgb(130, 80, 223);
-  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-warning {
-  --mdbook-alerts-color: rgb(154, 103, 0);
-  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
-}
-
-.mdbook-alerts-caution {
-  --mdbook-alerts-color: rgb(207, 34, 46);
-  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
-  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
-}
-
-</style>
-<h1 id="publishersubscriber-pattern"><a class="header" href="#publishersubscriber-pattern">Publisher/Subscriber Pattern</a></h1>
+<h2 id="publishersubscriber-pattern"><a class="header" href="#publishersubscriber-pattern">Publisher/Subscriber Pattern</a></h2>
 <p>The Pub/Sub pattern in Astra is similar to the <a href="std/./observer_pattern.html">observer pattern</a> in terms of core functionality, but it differs in terms of publisher &amp; subscriber management. A pubsub store is a global store. It can have multiple functions subcribed to an observable object, and multiple of these observable objects organized into topics, which are simply string keywords.</p>
 <p>You must remember that the rules of operating on pubsub stores is the same as that for the observer pattern, but pubsub stores are much more powerful and flexible.</p>
 <pre><code class="language-lua">local stores = require("astra.lua.stores")
@@ -2636,6 +2397,7 @@ impl crate::components::LuaComponents for MyNewExtension {
         <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
+        <script src="theme/pagetoc.js"></script>
 
         <script>
         window.addEventListener('load', function() {

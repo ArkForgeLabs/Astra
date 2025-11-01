@@ -33,13 +33,8 @@ local request_client = http.request("https://example.com")
   :set_body("THE CONTENT OF THE BODY")
   :set_json({ key = "value" })
   :set_file("/path/to/file")
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
   -- You can also execute as an async task
   :execute_task(function (result) end)
-=======
->>>>>>> Stashed changes
 ```
 
 You can also instead of chaining functions, just pass a table containing these values as such:
@@ -48,18 +43,13 @@ You can also instead of chaining functions, just pass a table containing these v
 local request_client = http.request({
   url = "https://example.com",
   method = "POST",
-<<<<<<< Updated upstream
   headers = {},
-=======
->>>>>>> Stashed changes
   body = {
     keys = "body accepts string, table (json), or even byte array"
   }
 })
 ```
 
-<<<<<<< Updated upstream
-=======
 For more complex requests, such as API calls with authentication and JSON payloads:
 
 ```lua
@@ -87,8 +77,8 @@ http.request({
 end)
 ```
 
->>>>>>> Stashed changes
-finally, you can execute the request to obtain the result:
+> > > > > > > Stashed changes
+> > > > > > > finally, you can execute the request to obtain the result:
 
 ```lua
 -- returns the result
@@ -99,8 +89,4 @@ request_client:execute_task( function(response) end )
 
 -- or execute in streaming manner and get response chunks
 request_client:execute_streaming( function(response) end )
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 ```

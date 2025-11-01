@@ -77,8 +77,7 @@ impl UserData for RequestLua {
             Ok(params_table)
         });
         methods.add_async_method("multipart", |_, this, ()| async move {
-            // TODO remove the cloning usage
-            match this.bytes.clone() {
+            match &this.bytes {
                 Some(bytes) => {
                     let state = State::<i32>::default();
                     let multipart_request =

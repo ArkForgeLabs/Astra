@@ -99,9 +99,9 @@ pub async fn route(
     }
 
     match route_inner(lua, details, cookie_jar.clone(), request).await {
-        Ok(response) => Ok((response.0, response.1)),
+        Ok(response) => Ok(response),
         Err(e) => {
-            eprintln!("Error executing the route: {e}");
+            tracing::error!("Error executing the route: {e}");
 
             Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
         }

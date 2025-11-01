@@ -29,6 +29,7 @@
         <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/pagetoc.css">
 
 
         <!-- Provide site root to javascript -->
@@ -272,16 +273,48 @@ pprint(new_string)
     pprint("EXITING!!!")
 end
 </code></pre>
+<h2 id="async-tasks"><a class="header" href="#async-tasks">Async Tasks</a></h2>
+<p>The <code>spawn_task</code> function spawns a new Async Task internally within Astra. An async task is a non-blocking block of code that runs until completion without affecting the rest of the software's control flow. Internally Astra runs these tasks as <a href="https://tokio.rs/tokio/tutorial/spawning#tasks">Tokio</a> tasks which are asynchronous green threads. There are no return values as they are not awaited until completion nor joined. The tasks accept a callback function that will be run.</p>
+<p>These are useful for when you do not wish to wait for something to be completed, such as making an HTTP request to an API that may or may not fail but you do not want to make sure of either. For example, telemetry or marketing APIs where it can have delays because of volume.</p>
+<p>An example of async task:</p>
+<pre><code class="language-lua">spawn_task(function ()
+    print("RUNNING ON ASYNC GREENTHREAD")
+end)
+
+print("RUNNING ON MAIN SYNC THREAD")
+</code></pre>
+<p>The tasks return a <code>TaskHandler</code> as well which has a single method: <code>abort</code>. This will kill the running task, even if it isn't finished.</p>
+<p>Additionally two more task types are also available:</p>
+<pre><code class="language-lua">-- Runs in a loop with a delay
+local task_id = spawn_interval(function ()
+    print("I AM LOOPING");
+end, 2000)
+
+-- Runs once after the given delay in milliseconds
+spawn_timeout(function ()
+    print("I AM RUNNING ONLY ONCE.")
+    print("Time to abort the interval above")
+    -- cancel the interval task
+    task_id:abort()
+end, 5000)
+</code></pre>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>The interval code runs immediately and then the delay happens before the loop starts again. In contrast the timeout's delay happen first before the code runs.</p>
+</div>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../std/middleware.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../std/datetime.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../std/observer_pattern.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../std/mem_stores.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -291,11 +324,11 @@ end
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../std/middleware.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../std/datetime.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../std/observer_pattern.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../std/mem_stores.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -319,6 +352,7 @@ end
         <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
+        <script src="../theme/pagetoc.js"></script>
 
 
     </div>

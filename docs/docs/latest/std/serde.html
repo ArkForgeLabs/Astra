@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Pub/Sub Pattern - ArkForge Astra</title>
+        <title>Serialization &amp; Deserialization - ArkForge Astra</title>
 
 
         <!-- Custom HTML head -->
@@ -29,6 +29,7 @@
         <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../theme/pagetoc.css">
 
 
         <!-- Provide site root to javascript -->
@@ -130,7 +131,7 @@
                         <a href="https://github.com/ArkForgeLabs/Astra" title="Git repository" aria-label="Git repository">
                             <i id="git-repository-button" class="fa fa-github"></i>
                         </a>
-                        <a href="https://github.com/ArkForgeLabs/Astra/edit/main/src/docs/latest/./src/std/pubsub_pattern.md" title="Suggest an edit" aria-label="Suggest an edit">
+                        <a href="https://github.com/ArkForgeLabs/Astra/edit/main/src/docs/latest/./src/std/serde.md" title="Suggest an edit" aria-label="Suggest an edit">
                             <i id="git-edit-button" class="fa fa-edit"></i>
                         </a>
 
@@ -226,63 +227,28 @@
 }
 
 </style>
-<h1 id="publishersubscriber-pattern"><a class="header" href="#publishersubscriber-pattern">Publisher/Subscriber Pattern</a></h1>
-<p>The Pub/Sub pattern in Astra is similar to the <a href="./observer_pattern.html">observer pattern</a> in terms of core functionality, but it differs in terms of publisher &amp; subscriber management. A pubsub store is a global store. It can have multiple functions subcribed to an observable object, and multiple of these observable objects organized into topics, which are simply string keywords.</p>
-<p>You must remember that the rules of operating on pubsub stores is the same as that for the observer pattern, but pubsub stores are much more powerful and flexible.</p>
-<pre><code class="language-lua">local stores = require("astra.lua.stores")
+<h1 id="serialization--deserialization"><a class="header" href="#serialization--deserialization">Serialization &amp; Deserialization</a></h1>
+<h2 id="json"><a class="header" href="#json">JSON</a></h2>
+<p>Often you will have to deal with a medium of structured data between your server and the clients. This could be in form of JSON, YAML, e.t.c. Astra includes some utilities to serialize and deserialize these with native Lua structures.</p>
+<p>For JSON, you can import the serializer package (<code>require("astra.lua.serde")</code>), and then use <code>json.encode()</code> and <code>json.decode()</code> methods which converts JSON data from and into Lua tables.</p>
+<pre><code class="language-lua">local serde = require("astra.lua.serde")
 
--- Let's create a few tables as examples for observable objects
-local user1 = {
- name = "John Doe",
- email = "johndoe@example.com",
-}
+local value = { key = 1.23 }
+local to_json = serde.json.encode(value) -- Returns JSON string
+local from_json = serde.json.decode(to_json) -- Returns back the original value
 
-local user2 = {
- name = "Jane Doe",
- email = "janedoe@example.com",
-}
-
--- We're going to subscribe functions to both user objects
--- The first parameter is the topic, for which we will use "user:update"
--- Then we pass in the observable object we want to subscribe to
--- Finally we pass in the function that'll subscribe to the aforementioned observable
-stores.pubsub.subscribe("user:update", user1, function(user)
- print("User1 updated:", user.name, user.email)
-end)
-
-stores.pubsub.subscribe("user:update", user2, function(user)
- print("User2 updated:", user.name, user.email)
-end)
-
--- Publish updates to the "user_update" topic
-user1.name = "John Doe Jr."
-stores.pubsub.publish("user:update", user1)
-
--- While unsubscribing a function, if the function isn't stored as a variable, you must match it exactly
--- The parameters required while unsubscribing are exactly the same as while subscribing.
-stores.pubsub.unsubscribe("user:update", user1, function(user)
- print("User1 updated:", user.name, user.email)
-end)
-
-user2.email = "jane.doe@company.com"
-stores.pubsub.publish("user:update", user2)
+assert(from_json, value)
 </code></pre>
-<p>You should get an output like this:</p>
-<pre><code class="language-txt">User1 updated:  John Doe Jr.    johndoe@example.com
-User2 updated:  Jane Doe        janedoe@example.com
-User2 updated:  Jane Doe        jane.doe@company.com
-</code></pre>
-<p>Now that you're familiar with how the pubsub system works, keep in mind that if you wish to add other observables under different topics, it's all going to work exactly the same, but with an added sense of dimension.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../std/observer_pattern.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../std/crypto.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../internals/structure.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../std/datetime.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -292,11 +258,11 @@ User2 updated:  Jane Doe        jane.doe@company.com
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../std/observer_pattern.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../std/crypto.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../internals/structure.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../std/datetime.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -320,6 +286,7 @@ User2 updated:  Jane Doe        jane.doe@company.com
         <script src="../book.js"></script>
 
         <!-- Custom JS scripts -->
+        <script src="../theme/pagetoc.js"></script>
 
 
     </div>
