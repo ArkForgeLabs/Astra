@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.34.0](https://github.com/ArkForgeLabs/Astra/compare/v0.33.1..v0.34.0) - 2025-11-02
+
+### Documentation
+
+- cleaned up and improved online documentation - ([7f7d09a](https://github.com/ArkForgeLabs/Astra/commit/7f7d09abbee096b9be13bfe4e5fa1ad4cc1a566f))
+
+### Features
+
+- IP Address access now available on servers - ([31b0177](https://github.com/ArkForgeLabs/Astra/commit/31b0177a6d032e664aa0bb2573c2878b1dd6f032))
+- imported module caches can now be invalidated and caches are now faster and improved - ([88f4609](https://github.com/ArkForgeLabs/Astra/commit/88f4609d2901831b1323a386c7d2534a90d843ad))
+
+### Refactoring
+
+- renamed serializer to serde - ([2d49bb8](https://github.com/ArkForgeLabs/Astra/commit/2d49bb81a9db0ae2e4f4a26faad67a65d2556936))
+
 ## [0.33.1](https://github.com/ArkForgeLabs/Astra/compare/v0.33.0..v0.33.1) - 2025-10-31
 
 ### Bug Fixes
