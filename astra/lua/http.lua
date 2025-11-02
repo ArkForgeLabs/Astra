@@ -8,7 +8,7 @@ local http = {}
 
 --- Represents an HTTP client response.
 ---@class HTTPClientResponse
----@field status_code fun(): table Gets the response HTTP Status code
+---@field status_code fun(): number Gets the response HTTP Status code
 ---@field body fun(): HTTPBody Gets the response HTTP Body which further can be parsed
 ---@field headers fun(): table|nil Returns the entire headers list from the HTTP response
 ---@field remote_address fun(): string|nil Gets the remote address of the HTTP response server
@@ -26,18 +26,18 @@ local http = {}
 
 --- Represents an HTTP client request.
 ---@class HTTPClientRequest
----@field set_method fun(http_request: HTTPClientRequest, method: string): HTTPClientRequest
----@field set_header fun(http_request: HTTPClientRequest, key: string, value: string): HTTPClientRequest
----@field set_headers fun(http_request: HTTPClientRequest, headers: table): HTTPClientRequest
----@field set_form fun(http_request: HTTPClientRequest, key: string, value: string): HTTPClientRequest
----@field set_forms fun(http_request: HTTPClientRequest, headers: table): HTTPClientRequest
----@field set_body fun(http_request: HTTPClientRequest, body: string): HTTPClientRequest
----@field set_bytes fun(http_request: HTTPClientRequest, body: integer[]): HTTPClientRequest
----@field set_json fun(http_request: HTTPClientRequest, json: table): HTTPClientRequest
----@field set_file fun(http_request: HTTPClientRequest, file_path: string): HTTPClientRequest Sets the for-upload file path
----@field execute fun(): HTTPClientResponse Executes the request and returns the response
----@field execute_task fun(http_request: HTTPClientRequest, callback: http_client_callback) Executes the request as an async task
----@field execute_streaming fun(http_request: HTTPClientRequest, callback: http_client_callback) Executes the request in a streaming manner
+---@field set_method fun(self: HTTPClientRequest, method: string): HTTPClientRequest
+---@field set_header fun(self: HTTPClientRequest, key: string, value: string): HTTPClientRequest
+---@field set_headers fun(self: HTTPClientRequest, headers: table): HTTPClientRequest
+---@field set_form fun(self: HTTPClientRequest, key: string, value: string): HTTPClientRequest
+---@field set_forms fun(self: HTTPClientRequest, headers: table): HTTPClientRequest
+---@field set_body fun(self: HTTPClientRequest, body: string): HTTPClientRequest
+---@field set_bytes fun(self: HTTPClientRequest, body: integer[]): HTTPClientRequest
+---@field set_json fun(self: HTTPClientRequest, json: table): HTTPClientRequest
+---@field set_file fun(self: HTTPClientRequest, file_path: string): HTTPClientRequest Sets the for-upload file path
+---@field execute fun(self: HTTPClientRequest): HTTPClientResponse Executes the request and returns the response
+---@field execute_task fun(self: HTTPClientRequest, callback: http_client_callback) Executes the request as an async task
+---@field execute_streaming fun(self: HTTPClientRequest, callback: http_client_callback) Executes the request in a streaming manner
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias callback fun(request: HTTPServerRequest, response: HTTPServerResponse): any
@@ -53,6 +53,15 @@ local http = {}
 ---@field static_file string?
 ---@field config HTTPRouteConfiguration?
 
+---@class IPAddress
+---@field address string
+---Converts this address to an `IpAddress_V4` if it is an IPv4-mapped IPv6 address, otherwise returns self as-is.
+---@field to_canonical IPAddress
+---@field is_ipv4 boolean
+---@field is_ipv6 boolean
+---@field is_loopback boolean
+---@field is_multicast boolean
+
 ---@class HTTPMultipartField
 ---@field name fun(): string
 ---@field file_name fun(): string|nil
@@ -63,47 +72,48 @@ local http = {}
 
 ---@class HTTPMultipart
 ---@field fields fun(): table Returns all multipart fields as an array
----@field get_field fun(name: string): HTTPMultipartField|nil Returns a specific field by name
+---@field get_field fun(name: string): HTTPMultipartField Returns a specific field by name
 ---@field file_name fun(): string|nil Returns the first filename found in the multipart data
 ---@field save_file fun(multipart: HTTPMultipart, file_path: string | nil): string | nil Saves the multipart into disk
 
 ---@class HTTPServerRequest
----@field method fun(request: HTTPServerRequest): string Returns the HTTP method (e.g., "GET", "POST").
----@field uri fun(request: HTTPServerRequest): string
----@field queries fun(request: HTTPServerRequest): table
----@field params fun(request: HTTPServerRequest): table
----@field headers fun(request: HTTPServerRequest): table
----@field body fun(request: HTTPServerRequest): HTTPBody|nil Returns the body of the request, which can be a table or a string.
----@field multipart fun(request: HTTPServerRequest): HTTPMultipart|nil
----@field get_cookie fun(request: HTTPServerRequest, name: string): Cookie
----@field new_cookie fun(request: HTTPServerRequest, name: string, value: string): Cookie
+---@field method fun(self: HTTPServerRequest): string Returns the HTTP method (e.g., "GET", "POST").
+---@field uri fun(self: HTTPServerRequest): string
+---@field queries fun(self: HTTPServerRequest): table
+---@field params fun(self: HTTPServerRequest): table
+---@field headers fun(self: HTTPServerRequest): table
+---@field body fun(self: HTTPServerRequest): HTTPBody Returns the body of the request, which can be a table or a string.
+---@field ip_address fun(self: HTTPServerRequest): IPAddress
+---@field multipart fun(self: HTTPServerRequest): HTTPMultipart
+---@field get_cookie fun(self: HTTPServerRequest, name: string): Cookie
+---@field new_cookie fun(self: HTTPServerRequest, name: string, value: string): Cookie
 
 ---@class HTTPServerResponse
 ---Sets the HTTP status code of the response
----@field set_status_code fun(response: HTTPServerResponse, new_status_code: number)
----@field set_header fun(response: HTTPServerResponse, key: string, value: string)
+---@field set_status_code fun(self: HTTPServerResponse, new_status_code: number)
+---@field set_header fun(self: HTTPServerResponse, key: string, value: string)
 ---Returns the entire headers list that so far has been set for the response
----@field get_headers fun(response: HTTPServerResponse): table|nil
----@field remove_header fun(response: HTTPServerResponse, key: string)
----@field set_cookie fun(response: HTTPServerResponse, cookie: Cookie)
----@field remove_cookie fun(response: HTTPServerResponse, cookie: Cookie)
+---@field get_headers fun(self: HTTPServerResponse): table|nil
+---@field remove_header fun(self: HTTPServerResponse, key: string)
+---@field set_cookie fun(self: HTTPServerResponse, cookie: Cookie)
+---@field remove_cookie fun(self: HTTPServerResponse, cookie: Cookie)
 
 ---@class Cookie
----@field set_name fun(cookie: Cookie, name: string)
----@field set_value fun(cookie: Cookie, value: string)
----@field set_domain fun(cookie: Cookie, domain: string)
----@field set_path fun(cookie: Cookie, path: string)
----@field set_expiration fun(cookie: Cookie, expiration: number)
----@field set_http_only fun(cookie: Cookie, http_only: boolean)
----@field set_max_age fun(cookie: Cookie, max_age: number)
----@field set_permanent fun(cookie: Cookie)
----@field get_name fun(cookie: Cookie): string?
----@field get_value fun(cookie: Cookie): string?
----@field get_domain fun(cookie: Cookie): string?
----@field get_path fun(cookie: Cookie): string?
----@field get_expiration fun(cookie: Cookie): number?
----@field get_http_only fun(cookie: Cookie): boolean?
----@field get_max_age fun(cookie: Cookie): number?
+---@field set_name fun(self: Cookie, name: string)
+---@field set_value fun(self: Cookie, value: string)
+---@field set_domain fun(self: Cookie, domain: string)
+---@field set_path fun(self: Cookie, path: string)
+---@field set_expiration fun(self: Cookie, expiration: number)
+---@field set_http_only fun(self: Cookie, http_only: boolean)
+---@field set_max_age fun(self: Cookie, max_age: number)
+---@field set_permanent fun(self: Cookie)
+---@field get_name fun(self: Cookie): string?
+---@field get_value fun(self: Cookie): string?
+---@field get_domain fun(self: Cookie): string?
+---@field get_path fun(self: Cookie): string?
+---@field get_expiration fun(self: Cookie): number?
+---@field get_http_only fun(self: Cookie): boolean?
+---@field get_max_age fun(self: Cookie): number?
 
 ---@class CloseFrame
 ---@field code integer

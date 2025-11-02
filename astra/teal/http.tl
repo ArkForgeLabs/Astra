@@ -51,6 +51,14 @@ global interface HTTPRoute
     config: HTTPRouteConfiguration | nil
 end
 
+global interface IPAddress
+    address: string
+    is_ipv4: boolean
+    is_ipv6: boolean
+    is_loopback: boolean
+    is_multicast: boolean
+end
+
 global interface HTTPMultipartField is userdata
     name: function(self: HTTPMultipartField): string
     file_name: function(self: HTTPMultipartField): string | nil
@@ -62,7 +70,7 @@ end
 
 global interface HTTPMultipart is userdata
     fields: function(self: HTTPMultipart): {HTTPMultipartField}
-    get_field: function(self: HTTPMultipart, name: string): HTTPMultipartField | nil
+    get_field: function(self: HTTPMultipart, name: string): HTTPMultipartField
     file_name: function(self: HTTPMultipart): string | nil
     save_file: function(self: HTTPMultipart, file_path?: string)
 end
@@ -74,6 +82,7 @@ global interface HTTPServerRequest is userdata
     params: function(self: HTTPServerRequest): table
     headers: function(self: HTTPServerRequest): table
     body: function(self: HTTPServerRequest): HTTPBody
+    ip_address: function(self: HTTPServerRequest): IPAddress
     multipart: function(self: HTTPServerRequest): HTTPMultipart
     get_cookie: function(self: HTTPServerRequest, name: string): Cookie
     new_cookie: function(self: HTTPServerRequest, name: string, value: string): Cookie

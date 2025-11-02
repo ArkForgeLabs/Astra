@@ -2,7 +2,7 @@ use super::cookie::LuaCookie;
 use crate::components::BodyLua;
 use axum::{
     body::Body,
-    extract::{FromRequest, FromRequestParts, Multipart, RawPathParams, State},
+    extract::{ConnectInfo, FromRequest, FromRequestParts, Multipart, RawPathParams, State},
     http::{Request, request::Parts},
 };
 use axum_extra::extract::{CookieJar, cookie::Cookie};
@@ -76,6 +76,16 @@ impl UserData for RequestLua {
 
             Ok(params_table)
         });
+        methods.add_async_method("ip_address", |_, this, ()| async move {
+            let connect_info = ConnectInfo::<std::net::SocketAddr>::from_request_parts(
+                &mut this.parts.clone(),
+                &(),
+            )
+            .await
+            .map_err(|e| e.into_lua_err())?;
+
+            Ok(LuaSocketAddr(connect_info.ip()))
+        });
         methods.add_async_method("multipart", |_, this, ()| async move {
             match &this.bytes {
                 Some(bytes) => {
@@ -114,6 +124,21 @@ impl UserData for RequestLua {
             Some(bytes) => Ok(BodyLua::new(bytes)),
             None => Ok(BodyLua::new(bytes::Bytes::new())),
         });
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct LuaSocketAddr(std::net::IpAddr);
+impl UserData for LuaSocketAddr {
+    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
+        methods.add_method("address", |_, this, ()| Ok(this.0.to_string()));
+        methods.add_method("to_canonical", |_, this, ()| {
+            Ok(LuaSocketAddr(this.0.to_canonical()))
+        });
+        methods.add_method("is_ipv4", |_, this, ()| Ok(this.0.is_ipv4()));
+        methods.add_method("is_ipv6", |_, this, ()| Ok(this.0.is_ipv6()));
+        methods.add_method("is_loopback", |_, this, ()| Ok(this.0.is_loopback()));
+        methods.add_method("is_multicast", |_, this, ()| Ok(this.0.is_multicast()));
     }
 }
 

@@ -46,7 +46,8 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
             #[allow(clippy::expect_used)]
             axum::serve(
                 listener,
-                crate::components::http::server::routes::load_routes(server),
+                crate::components::http::server::routes::load_routes(server)
+                    .into_make_service_with_connect_info::<std::net::SocketAddr>(),
             )
             .with_graceful_shutdown(async move {
                 let sigint = tokio::signal::ctrl_c();
