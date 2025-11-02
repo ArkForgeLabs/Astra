@@ -6,6 +6,11 @@ global function pprint(value: any)
 	astra_internal__pretty_print(value)
 end
 
+local type astra_internal__invalidate_cache = function(path: string)
+global function invalidate_cache(path: string)
+	astra_internal__invalidate_cache(path)
+end
+
 ---Represents an async task
 global interface TaskHandler is userdata
     abort: function(self: TaskHandler)

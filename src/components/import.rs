@@ -61,13 +61,9 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.create_async_function(|lua, path: String| async move {
             let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
 
-            let mut cache = lua
-                .globals()
-                .get::<std::collections::HashMap<String, mlua::RegistryKey>>(key_id.as_str())
-                .unwrap_or_default();
-
-            if let Some(key) = cache.get(&path) {
-                lua.registry_value::<mlua::Value>(key)
+            if let Ok(cache) = lua.globals().get::<Option<mlua::RegistryKey>>(key_id.as_str()) 
+                && let Some(key) = cache {
+                lua.registry_value::<mlua::Value>(&key)
             } else {
                 let current_script_path: String =
                     lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
@@ -82,7 +78,6 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                 {
                     let file_path = file_path
                         .to_string_lossy()
-                        .to_string()
                         .replace("./", "")
                         .replace(".\\", "");
 
@@ -98,8 +93,7 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                     };
 
                     let key = lua.create_registry_value(&result)?;
-                    cache.insert(path, key);
-                    lua.globals().set(key_id, cache)?;
+                    lua.globals().set(key_id, Some(key))?;
                     lua.globals()
                         .set("ASTRA_INTERNAL__CURRENT_SCRIPT", current_script_path)?;
 

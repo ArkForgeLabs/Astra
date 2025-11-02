@@ -1,11 +1,9 @@
-use mlua::{ExternalError, LuaSerdeExt, UserData};
+use mlua::{LuaSerdeExt, UserData};
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     dotenv_function(lua)?;
+    invalidate_cache(lua)?;
     pprint(lua)?;
-    // json
-    json_encode(lua)?;
-    json_decode(lua)?;
     // env
     getenv(lua)?;
     setenv(lua)?;
@@ -44,52 +42,6 @@ pub fn pprint(lua: &mlua::Lua) -> mlua::Result<()> {
     )
 }
 
-pub fn json_encode(lua: &mlua::Lua) -> mlua::Result<()> {
-    lua.globals().set(
-        "astra_internal__json_encode",
-        lua.create_function(|lua, input: mlua::Value| {
-            // removing functions
-            let input = if let Some(input) = input.as_table() {
-                let new_input = lua.create_table()?;
-
-                for pair in input.pairs::<mlua::Value, mlua::Value>() {
-                    let (key, value) = pair?;
-                    if !value.is_function()
-                        && !value.is_light_userdata()
-                        && !value.is_userdata()
-                        && !value.is_error()
-                        && !value.is_thread()
-                    {
-                        new_input.set(key, value)?;
-                    }
-                }
-
-                lua.to_value(&new_input)?
-            } else {
-                input
-            };
-
-            let json_value = lua.from_value::<serde_json::Value>(input)?;
-            match serde_json::to_string(&json_value) {
-                Ok(serialized) => Ok(lua.to_value(&serialized)?),
-                Err(e) => Err(e.into_lua_err()),
-            }
-        })?,
-    )
-}
-
-pub fn json_decode(lua: &mlua::Lua) -> mlua::Result<()> {
-    lua.globals().set(
-        "astra_internal__json_decode",
-        lua.create_function(|lua, input: String| {
-            match serde_json::from_str::<serde_json::Value>(&input) {
-                Ok(deserialized) => lua.to_value(&deserialized),
-                Err(e) => Err(e.into_lua_err()),
-            }
-        })?,
-    )
-}
-
 pub fn getenv(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__getenv",
@@ -108,6 +60,27 @@ pub fn setenv(lua: &mlua::Lua) -> mlua::Result<()> {
         "astra_internal__setenv",
         lua.create_function(|_, (key, value): (String, String)| {
             unsafe { std::env::set_var(key, value) };
+
+            Ok(())
+        })?,
+    )
+}
+
+pub fn invalidate_cache(lua: &mlua::Lua) -> mlua::Result<()> {
+    lua.globals().set(
+        "astra_internal__invalidate_cache",
+        lua.create_function(|lua, path: String| {
+            let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
+
+            if let Ok(cache) = lua
+                .globals()
+                .get::<Option<mlua::RegistryKey>>(key_id.clone())
+                && let Some(key) = cache
+            {
+                lua.remove_registry_value(key)?;
+            }
+
+            lua.globals().raw_remove(key_id)?;
 
             Ok(())
         })?,

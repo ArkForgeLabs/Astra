@@ -18,6 +18,16 @@ function pprint(value)
 	astra_internal__pretty_print(value)
 end
 
+---Invalidates imported module cache
+---
+---Modules are cached upon importing at Astra, you can use this
+---function to remove those caches
+---@param path string
+function invalidate_cache(path)
+	---@diagnostic disable-next-line: undefined-global
+	astra_internal__invalidate_cache(path)
+end
+
 ---Represents an async task
 ---@class TaskHandler
 ---@field abort fun(self: TaskHandler) Aborts the running task

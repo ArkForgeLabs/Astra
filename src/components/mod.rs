@@ -1,5 +1,6 @@
 use mlua::{ExternalError, LuaSerdeExt};
 
+mod astra_serde;
 mod crypto;
 pub mod database;
 mod datetime;
@@ -13,6 +14,7 @@ mod templates;
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     import::register_import_function(lua).await?;
     global::register_to_lua(lua)?;
+    astra_serde::register_to_lua(lua)?;
     http::server::register_to_lua(lua)?;
     http::client::HTTPClientRequest::register_to_lua(lua)?;
     database::Database::register_to_lua(lua)?;
