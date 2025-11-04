@@ -89,7 +89,7 @@ There are also utilities provided such as a PostgreSQL/SQLite, http client reque
 -- spawn an async task that does not block the running thread
 spawn_task(function ()
     -- HTTP Request to check your IP address
-    local response = Astra.http.request("https://myip.wtf/json"):execute()
+    local response = require("astra.lua.http").request("https://myip.wtf/json"):execute()
     pprint(response:status_code())
     pprint(response:remote_address())
     pprint(response:body():json())
