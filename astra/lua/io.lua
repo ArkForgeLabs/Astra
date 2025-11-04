@@ -23,6 +23,30 @@ local io = {}
 ---@field is_readonly fun(file_io_permissions: FileIOPermissions): boolean
 ---@field set_readonly fun(file_io_permissions: FileIOPermissions, value: boolean)
 
+---Returns the entire content of the file
+---@param path string Path to the file
+---@return string
+function io.read_file(path)
+	---@diagnostic disable-next-line: undefined-global
+	return astra_internal__read_file_string(path)
+end
+
+---Returns the entire content of the file as bytes
+---@param path string Path to the file
+---@return number[]
+function io.read_file_bytes(path)
+	---@diagnostic disable-next-line: undefined-global
+	return astra_internal__read_file_bytes(path)
+end
+
+---Returns the entire content of the file
+---@param path string Path to the file
+---@param contents string | number[] | table
+function io.write_file(path, contents)
+	---@diagnostic disable-next-line: undefined-global
+	return astra_internal__write_file(path, contents)
+end
+
 ---Returns the metadata of a file or directory
 ---@param path string
 ---@return FileMetadata

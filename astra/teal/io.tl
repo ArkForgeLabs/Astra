@@ -32,6 +32,24 @@ function file_io.get_metadata(path: string): FileMetadata
 	return astra_internal__get_metadata(path)
 end
 
+local type astra_internal__read_file_string = function(path: string): string
+---Returns the entire content of the file
+function file_io.read_file(path: string): string
+	return astra_internal__read_file_string(path)
+end
+
+local type astra_internal__read_file_bytes = function(path: string): {number}
+---Returns the entire content of the file as bytes
+function file_io.read_file_bytes(path: string): {number}
+	return astra_internal__read_file_bytes(path)
+end
+
+local type astra_internal__write_file = function(path: string, content: string | table)
+---Returns the entire content of the file
+function file_io.write_file(path: string, contents: string | table)
+	return astra_internal__write_file(path, contents)
+end
+
 local type astra_internal__read_dir = function(path: string): {DirEntry}
 ---Returns the content of the directory
 function file_io.read_dir(path: string): {DirEntry}

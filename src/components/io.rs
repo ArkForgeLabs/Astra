@@ -1,4 +1,4 @@
-use mlua::{ExternalError, UserData};
+use mlua::{ExternalError, LuaSerdeExt, UserData};
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     let lua_globals = lua.globals();
@@ -22,6 +22,27 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         "astra_internal__read_file_string",
         lua.create_async_function(|_, path: String| async {
             Ok(tokio::fs::read_to_string(path).await?)
+        })?,
+    )?;
+
+    lua_globals.set(
+        "astra_internal__write_file",
+        lua.create_async_function(|lua, (path, value): (String, mlua::Value)| async move {
+            match value.clone() {
+                mlua::Value::String(contents) => {
+                    Ok(tokio::fs::write(path, contents.to_string_lossy()).await?)
+                }
+                mlua::Value::Table(contents) => {
+                    if super::is_table_byte_array(&contents)? {
+                        Ok(tokio::fs::write(path, lua.from_value::<Vec<u8>>(value)?).await?)
+                    } else if let Ok(contents) = serde_json::to_string(&contents) {
+                        Ok(tokio::fs::write(path, contents).await?)
+                    } else {
+                        Err(mlua::Error::runtime("Invalid data type to write"))
+                    }
+                }
+                _ => Err(mlua::Error::runtime("Invalid data type to write")),
+            }
         })?,
     )?;
 
@@ -128,25 +149,25 @@ impl UserData for AstraFileMetadata {
         methods.add_method("last_accessed", |_, this, ()| match this.0.accessed() {
             Ok(file_name) => match file_name.duration_since(std::time::UNIX_EPOCH) {
                 Ok(result) => Ok(result.as_secs()),
-                Err(e) => Err(mlua::Error::runtime(format!("{e:?}"))),
+                Err(e) => Err(e.into_lua_err()),
             },
-            Err(e) => Err(mlua::Error::runtime(format!("{e:?}"))),
+            Err(e) => Err(e.into_lua_err()),
         });
 
         methods.add_method("created_at", |_, this, ()| match this.0.created() {
             Ok(file_name) => match file_name.duration_since(std::time::UNIX_EPOCH) {
                 Ok(result) => Ok(result.as_secs()),
-                Err(e) => Err(mlua::Error::runtime(format!("{e:?}"))),
+                Err(e) => Err(e.into_lua_err()),
             },
-            Err(e) => Err(mlua::Error::runtime(format!("{e:?}"))),
+            Err(e) => Err(e.into_lua_err()),
         });
 
         methods.add_method("last_modified", |_, this, ()| match this.0.modified() {
             Ok(file_name) => match file_name.duration_since(std::time::UNIX_EPOCH) {
                 Ok(result) => Ok(result.as_secs()),
-                Err(e) => Err(mlua::Error::runtime(format!("{e:?}"))),
+                Err(e) => Err(e.into_lua_err()),
             },
-            Err(e) => Err(mlua::Error::runtime(format!("{e:?}"))),
+            Err(e) => Err(e.into_lua_err()),
         });
 
         methods.add_method("file_type", |_, this, ()| {
@@ -197,7 +218,7 @@ impl UserData for AstraDirEntry {
         methods.add_async_method("file_type", |_, this, ()| async move {
             match this.0.file_type().await {
                 Ok(file_type) => Ok(AstraFileType(file_type)),
-                Err(e) => Err(mlua::Error::runtime(format!("{e:?}"))),
+                Err(e) => Err(e.into_lua_err()),
             }
         });
         methods.add_method("path", |_, this, ()| match this.0.path().to_str() {
