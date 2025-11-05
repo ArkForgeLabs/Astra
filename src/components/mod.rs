@@ -8,7 +8,6 @@ pub mod global;
 pub mod http;
 mod import;
 mod io;
-mod regex;
 mod templates;
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
@@ -18,22 +17,21 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     http::server::register_to_lua(lua)?;
     http::client::HTTPClientRequest::register_to_lua(lua)?;
     database::Database::register_to_lua(lua)?;
-    datetime::LuaDateTime::register_to_lua(lua)?;
+    datetime::AstraDateTime::register_to_lua(lua)?;
     crypto::register_to_lua(lua)?;
     io::register_to_lua(lua)?;
     templates::TemplatingEngine::register_to_lua(lua)?;
-    regex::LuaRegex::register_to_lua(lua)?;
 
     Ok(())
 }
 
 #[derive(Debug, Clone)]
-pub struct BodyLua {
+pub struct AstraHTTPBody {
     #[allow(unused)]
     pub body: bytes::Bytes,
     pub body_string: String,
 }
-impl BodyLua {
+impl AstraHTTPBody {
     pub fn new(bytes: bytes::Bytes) -> Self {
         let body_string = String::from_utf8_lossy(&bytes).to_string();
 
@@ -43,7 +41,7 @@ impl BodyLua {
         }
     }
 }
-impl mlua::UserData for BodyLua {
+impl mlua::UserData for AstraHTTPBody {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("text", |_, this, ()| Ok(this.body_string.clone()));
 

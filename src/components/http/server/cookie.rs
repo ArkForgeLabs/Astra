@@ -2,8 +2,8 @@ use axum_extra::extract::cookie::Cookie;
 use mlua::{FromLua, UserData};
 
 #[derive(Debug, Clone, FromLua)]
-pub struct LuaCookie<'a>(pub Cookie<'a>);
-impl UserData for LuaCookie<'_> {
+pub struct AstraHTTPCookie<'a>(pub Cookie<'a>);
+impl UserData for AstraHTTPCookie<'_> {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut("set_name", |_, this, name: String| {
             this.0.set_name(name);

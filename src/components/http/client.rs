@@ -1,4 +1,4 @@
-use crate::components::BodyLua;
+use crate::components::AstraHTTPBody;
 use futures::StreamExt;
 use mlua::{LuaSerdeExt, UserData};
 use reqwest::{Client, RequestBuilder};
@@ -152,9 +152,9 @@ impl HTTPClientRequest {
             })
             .collect::<std::collections::HashMap<String, String>>();
         let body = if let Ok(bytes) = response.bytes().await {
-            BodyLua::new(bytes)
+            AstraHTTPBody::new(bytes)
         } else {
-            BodyLua::new(bytes::Bytes::new())
+            AstraHTTPBody::new(bytes::Bytes::new())
         };
         HTTPClientResponse {
             url,
@@ -283,7 +283,7 @@ impl UserData for HTTPClientRequest {
                         url: response.url().to_string(),
                         status_code: response.status().as_u16(),
                         remote_address: response.remote_addr().map(|i| i.to_string()),
-                        body: BodyLua::new(bytes::Bytes::new()),
+                        body: AstraHTTPBody::new(bytes::Bytes::new()),
                         headers,
                     };
 
@@ -299,7 +299,7 @@ impl UserData for HTTPClientRequest {
                         match chunk {
                             Ok(chunk) => {
                                 let mut chunk_response = initial_response.clone();
-                                chunk_response.body = BodyLua::new(chunk);
+                                chunk_response.body = AstraHTTPBody::new(chunk);
                                 if let Err(e) = callback.call::<()>(chunk_response) {
                                     tracing::error!("Error running chunk callback: {e}");
                                     break;
@@ -323,7 +323,7 @@ pub struct HTTPClientResponse {
     pub url: String,
     pub status_code: u16,
     pub remote_address: Option<String>,
-    pub body: BodyLua,
+    pub body: AstraHTTPBody,
     pub headers: HashMap<String, String>,
 }
 

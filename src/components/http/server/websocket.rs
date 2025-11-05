@@ -2,8 +2,8 @@ use axum::extract::ws::{CloseFrame, Message, Utf8Bytes, WebSocket};
 use bytes::Bytes;
 use mlua::{ExternalError, UserData};
 
-pub struct LuaWebSocket(pub WebSocket);
-impl LuaWebSocket {
+pub struct AstraWebSocket(pub WebSocket);
+impl AstraWebSocket {
     fn value_to_bytes(value: &mlua::Value) -> Result<Bytes, mlua::Error> {
         if let Some(table) = value.as_table() {
             Ok(Bytes::from_iter(
@@ -16,7 +16,7 @@ impl LuaWebSocket {
         }
     }
 }
-impl UserData for LuaWebSocket {
+impl UserData for AstraWebSocket {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_async_method_mut("recv", |lua, mut this, ()| async move {
             match this.0.recv().await {

@@ -1,5 +1,5 @@
-use super::cookie::LuaCookie;
-use crate::components::BodyLua;
+use super::cookie::AstraHTTPCookie;
+use crate::components::AstraHTTPBody;
 use axum::{
     body::Body,
     extract::{ConnectInfo, FromRequest, FromRequestParts, Multipart, RawPathParams, State},
@@ -84,7 +84,7 @@ impl UserData for RequestLua {
             .await
             .map_err(|e| e.into_lua_err())?;
 
-            Ok(LuaSocketAddr(connect_info.ip()))
+            Ok(AstraSocketAddr(connect_info.ip()))
         });
         methods.add_async_method("multipart", |_, this, ()| async move {
             match &this.bytes {
@@ -94,7 +94,7 @@ impl UserData for RequestLua {
                         Request::from_parts(this.parts.clone(), Body::from(bytes.clone()));
 
                     match Multipart::from_request(multipart_request, &state).await {
-                        Ok(multipart) => LuaMultipart::new(multipart).await,
+                        Ok(multipart) => AstraMultipart::new(multipart).await,
                         Err(e) => Err(e.into_lua_err()),
                     }
                 }
@@ -114,26 +114,26 @@ impl UserData for RequestLua {
             Ok(this
                 .cookie_jar
                 .get(name.as_str())
-                .map(|cookie| LuaCookie(cookie.clone())))
+                .map(|cookie| AstraHTTPCookie(cookie.clone())))
         });
         methods.add_method("new_cookie", |_, _, (name, value): (String, String)| {
-            Ok(LuaCookie(Cookie::new(name, value)))
+            Ok(AstraHTTPCookie(Cookie::new(name, value)))
         });
         // ! Create new cookie
         methods.add_method("body", |_, this, ()| match this.bytes.clone() {
-            Some(bytes) => Ok(BodyLua::new(bytes)),
-            None => Ok(BodyLua::new(bytes::Bytes::new())),
+            Some(bytes) => Ok(AstraHTTPBody::new(bytes)),
+            None => Ok(AstraHTTPBody::new(bytes::Bytes::new())),
         });
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct LuaSocketAddr(std::net::IpAddr);
-impl UserData for LuaSocketAddr {
+pub struct AstraSocketAddr(std::net::IpAddr);
+impl UserData for AstraSocketAddr {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("address", |_, this, ()| Ok(this.0.to_string()));
         methods.add_method("to_canonical", |_, this, ()| {
-            Ok(LuaSocketAddr(this.0.to_canonical()))
+            Ok(AstraSocketAddr(this.0.to_canonical()))
         });
         methods.add_method("is_ipv4", |_, this, ()| Ok(this.0.is_ipv4()));
         methods.add_method("is_ipv6", |_, this, ()| Ok(this.0.is_ipv6()));
@@ -143,14 +143,14 @@ impl UserData for LuaSocketAddr {
 }
 
 #[derive(Debug, Clone)]
-pub struct LuaMultipartField {
+pub struct AstraMultipartField {
     pub name: String,
     pub data: bytes::Bytes,
     pub file_name: Option<String>,
     pub content_type: Option<String>,
     pub headers: HashMap<String, String>,
 }
-impl UserData for LuaMultipartField {
+impl UserData for AstraMultipartField {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("name", |_, this, ()| Ok(this.name.clone()));
         methods.add_method("file_name", |_, this, ()| Ok(this.file_name.clone()));
@@ -164,10 +164,10 @@ impl UserData for LuaMultipartField {
 }
 
 #[derive(Debug)]
-pub struct LuaMultipart {
-    fields: Vec<LuaMultipartField>,
+pub struct AstraMultipart {
+    fields: Vec<AstraMultipartField>,
 }
-impl LuaMultipart {
+impl AstraMultipart {
     async fn new(mut multipart: Multipart) -> mlua::Result<Self> {
         let mut fields = Vec::new();
 
@@ -187,7 +187,7 @@ impl LuaMultipart {
             // Read field data
             let bytes = field.bytes().await.map_err(|e| e.into_lua_err())?;
 
-            fields.push(LuaMultipartField {
+            fields.push(AstraMultipartField {
                 name,
                 data: bytes,
                 file_name: filename,
@@ -199,7 +199,7 @@ impl LuaMultipart {
         Ok(Self { fields })
     }
 }
-impl UserData for LuaMultipart {
+impl UserData for AstraMultipart {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("fields", |lua, this, ()| {
             let fields_table = lua.create_table()?;

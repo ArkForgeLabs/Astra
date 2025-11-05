@@ -2,10 +2,10 @@ use chrono::{offset::LocalResult, prelude::*};
 use mlua::{FromLua, UserData};
 
 #[derive(Debug, Clone, FromLua)]
-pub struct LuaDateTime {
+pub struct AstraDateTime {
     dt: DateTime<FixedOffset>,
 }
-impl LuaDateTime {
+impl AstraDateTime {
     pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.globals().set(
             "astra_internal__datetime_new_now",
@@ -89,7 +89,7 @@ impl LuaDateTime {
     }
 }
 
-impl UserData for LuaDateTime {
+impl UserData for AstraDateTime {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         macro_rules! add_getter_method {
             ($method_name:expr, $field:ident) => {

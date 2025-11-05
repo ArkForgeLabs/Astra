@@ -1,10 +1,10 @@
-use crate::components::http::server::cookie::LuaCookie;
+use crate::components::http::server::cookie::AstraHTTPCookie;
 use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 
 // ! Support more cookie types like signed and private
 #[derive(Debug, Clone)]
 pub enum CookieOperation<'a> {
-    Add(LuaCookie<'a>),
+    Add(AstraHTTPCookie<'a>),
     Remove { key: String },
 }
 
@@ -81,7 +81,7 @@ impl mlua::UserData for ResponseLua<'_> {
             Ok(header_map)
         });
 
-        methods.add_method_mut("set_cookie", |_, this, cookie: LuaCookie| {
+        methods.add_method_mut("set_cookie", |_, this, cookie: AstraHTTPCookie| {
             this.cookie_operations.push(CookieOperation::Add(cookie));
 
             Ok(())

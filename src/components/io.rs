@@ -143,6 +143,8 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     Ok(())
 }
 
+struct AstraFile(tokio::fs::File);
+
 struct AstraFileMetadata(std::fs::Metadata);
 impl UserData for AstraFileMetadata {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
