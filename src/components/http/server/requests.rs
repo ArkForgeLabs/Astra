@@ -1,5 +1,5 @@
 use super::cookie::AstraHTTPCookie;
-use crate::components::AstraHTTPBody;
+use crate::components::AstraBuffer;
 use axum::{
     body::Body,
     extract::{ConnectInfo, FromRequest, FromRequestParts, Multipart, RawPathParams, State},
@@ -121,8 +121,8 @@ impl UserData for RequestLua {
         });
         // ! Create new cookie
         methods.add_method("body", |_, this, ()| match this.bytes.clone() {
-            Some(bytes) => Ok(AstraHTTPBody::new(bytes)),
-            None => Ok(AstraHTTPBody::new(bytes::Bytes::new())),
+            Some(bytes) => Ok(AstraBuffer::new(bytes)),
+            None => Ok(AstraBuffer::new(bytes::Bytes::new())),
         });
     }
 }

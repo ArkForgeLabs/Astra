@@ -1,4 +1,4 @@
-use mlua::{ExternalError, LuaSerdeExt};
+use mlua::{ExternalError, FromLua, LuaSerdeExt};
 
 mod astra_serde;
 mod crypto;
@@ -25,34 +25,42 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone)]
-pub struct AstraHTTPBody {
-    #[allow(unused)]
-    pub body: bytes::Bytes,
-    pub body_string: String,
-}
-impl AstraHTTPBody {
-    pub fn new(bytes: bytes::Bytes) -> Self {
-        let body_string = String::from_utf8_lossy(&bytes).to_string();
-
-        Self {
-            body: bytes,
-            body_string,
-        }
-    }
-}
-impl mlua::UserData for AstraHTTPBody {
-    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("text", |_, this, ()| Ok(this.body_string.clone()));
-
-        methods.add_method("json", |lua, this, ()| {
-            match serde_json::from_str::<serde_json::Value>(&this.body_string) {
-                Ok(body_json) => lua.to_value(&body_json),
-                Err(e) => Err(e.into_lua_err()),
+macro_rules! astra_buffer_types {
+    ($name:ident, $buffer_type:ty) => {
+        #[derive(Debug, Clone, FromLua)]
+        pub struct $name(std::sync::Arc<tokio::sync::Mutex<$buffer_type>>);
+        macros::impl_deref!($name, std::sync::Arc<tokio::sync::Mutex<$buffer_type>>);
+        impl $name {
+            pub fn new(bytes: $buffer_type) -> Self {
+                Self(std::sync::Arc::new(tokio::sync::Mutex::new(bytes)))
             }
-        });
-    }
+        }
+        impl mlua::UserData for $name {
+            fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
+                methods.add_async_method("bytes", |_, this, ()| async move {
+                    let bytes = this.lock().await;
+                    Ok(bytes.to_vec())
+                });
+                methods.add_async_method("text", |_, this, ()| async move {
+                    let bytes = this.lock().await;
+                    Ok(String::from_utf8_lossy(&bytes).to_string())
+                });
+                methods.add_async_method("json", |lua, this, ()| async move {
+                    let bytes = this.lock().await;
+                    match serde_json::from_str::<serde_json::Value>(
+                        &String::from_utf8_lossy(&bytes).to_string(),
+                    ) {
+                        Ok(parsed_json) => lua.to_value(&parsed_json),
+                        Err(e) => Err(e.into_lua_err()),
+                    }
+                });
+            }
+        }
+    };
 }
+
+astra_buffer_types!(AstraBuffer, bytes::Bytes);
+astra_buffer_types!(AstraBufferMut, bytes::BytesMut);
 
 // to capture all types of string literals
 const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\

@@ -2,13 +2,16 @@
 
 local fs = {}
 
----@class Buffer
-
 ---@class File
+---Pulls some bytes from this source into the specified buffer, returning how many bytes were read. A nonzero n value indicates that the buffer buf has been filled in with n bytes of data from this source.
 ---@field read fun(self: File, buffer: Buffer)
+---Pulls some bytes from this source into the specified buffer, advancing the buffer's internal cursor. A nonzero n value indicates that the buffer buf has been filled in with n bytes of data from this source.
 ---@field read_buf fun(self: File, buffer: Buffer)
+---Reads the exact number of bytes required to fill buffer.
 ---@field read_exact fun(self: File, buffer: Buffer)
+---This function will attempt to write the entire contents of buffer, but the entire write may not succeed, or the write may also generate an error. A call to write represents at most one attempt to write to any wrapped object. If the return value is n then it must be guaranteed that n <= len(buf). A return value of 0 typically means that the underlying object is no longer able to accept bytes and will likely not be able to in the future as well, or that the buffer provided is empty.
 ---@field write fun(self: File, buffer: Buffer)
+---This method will continuously call write until buffer remaining calls returns false. This method will not return until the entire buffer has been successfully written or an error occurs. The first error generated will be returned. The buffer is advanced after each chunk is successfully written.
 ---@field write_buf fun(self: File, buffer: Buffer)
 
 ---@class FileType
@@ -32,11 +35,20 @@ local fs = {}
 ---@field is_readonly fun(file_io_permissions: FileIOPermissions): boolean
 ---@field set_readonly fun(file_io_permissions: FileIOPermissions, value: boolean)
 
----Creates a new buffer
+---Creates a new buffer with size in bytes allocated
+---@param capacity number
 ---@return Buffer
-function fs.new_buffer()
+function fs.new_buffer(capacity)
 	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__new_buffer()
+	return astra_internal__new_buffer(capacity)
+end
+
+---Opens the file in the given path
+---@param path string
+---@return File
+function fs.open(path)
+	---@diagnostic disable-next-line: undefined-global
+	return astra_internal__open_file(path)
 end
 
 ---Returns the entire content of the file

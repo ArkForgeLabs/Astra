@@ -1,11 +1,12 @@
-global interface HTTPBody is userdata
-    text: function(self: HTTPBody): string
-    json: function(self: HTTPBody): table
+global interface Buffer is userdata
+    bytes: function(self: Buffer): {number}
+    text: function(self: Buffer): string
+    json: function(self: Buffer): table
 end
 
 global interface HTTPClientResponse is userdata
     status_code: function(self: HTTPClientResponse): number
-    body: function(self: HTTPClientResponse): HTTPBody
+    body: function(self: HTTPClientResponse): Buffer
     headers: function(self: HTTPClientResponse): table | nil
     remote_address: function(self: HTTPClientResponse): string | nil
 end
@@ -81,7 +82,7 @@ global interface HTTPServerRequest is userdata
     queries: function(self: HTTPServerRequest): table
     params: function(self: HTTPServerRequest): table
     headers: function(self: HTTPServerRequest): table
-    body: function(self: HTTPServerRequest): HTTPBody
+    body: function(self: HTTPServerRequest): Buffer
     ip_address: function(self: HTTPServerRequest): IPAddress
     multipart: function(self: HTTPServerRequest): HTTPMultipart
     get_cookie: function(self: HTTPServerRequest, name: string): Cookie

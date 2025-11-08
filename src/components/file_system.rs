@@ -1,4 +1,5 @@
-use mlua::{ExternalError, FromLua, LuaSerdeExt, UserData};
+use super::AstraBufferMut;
+use mlua::{ExternalError, LuaSerdeExt, UserData};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
@@ -28,7 +29,9 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     lua_globals.set(
         "astra_internal__new_buffer",
         lua.create_function(|_, capacity: usize| {
-            Ok(AstraBuffer(bytes::BytesMut::with_capacity(capacity)))
+            Ok(AstraBufferMut::new(bytes::BytesMut::with_capacity(
+                capacity,
+            )))
         })?,
     )?;
 
@@ -128,19 +131,18 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone, FromLua)]
-struct AstraBuffer(bytes::BytesMut);
-impl UserData for AstraBuffer {}
-
+#[derive(Debug)]
 struct AstraFile(tokio::fs::File);
+super::macros::impl_deref!(AstraFile, tokio::fs::File);
 impl UserData for AstraFile {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         macro_rules! file_io_methods {
             ($name:expr, $method:ident) => {
                 methods.add_async_method_mut(
                     $name,
-                    |_, mut this, mut buffer: AstraBuffer| async move {
-                        match this.0.$method(&mut buffer.0).await {
+                    |_, mut this, buffer: AstraBufferMut| async move {
+                        let mut bytes = buffer.lock().await;
+                        match this.$method(&mut *bytes).await {
                             Ok(result) => Ok(result),
                             Err(e) => Err(e.into_lua_err()),
                         }
@@ -148,6 +150,14 @@ impl UserData for AstraFile {
                 );
             };
         }
+
+        // methods.add_async_method_mut("", |_, mut this, buffer: AstraBufferMut| async move {
+        //     let mut bytes = buffer.0.lock().await;
+        //     match this.0.read(&mut *bytes).await {
+        //         Ok(result) => Ok(result),
+        //         Err(e) => Err(e.into_lua_err()),
+        //     }
+        // });
 
         file_io_methods!("read", read);
         file_io_methods!("read_buf", read_buf);
@@ -158,12 +168,14 @@ impl UserData for AstraFile {
     }
 }
 
+#[derive(Debug, Clone)]
 struct AstraFileMetadata(std::fs::Metadata);
+super::macros::impl_deref!(AstraFileMetadata, std::fs::Metadata);
 impl UserData for AstraFileMetadata {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         macro_rules! file_metadata_methods {
             ($name:expr, $method:ident) => {
-                methods.add_method($name, |_, this, ()| match this.0.$method() {
+                methods.add_method($name, |_, this, ()| match this.$method() {
                     Ok(file_name) => match file_name.duration_since(std::time::UNIX_EPOCH) {
                         Ok(result) => Ok(result.as_secs()),
                         Err(e) => Err(e.into_lua_err()),
@@ -171,57 +183,61 @@ impl UserData for AstraFileMetadata {
                     Err(e) => Err(e.into_lua_err()),
                 });
             };
+            ($name:expr, $wrap_type:ident, $method:ident) => {
+                methods.add_method($name, |_, this, ()| Ok($wrap_type(this.$method())));
+            };
         }
 
         file_metadata_methods!("last_accessed", accessed);
         file_metadata_methods!("last_modified", modified);
         file_metadata_methods!("created_at", created);
-
-        methods.add_method("file_type", |_, this, ()| {
-            Ok(AstraFileType(this.0.file_type()))
-        });
-
-        methods.add_method("file_permissions", |_, this, ()| {
-            Ok(AstraFilePermissions(this.0.permissions()))
-        });
+        file_metadata_methods!("file_type", AstraFileType, file_type);
+        file_metadata_methods!("file_permissions", AstraFilePermissions, permissions);
     }
 }
 
+#[derive(Debug, Clone)]
 struct AstraFilePermissions(std::fs::Permissions);
+super::macros::impl_deref!(AstraFilePermissions, std::fs::Permissions);
 impl UserData for AstraFilePermissions {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("is_readonly", |_, this, ()| Ok(this.0.readonly()));
+        methods.add_method("is_readonly", |_, this, ()| Ok(this.readonly()));
         methods.add_method_mut("set_readonly", |_, this, mode: bool| {
-            this.0.set_readonly(mode);
+            this.set_readonly(mode);
             Ok(())
         });
     }
 }
 
+#[derive(Debug, Clone)]
 struct AstraFileType(std::fs::FileType);
+super::macros::impl_deref!(AstraFileType, std::fs::FileType);
 impl UserData for AstraFileType {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("is_file", |_, this, ()| Ok(this.0.is_file()));
-        methods.add_method("is_dir", |_, this, ()| Ok(this.0.is_dir()));
-        methods.add_method("is_symlink", |_, this, ()| Ok(this.0.is_symlink()));
+        methods.add_method("is_file", |_, this, ()| Ok(this.is_file()));
+        methods.add_method("is_dir", |_, this, ()| Ok(this.is_dir()));
+        methods.add_method("is_symlink", |_, this, ()| Ok(this.is_symlink()));
     }
 }
+
+#[derive(Debug)]
 struct AstraDirEntry(tokio::fs::DirEntry);
+super::macros::impl_deref!(AstraDirEntry, tokio::fs::DirEntry);
 impl UserData for AstraDirEntry {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("file_name", |_, this, ()| {
-            match this.0.file_name().into_string() {
+            match this.file_name().into_string() {
                 Ok(file_name) => Ok(file_name),
                 Err(e) => Err(mlua::Error::runtime(format!("{e:?}"))),
             }
         });
         methods.add_async_method("file_type", |_, this, ()| async move {
-            match this.0.file_type().await {
+            match this.file_type().await {
                 Ok(file_type) => Ok(AstraFileType(file_type)),
                 Err(e) => Err(e.into_lua_err()),
             }
         });
-        methods.add_method("path", |_, this, ()| match this.0.path().to_str() {
+        methods.add_method("path", |_, this, ()| match this.path().to_str() {
             Some(path) => Ok(path.to_string()),
             None => Err(mlua::Error::runtime("Could not get the path")),
         });

@@ -1,6 +1,7 @@
 ---@meta
 
----@class HTTPBody
+---@class Buffer
+---@field bytes fun(): number[]
 ---@field text fun(): string
 ---@field json fun(): table Returns the body parsed as JSON -> Lua Table
 
@@ -9,7 +10,7 @@ local http = {}
 --- Represents an HTTP client response.
 ---@class HTTPClientResponse
 ---@field status_code fun(): number Gets the response HTTP Status code
----@field body fun(): HTTPBody Gets the response HTTP Body which further can be parsed
+---@field body fun(): Buffer Gets the response HTTP Body which further can be parsed
 ---@field headers fun(): table|nil Returns the entire headers list from the HTTP response
 ---@field remote_address fun(): string|nil Gets the remote address of the HTTP response server
 
