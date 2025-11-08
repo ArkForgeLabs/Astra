@@ -4,6 +4,17 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     let lua_globals = lua.globals();
 
+    macro_rules! file_io_methods {
+        ($name:expr, $method:expr) => {
+            lua_globals.set(
+                $name,
+                lua.create_async_function(
+                    |_, path: String| async move { Ok($method(path).await?) },
+                )?,
+            )?;
+        };
+    }
+
     lua_globals.set(
         "astra_internal__get_metadata",
         lua.create_async_function(|_, path: String| async {
@@ -28,17 +39,11 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         })?,
     )?;
 
-    lua_globals.set(
-        "astra_internal__read_file_bytes",
-        lua.create_async_function(|_, path: String| async { Ok(tokio::fs::read(path).await?) })?,
-    )?;
-
-    lua_globals.set(
+    file_io_methods!("astra_internal__read_file_bytes", tokio::fs::read);
+    file_io_methods!(
         "astra_internal__read_file_string",
-        lua.create_async_function(|_, path: String| async {
-            Ok(tokio::fs::read_to_string(path).await?)
-        })?,
-    )?;
+        tokio::fs::read_to_string
+    );
 
     lua_globals.set(
         "astra_internal__write_file",
@@ -90,52 +95,17 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.create_function(|_, ()| Ok(std::path::MAIN_SEPARATOR_STR))?,
     )?;
 
-    lua_globals.set(
-        "astra_internal__exists",
-        lua.create_async_function(|_, path: String| async {
-            Ok(tokio::fs::try_exists(path).await?)
-        })?,
-    )?;
-
+    file_io_methods!("astra_internal__exists", tokio::fs::try_exists);
     lua_globals.set(
         "astra_internal__change_dir",
         lua.create_function(|_, path: String| Ok(std::env::set_current_dir(path)?))?,
     )?;
 
-    lua_globals.set(
-        "astra_internal__create_dir",
-        lua.create_async_function(|_, path: String| async {
-            Ok(tokio::fs::create_dir(path).await?)
-        })?,
-    )?;
-
-    lua_globals.set(
-        "astra_internal__create_dir_all",
-        lua.create_async_function(|_, path: String| async {
-            Ok(tokio::fs::create_dir_all(path).await?)
-        })?,
-    )?;
-
-    lua_globals.set(
-        "astra_internal__remove",
-        lua.create_async_function(|_, path: String| async {
-            Ok(tokio::fs::remove_file(path).await?)
-        })?,
-    )?;
-
-    lua_globals.set(
-        "astra_internal__remove_dir",
-        lua.create_async_function(|_, path: String| async {
-            Ok(tokio::fs::remove_dir(path).await?)
-        })?,
-    )?;
-
-    lua_globals.set(
-        "astra_internal__remove_dir_all",
-        lua.create_async_function(|_, path: String| async {
-            Ok(tokio::fs::remove_dir_all(path).await?)
-        })?,
-    )?;
+    file_io_methods!("astra_internal__create_dir", tokio::fs::create_dir);
+    file_io_methods!("astra_internal__create_dir_all", tokio::fs::create_dir_all);
+    file_io_methods!("astra_internal__remove", tokio::fs::remove_file);
+    file_io_methods!("astra_internal__remove_dir", tokio::fs::remove_dir);
+    file_io_methods!("astra_internal__remove_dir_all", tokio::fs::remove_dir_all);
 
     lua_globals.set(
         "astra_internal__get_script_path",
