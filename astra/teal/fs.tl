@@ -4,10 +4,10 @@ local fs = {}
 
 global record File
     read: function(self: File, buffer: Buffer)
-    read_buf: function(self: File, buffer: Buffer)
+    read_buffer: function(self: File, buffer: Buffer)
     read_exact: function(self: File, buffer: Buffer)
     write: function(self: File, buffer: Buffer)
-    write_buf: function(self: File, buffer: Buffer)
+    write_buffer: function(self: File, buffer: Buffer)
 end
 
 global record FileType is userdata

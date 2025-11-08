@@ -1469,8 +1469,8 @@ pprint(result)
 }
 
 </style>
-<h1 id="file-io"><a class="header" href="#file-io">File IO</a></h1>
-<p>Astra provides some File IO functionality to help extend the standard library. Which contains the IO functions. The current list is as follows:</p>
+<h1 id="filesystem"><a class="header" href="#filesystem">Filesystem</a></h1>
+<p>Astra provides some Filesystem functionality to help extend the standard library. Some of the common ones are as follows:</p>
 <ul>
 <li><code>get_metadata</code></li>
 <li><code>read_dir</code></li>
@@ -1486,9 +1486,30 @@ pprint(result)
 <li><code>remove_dir_all</code></li>
 </ul>
 <p>They are fairly self explanitory and does not require further details. Example usage:</p>
-<pre><code class="language-lua">local io = require("io")
-pprint(Astra.io.get_script_path())
+<pre><code class="language-lua">local fs = require("fs")
+pprint(fs.get_script_path())
 </code></pre>
+<p>The Filesystem also supports buffers and buffered read and write of files as well.</p>
+<pre><code class="language-lua">-- Begin with creating a buffer with capacity of 10 bytes
+local buffer = fs.new_buffer(10)
+
+-- Then open a file to do operations on
+local file = fs.open("myfile.txt")
+
+-- You can read the contents
+file:read(buffer)
+
+-- Or write
+file:write(buffer)
+</code></pre>
+<p>There are variations of them as well. Here is the full list:</p>
+<ul>
+<li><code>read</code></li>
+<li><code>read_buffer</code></li>
+<li><code>read_exact</code></li>
+<li><code>write</code></li>
+<li><code>write_buffer</code></li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><style>
 .mdbook-alerts {
   padding: 8px 16px;
