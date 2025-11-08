@@ -4,7 +4,7 @@ mod astra_serde;
 mod crypto;
 pub mod database;
 mod datetime;
-mod file_io;
+mod file_system;
 pub mod global;
 pub mod http;
 mod import;
@@ -19,7 +19,7 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     database::Database::register_to_lua(lua)?;
     datetime::AstraDateTime::register_to_lua(lua)?;
     crypto::register_to_lua(lua)?;
-    file_io::register_to_lua(lua)?;
+    file_system::register_to_lua(lua)?;
     templates::TemplatingEngine::register_to_lua(lua)?;
 
     Ok(())
