@@ -1,4 +1,5 @@
-use mlua::{ExternalError, LuaSerdeExt, UserData};
+use mlua::{ExternalError, FromLua, LuaSerdeExt, UserData};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     let lua_globals = lua.globals();
@@ -10,6 +11,20 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
                 Ok(result) => Ok(AstraFileMetadata(result)),
                 Err(e) => Err(e.into_lua_err()),
             }
+        })?,
+    )?;
+
+    lua_globals.set(
+        "astra_internal__new_buffer",
+        lua.create_function(|_, capacity: usize| {
+            Ok(AstraBuffer(bytes::BytesMut::with_capacity(capacity)))
+        })?,
+    )?;
+
+    lua_globals.set(
+        "astra_internal__open_file",
+        lua.create_async_function(|_, path: String| async {
+            Ok(AstraFile(tokio::fs::File::open(path).await?))
         })?,
     )?;
 
@@ -143,34 +158,54 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     Ok(())
 }
 
+#[derive(Debug, Clone, FromLua)]
+struct AstraBuffer(bytes::BytesMut);
+impl UserData for AstraBuffer {}
+
 struct AstraFile(tokio::fs::File);
+impl UserData for AstraFile {
+    fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
+        macro_rules! file_io_methods {
+            ($name:expr, $method:ident) => {
+                methods.add_async_method_mut(
+                    $name,
+                    |_, mut this, mut buffer: AstraBuffer| async move {
+                        match this.0.$method(&mut buffer.0).await {
+                            Ok(result) => Ok(result),
+                            Err(e) => Err(e.into_lua_err()),
+                        }
+                    },
+                );
+            };
+        }
+
+        file_io_methods!("read", read);
+        file_io_methods!("read_buf", read_buf);
+        file_io_methods!("read_exact", read_exact);
+
+        file_io_methods!("write", write);
+        file_io_methods!("write_buf", write_all_buf);
+    }
+}
 
 struct AstraFileMetadata(std::fs::Metadata);
 impl UserData for AstraFileMetadata {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method("last_accessed", |_, this, ()| match this.0.accessed() {
-            Ok(file_name) => match file_name.duration_since(std::time::UNIX_EPOCH) {
-                Ok(result) => Ok(result.as_secs()),
-                Err(e) => Err(e.into_lua_err()),
-            },
-            Err(e) => Err(e.into_lua_err()),
-        });
+        macro_rules! file_metadata_methods {
+            ($name:expr, $method:ident) => {
+                methods.add_method($name, |_, this, ()| match this.0.$method() {
+                    Ok(file_name) => match file_name.duration_since(std::time::UNIX_EPOCH) {
+                        Ok(result) => Ok(result.as_secs()),
+                        Err(e) => Err(e.into_lua_err()),
+                    },
+                    Err(e) => Err(e.into_lua_err()),
+                });
+            };
+        }
 
-        methods.add_method("created_at", |_, this, ()| match this.0.created() {
-            Ok(file_name) => match file_name.duration_since(std::time::UNIX_EPOCH) {
-                Ok(result) => Ok(result.as_secs()),
-                Err(e) => Err(e.into_lua_err()),
-            },
-            Err(e) => Err(e.into_lua_err()),
-        });
-
-        methods.add_method("last_modified", |_, this, ()| match this.0.modified() {
-            Ok(file_name) => match file_name.duration_since(std::time::UNIX_EPOCH) {
-                Ok(result) => Ok(result.as_secs()),
-                Err(e) => Err(e.into_lua_err()),
-            },
-            Err(e) => Err(e.into_lua_err()),
-        });
+        file_metadata_methods!("last_accessed", accessed);
+        file_metadata_methods!("last_modified", modified);
+        file_metadata_methods!("created_at", created);
 
         methods.add_method("file_type", |_, this, ()| {
             Ok(AstraFileType(this.0.file_type()))
@@ -190,13 +225,6 @@ impl UserData for AstraFilePermissions {
             this.0.set_readonly(mode);
             Ok(())
         });
-
-        // ? These are unix only
-        // methods.add_method("get_mode", |_, this, ()| Ok(this.0.mode()));
-        // methods.add_method_mut("set_mode", |_, this, mode: u32| {
-        //     this.0.set_mode(mode);
-        //     Ok(())
-        // });
     }
 }
 
