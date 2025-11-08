@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.35.0](https://github.com/ArkForgeLabs/Astra/compare/v0.34.0..v0.35.0) - 2025-11-08
+
+### Features
+
+- file_io now have methods for file read and write - ([9de9aa6](https://github.com/ArkForgeLabs/Astra/commit/9de9aa69abcd5f85f7f931a5bbfea6eaa1a2f48c))
+- added Buffers and File opening for File IO - ([98743e1](https://github.com/ArkForgeLabs/Astra/commit/98743e185ced3b80da6667ca51478906f53c8f79))
+- can omit the 'astra.lua.' prefix from standard library - ([27e09ff](https://github.com/ArkForgeLabs/Astra/commit/27e09ff288b9f9b3c38ac16468badfc56d4d2e42))
+- filesystem buffer read and write added - ([e4c166d](https://github.com/ArkForgeLabs/Astra/commit/e4c166d4f97a62af79063bd184ed83262e1950d9))
+
+### Refactoring
+
+- renamed components with Lua prefix to Astra - ([0bfaeb3](https://github.com/ArkForgeLabs/Astra/commit/0bfaeb3fed2a1d4a0cecf1c505a664c19f64719c))
+- added macros for file_io - ([61d8e62](https://github.com/ArkForgeLabs/Astra/commit/61d8e6294b1184d9d36077c6d160412657033686))
+- renamed io.rs to file_io.rs to reflect the changes clearly - ([1e5ba81](https://github.com/ArkForgeLabs/Astra/commit/1e5ba818faaa76f92aa2447ee1b61667d06291c0))
+- [**breaking**] renamed io.lua to fs.lua to better reflect its nature - ([a65781b](https://github.com/ArkForgeLabs/Astra/commit/a65781bf3d179dd0ebb98e33dc1b45ba68fe1e84))
+- expanded the fs.rs into file_system.rs - ([bf67d0a](https://github.com/ArkForgeLabs/Astra/commit/bf67d0a6498c1a622d5e11bc4a57087111b30bd9))
+
 ## [0.34.0](https://github.com/ArkForgeLabs/Astra/compare/v0.33.1..v0.34.0) - 2025-11-02
 
 ### Documentation
