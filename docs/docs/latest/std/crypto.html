@@ -231,7 +231,7 @@
 <p>During development of your web servers, you might need some cryptography functionality such as hashing and encoding. For these cases, Astra provides commonly used cryptographic functions to ease up development.</p>
 <h2 id="hashing"><a class="header" href="#hashing">Hashing</a></h2>
 <p>Currently Astra provides SHA2 and SHA3 (both 256 and 512 variants) hashing functions.</p>
-<pre><code class="language-lua">local crypto = require("astra.lua.crypto")
+<pre><code class="language-lua">local crypto = require("crypto")
 
 crypto.hash("sha2_512", "MY INPUT")
 </code></pre>

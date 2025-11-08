@@ -42,7 +42,7 @@ powershell -c "irm https://raw.githubusercontent.com/ArkForgeLabs/Astra/refs/hea
 
 ```lua
 -- Create a new server
-local server = require("astra.lua.http").server.new()
+local server = require("http").server.new()
 
 -- Register a route
 server:get("/", function()
@@ -89,7 +89,7 @@ There are also utilities provided such as a PostgreSQL/SQLite, http client reque
 -- spawn an async task that does not block the running thread
 spawn_task(function ()
     -- HTTP Request to check your IP address
-    local response = require("astra.lua.http").request("https://myip.wtf/json"):execute()
+    local response = require("http").request("https://myip.wtf/json"):execute()
     pprint(response:status_code())
     pprint(response:remote_address())
     pprint(response:body():json())

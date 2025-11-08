@@ -36,16 +36,35 @@ pub async fn find_first_lua_match_with_content(
         }
 
         // Check in packaged libs if it exists
-        for candidate in candidates {
-            if let Ok(file_path) = candidate.strip_prefix(format!(
+        for candidate in &candidates {
+            let file_path = if let Ok(file_path) = candidate.strip_prefix(format!(
                 ".{}astra{}",
                 std::path::MAIN_SEPARATOR_STR,
                 std::path::MAIN_SEPARATOR_STR
-            )) 
-                // && let _ = println!("FILE TO IMPORT: {:?}", file_path)
-                && let Some(file) =
-                    ASTRA_STD_LIBS.get_file(file_path.to_string_lossy().replace("\\", "/"))
-                && let Some(content) = file.contents_utf8()
+            )) {
+                file_path
+            } else if let Ok(file_path) =
+                candidate.strip_prefix(format!(".{}", std::path::MAIN_SEPARATOR_STR))
+            {
+                file_path
+            } else {
+                candidate
+            };
+
+            // println!(
+            //     "FILE TO IMPORT: {:?}",
+            //     std::path::PathBuf::from("lua")
+            //         .join(file_path)
+            //         .to_string_lossy()
+            //         .replace("\\", "/")
+            // );
+
+            if let Some(file) = ASTRA_STD_LIBS.get_file(
+                std::path::PathBuf::from("lua")
+                    .join(file_path)
+                    .to_string_lossy()
+                    .replace("\\", "/"),
+            ) && let Some(content) = file.contents_utf8()
             {
                 return Some((candidate.to_path_buf(), content.to_string()));
             }
@@ -61,8 +80,11 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.create_async_function(|lua, path: String| async move {
             let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
 
-            if let Ok(cache) = lua.globals().get::<Option<mlua::RegistryKey>>(key_id.as_str()) 
-                && let Some(key) = cache {
+            if let Ok(cache) = lua
+                .globals()
+                .get::<Option<mlua::RegistryKey>>(key_id.as_str())
+                && let Some(key) = cache
+            {
                 lua.registry_value::<mlua::Value>(&key)
             } else {
                 let current_script_path: String =
@@ -86,7 +108,7 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                     let result = if is_teal {
                         super::execute_teal_code(&lua, &file_path, &content).await?
                     } else {
-                        lua.load( content)
+                        lua.load(content)
                             .set_name(file_path)
                             .eval_async::<mlua::Value>()
                             .await?

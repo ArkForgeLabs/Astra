@@ -7,7 +7,7 @@ During development of your web servers, you might need some cryptography functio
 Currently Astra provides SHA2 and SHA3 (both 256 and 512 variants) hashing functions.
 
 ```lua
-local crypto = require("astra.lua.crypto")
+local crypto = require("crypto")
 
 crypto.hash("sha2_512", "MY INPUT")
 ```

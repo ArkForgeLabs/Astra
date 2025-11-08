@@ -6,7 +6,7 @@
     The license is same as the Astra's license.
 ]]
 
-local astra_io = require("astra.lua.io")
+local fs = require("fs")
 
 ------------- UTILS
 
@@ -37,7 +37,7 @@ local function execute_command_in_subdirectories(directory, ignore, command)
             local full_path = directory .. "/" .. file
 
             -- Check if the entry is a directory
-            local is_dir = astra_io.get_metadata(full_path):file_type():is_dir()
+            local is_dir = fs.get_metadata(full_path):file_type():is_dir()
 
             if is_dir then
                 print("Executing command in directory: " .. full_path)

@@ -230,7 +230,7 @@
 <h1 id="in-memory-stores"><a class="header" href="#in-memory-stores">In-Memory Stores</a></h1>
 <h2 id="observer-pattern"><a class="header" href="#observer-pattern">Observer Pattern</a></h2>
 <p>Astra provides you with an observable object which can have functions subcribe and unsubscribe to it, to which you can publish a desired data payload.</p>
-<pre><code class="language-lua">local stores = require("astra.lua.stores")
+<pre><code class="language-lua">local stores = require("stores")
 
 -- You can can construct an observable object as shown below:
 -- Replace `0` with whatever data you'd like
@@ -349,7 +349,7 @@ counter:publish(add_to_counter(4))
 <h2 id="publishersubscriber-pattern"><a class="header" href="#publishersubscriber-pattern">Publisher/Subscriber Pattern</a></h2>
 <p>The Pub/Sub pattern in Astra is similar to the <a href="./observer_pattern.html">observer pattern</a> in terms of core functionality, but it differs in terms of publisher &amp; subscriber management. A pubsub store is a global store. It can have multiple functions subcribed to an observable object, and multiple of these observable objects organized into topics, which are simply string keywords.</p>
 <p>You must remember that the rules of operating on pubsub stores is the same as that for the observer pattern, but pubsub stores are much more powerful and flexible.</p>
-<pre><code class="language-lua">local stores = require("astra.lua.stores")
+<pre><code class="language-lua">local stores = require("stores")
 
 -- Let's create a few tables as examples for observable objects
 local user1 = {

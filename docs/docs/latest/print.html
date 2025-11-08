@@ -464,7 +464,7 @@
 <h1 id="http-server"><a class="header" href="#http-server">HTTP Server</a></h1>
 <p>Astra offers HTTP1/2 web server through the <a href="https://github.com/tokio-rs/axum">axum</a> project. On the Lua's side, the server holds configuration and route details, which are then sent to the Rust for running them. Since it is running on Tokio, it can take advantage of all available resources automatically, making it easy for vertical scaling. Throughout this documentation, the word <code>server</code> is used to describe an HTTP web server table on the Lua's side. You can create one as such:</p>
 <pre><code class="language-lua">-- create a new server with
-local server = require("astra.lua.http").server.new()
+local server = require("http").server.new()
 
 -- run the server with
 server:run()
@@ -660,7 +660,7 @@ socket
 <p>For more details, see the <a href="https://github.com/ArkForgeLabs/Astra/blob/main/src/components/http/middleware.lua">middleware.lua</a> and the <a href="https://github.com/ArkForgeLabs/Astra/tree/main/examples/middleware.lua">middleware_example.lua</a>.</p>
 <h3 id="basic-middleware"><a class="header" href="#basic-middleware">Basic middleware</a></h3>
 <p>The following example shows the most basic middleware that changes the response headers.</p>
-<pre><code class="language-lua">local http = require("astra.lua.http")
+<pre><code class="language-lua">local http = require("http")
 local server = http.server:new()
 
 local function sunny_day(request, response)
@@ -684,7 +684,7 @@ server:run()
 </code></pre>
 <h3 id="context"><a class="header" href="#context">Context</a></h3>
 <p>When we want to pass data through middleware, we can use the third argument and treat it as a context table.</p>
-<pre><code class="language-lua">local datetime = require("astra.lua.datetime")
+<pre><code class="language-lua">local datetime = require("datetime")
 local server = http.server:new()
 
 ---@param ctx { datetime: DateTime }
@@ -791,8 +791,8 @@ server:run()
 </code></pre>
 <p>The <code>logger</code> we got from the <code>file_logger</code> is gonna be used in all routes we pass it as a middleware.</p>
 <h3 id="full-example"><a class="header" href="#full-example">Full example</a></h3>
-<pre><code class="language-lua">local http = require("astra.lua.http")
-local datetime = require("astra.lua.datetime")
+<pre><code class="language-lua">local http = require("http")
+local datetime = require("datetime")
 local server = http.server:new()
 local chain = http.middleware.chain
 
@@ -976,7 +976,7 @@ sudo ufw allow 443
 <h1 id="http-client"><a class="header" href="#http-client">HTTP Client</a></h1>
 <p>Sometimes your server needs to access other servers and make an HTTP Request, for these cases Astra provides a HTTP Client function:</p>
 <pre><code class="language-lua">-- Import
-local http = require("astra.lua.http")
+local http = require("http")
 
 -- By default its always a GET request
 local response = http.request("https://example.com/"):execute()
@@ -1016,7 +1016,7 @@ pprint(response:body():text()) -- or response:body():json() for json content
 })
 </code></pre>
 <p>For more complex requests, such as API calls with authentication and JSON payloads:</p>
-<pre><code class="language-lua">local http = require("astra.lua.http")
+<pre><code class="language-lua">local http = require("http")
 
 http.request({
     url = "https://example-ai-company.com",
@@ -1134,7 +1134,7 @@ request_client:execute_streaming( function(response) end )
 <h1 id="templating"><a class="header" href="#templating">Templating</a></h1>
 <p>Astra supports jinja templating through <a href="https://github.com/mitsuhiko/minijinja/blob/main/COMPATIBILITY.md">minijinja</a>. It is incredibly performent, feature rich and easy to use.</p>
 <pre><code class="language-lua">-- can also pass no arguments to make an empty templating engine
-local templating_engine = require("astra.lua.jinja2")
+local templating_engine = require("jinja2")
 local templates = templating_engine.new("examples/templates/**/*.html")
 
 -- Exclude files
@@ -1240,7 +1240,7 @@ end)
 <h1 id="schema-validation"><a class="header" href="#schema-validation">Schema Validation</a></h1>
 <p>Sometimes during development, your server likely recieves structured data such as JSON from outside. You likely also have a structure in mind for them. For these cases to validate that the structures are correct and to confidently go through them without risk of errors, hopefully, you can use the schema validation utility.</p>
 <p>Schema Validation essentially is a function that returns true if a given table is of a given structure. The structure is defined as a separate table that has the field names along the types and requirements. For example:</p>
-<pre><code class="language-lua">local validation = require("astra.lua.validation")
+<pre><code class="language-lua">local validation = require("validation")
 
 -- Your schema
 local schema = {
@@ -1382,7 +1382,7 @@ assert(is_valid, "Validation failed: " .. tostring(err))
 <h1 id="sql-driver"><a class="header" href="#sql-driver">SQL Driver</a></h1>
 <p>If your server requires access to an SQL database such as PostgreSQL and SQLite, Astra provides utilities for basic connection and querying.</p>
 <pre><code class="language-lua">-- connect to your db
-local driver = require("astra.lua.database")
+local driver = require("database")
 local db = driver.new("postgres", "postgres://astra_postgres:password@localhost/astr_database")
 
 -- You can execute queries to the database along with optional parameters
@@ -1486,7 +1486,7 @@ pprint(result)
 <li><code>remove_dir_all</code></li>
 </ul>
 <p>They are fairly self explanitory and does not require further details. Example usage:</p>
-<pre><code class="language-lua">local io = require("astra.lua.io")
+<pre><code class="language-lua">local io = require("io")
 pprint(Astra.io.get_script_path())
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><style>
@@ -1560,7 +1560,7 @@ pprint(Astra.io.get_script_path())
 <p>During development of your web servers, you might need some cryptography functionality such as hashing and encoding. For these cases, Astra provides commonly used cryptographic functions to ease up development.</p>
 <h2 id="hashing"><a class="header" href="#hashing">Hashing</a></h2>
 <p>Currently Astra provides SHA2 and SHA3 (both 256 and 512 variants) hashing functions.</p>
-<pre><code class="language-lua">local crypto = require("astra.lua.crypto")
+<pre><code class="language-lua">local crypto = require("crypto")
 
 crypto.hash("sha2_512", "MY INPUT")
 </code></pre>
@@ -1644,8 +1644,8 @@ print(decoded)
 <h1 id="serialization--deserialization"><a class="header" href="#serialization--deserialization">Serialization &amp; Deserialization</a></h1>
 <h2 id="json"><a class="header" href="#json">JSON</a></h2>
 <p>Often you will have to deal with a medium of structured data between your server and the clients. This could be in form of JSON, YAML, e.t.c. Astra includes some utilities to serialize and deserialize these with native Lua structures.</p>
-<p>For JSON, you can import the serializer package (<code>require("astra.lua.serde")</code>), and then use <code>json.encode()</code> and <code>json.decode()</code> methods which converts JSON data from and into Lua tables.</p>
-<pre><code class="language-lua">local serde = require("astra.lua.serde")
+<p>For JSON, you can import the serializer package (<code>require("serde")</code>), and then use <code>json.encode()</code> and <code>json.decode()</code> methods which converts JSON data from and into Lua tables.</p>
+<pre><code class="language-lua">local serde = require("serde")
 
 local value = { key = 1.23 }
 local to_json = serde.json.encode(value) -- Returns JSON string
@@ -1722,7 +1722,7 @@ assert(from_json, value)
 </style>
 <h1 id="datetime"><a class="header" href="#datetime">DateTime</a></h1>
 <p>Astra provides date &amp; time functionality as an extension to the standard library. It is loosely inspired by the <a href="https://www.w3schools.com/jsref/jsref_obj_date.asp">JavaScript Date</a> implementation.</p>
-<pre><code class="language-lua">local datetime = require("astra.lua.datetime")
+<pre><code class="language-lua">local datetime = require("datetime")
 
 -- Returns a DateTime object which corresponds to the current date, time &amp; local offset from UTC.
 local dt = datetime.new()
@@ -1986,7 +1986,7 @@ end, 5000)
 <h1 id="in-memory-stores"><a class="header" href="#in-memory-stores">In-Memory Stores</a></h1>
 <h2 id="observer-pattern"><a class="header" href="#observer-pattern">Observer Pattern</a></h2>
 <p>Astra provides you with an observable object which can have functions subcribe and unsubscribe to it, to which you can publish a desired data payload.</p>
-<pre><code class="language-lua">local stores = require("astra.lua.stores")
+<pre><code class="language-lua">local stores = require("stores")
 
 -- You can can construct an observable object as shown below:
 -- Replace `0` with whatever data you'd like
@@ -2105,7 +2105,7 @@ counter:publish(add_to_counter(4))
 <h2 id="publishersubscriber-pattern"><a class="header" href="#publishersubscriber-pattern">Publisher/Subscriber Pattern</a></h2>
 <p>The Pub/Sub pattern in Astra is similar to the <a href="std/./observer_pattern.html">observer pattern</a> in terms of core functionality, but it differs in terms of publisher &amp; subscriber management. A pubsub store is a global store. It can have multiple functions subcribed to an observable object, and multiple of these observable objects organized into topics, which are simply string keywords.</p>
 <p>You must remember that the rules of operating on pubsub stores is the same as that for the observer pattern, but pubsub stores are much more powerful and flexible.</p>
-<pre><code class="language-lua">local stores = require("astra.lua.stores")
+<pre><code class="language-lua">local stores = require("stores")
 
 -- Let's create a few tables as examples for observable objects
 local user1 = {

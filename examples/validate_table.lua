@@ -27,7 +27,7 @@ local table_to_validate = {
 	},
 }
 
-local is_valid, err = require("astra.lua.validation").validate_table(table_to_validate, schema)
+local is_valid, err = require("validation").validate_table(table_to_validate, schema)
 if is_valid then
 	print("The table is valid!")
 else

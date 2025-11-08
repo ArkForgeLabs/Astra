@@ -1,4 +1,4 @@
-local http = require("astra.teal.http")
+local http = require("http")
 local server = http.server.new()
 
 -- A simple GET index route with text return

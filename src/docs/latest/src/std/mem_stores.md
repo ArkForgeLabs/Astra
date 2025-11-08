@@ -5,7 +5,7 @@
 Astra provides you with an observable object which can have functions subcribe and unsubscribe to it, to which you can publish a desired data payload.
 
 ```lua
-local stores = require("astra.lua.stores")
+local stores = require("stores")
 
 -- You can can construct an observable object as shown below:
 -- Replace `0` with whatever data you'd like
@@ -152,7 +152,7 @@ The Pub/Sub pattern in Astra is similar to the [observer pattern](./observer_pat
 You must remember that the rules of operating on pubsub stores is the same as that for the observer pattern, but pubsub stores are much more powerful and flexible.
 
 ```lua
-local stores = require("astra.lua.stores")
+local stores = require("stores")
 
 -- Let's create a few tables as examples for observable objects
 local user1 = {

@@ -5,7 +5,7 @@ Sometimes during development, your server likely recieves structured data such a
 Schema Validation essentially is a function that returns true if a given table is of a given structure. The structure is defined as a separate table that has the field names along the types and requirements. For example:
 
 ```lua
-local validation = require("astra.lua.validation")
+local validation = require("validation")
 
 -- Your schema
 local schema = {

@@ -230,7 +230,7 @@
 <h1 id="http-client"><a class="header" href="#http-client">HTTP Client</a></h1>
 <p>Sometimes your server needs to access other servers and make an HTTP Request, for these cases Astra provides a HTTP Client function:</p>
 <pre><code class="language-lua">-- Import
-local http = require("astra.lua.http")
+local http = require("http")
 
 -- By default its always a GET request
 local response = http.request("https://example.com/"):execute()
@@ -270,7 +270,7 @@ pprint(response:body():text()) -- or response:body():json() for json content
 })
 </code></pre>
 <p>For more complex requests, such as API calls with authentication and JSON payloads:</p>
-<pre><code class="language-lua">local http = require("astra.lua.http")
+<pre><code class="language-lua">local http = require("http")
 
 http.request({
     url = "https://example-ai-company.com",

@@ -1,5 +1,5 @@
 local lust = require("tests.lust")
-local datetime = require("astra.lua.datetime")
+local datetime = require("datetime")
 local describe, it, expect = lust.describe, lust.it, lust.expect
 
 -- helper functions

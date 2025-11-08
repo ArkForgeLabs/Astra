@@ -230,7 +230,7 @@
 <h1 id="schema-validation"><a class="header" href="#schema-validation">Schema Validation</a></h1>
 <p>Sometimes during development, your server likely recieves structured data such as JSON from outside. You likely also have a structure in mind for them. For these cases to validate that the structures are correct and to confidently go through them without risk of errors, hopefully, you can use the schema validation utility.</p>
 <p>Schema Validation essentially is a function that returns true if a given table is of a given structure. The structure is defined as a separate table that has the field names along the types and requirements. For example:</p>
-<pre><code class="language-lua">local validation = require("astra.lua.validation")
+<pre><code class="language-lua">local validation = require("validation")
 
 -- Your schema
 local schema = {

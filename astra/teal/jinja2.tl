@@ -1,4 +1,4 @@
-require("astra.teal.http")
+require("http")
 
 local type template_function_type = function(args: {any:any}): any
 local type template_context = {any:any}

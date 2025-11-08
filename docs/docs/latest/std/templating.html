@@ -230,7 +230,7 @@
 <h1 id="templating"><a class="header" href="#templating">Templating</a></h1>
 <p>Astra supports jinja templating through <a href="https://github.com/mitsuhiko/minijinja/blob/main/COMPATIBILITY.md">minijinja</a>. It is incredibly performent, feature rich and easy to use.</p>
 <pre><code class="language-lua">-- can also pass no arguments to make an empty templating engine
-local templating_engine = require("astra.lua.jinja2")
+local templating_engine = require("jinja2")
 local templates = templating_engine.new("examples/templates/**/*.html")
 
 -- Exclude files

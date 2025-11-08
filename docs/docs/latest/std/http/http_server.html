@@ -230,7 +230,7 @@
 <h1 id="http-server"><a class="header" href="#http-server">HTTP Server</a></h1>
 <p>Astra offers HTTP1/2 web server through the <a href="https://github.com/tokio-rs/axum">axum</a> project. On the Lua's side, the server holds configuration and route details, which are then sent to the Rust for running them. Since it is running on Tokio, it can take advantage of all available resources automatically, making it easy for vertical scaling. Throughout this documentation, the word <code>server</code> is used to describe an HTTP web server table on the Lua's side. You can create one as such:</p>
 <pre><code class="language-lua">-- create a new server with
-local server = require("astra.lua.http").server.new()
+local server = require("http").server.new()
 
 -- run the server with
 server:run()
@@ -426,7 +426,7 @@ socket
 <p>For more details, see the <a href="https://github.com/ArkForgeLabs/Astra/blob/main/src/components/http/middleware.lua">middleware.lua</a> and the <a href="https://github.com/ArkForgeLabs/Astra/tree/main/examples/middleware.lua">middleware_example.lua</a>.</p>
 <h3 id="basic-middleware"><a class="header" href="#basic-middleware">Basic middleware</a></h3>
 <p>The following example shows the most basic middleware that changes the response headers.</p>
-<pre><code class="language-lua">local http = require("astra.lua.http")
+<pre><code class="language-lua">local http = require("http")
 local server = http.server:new()
 
 local function sunny_day(request, response)
@@ -450,7 +450,7 @@ server:run()
 </code></pre>
 <h3 id="context"><a class="header" href="#context">Context</a></h3>
 <p>When we want to pass data through middleware, we can use the third argument and treat it as a context table.</p>
-<pre><code class="language-lua">local datetime = require("astra.lua.datetime")
+<pre><code class="language-lua">local datetime = require("datetime")
 local server = http.server:new()
 
 ---@param ctx { datetime: DateTime }
@@ -557,8 +557,8 @@ server:run()
 </code></pre>
 <p>The <code>logger</code> we got from the <code>file_logger</code> is gonna be used in all routes we pass it as a middleware.</p>
 <h3 id="full-example"><a class="header" href="#full-example">Full example</a></h3>
-<pre><code class="language-lua">local http = require("astra.lua.http")
-local datetime = require("astra.lua.datetime")
+<pre><code class="language-lua">local http = require("http")
+local datetime = require("datetime")
 local server = http.server:new()
 local chain = http.middleware.chain
 

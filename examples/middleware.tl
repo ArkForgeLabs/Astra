@@ -1,5 +1,5 @@
-local http = require("astra.teal.http")
-local datetime = require("astra.teal.datetime")
+local http = require("http")
+local datetime = require("datetime")
 
 local server = http.server.new()
 local chain = http.middleware.chain

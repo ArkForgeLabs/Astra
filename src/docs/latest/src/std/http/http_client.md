@@ -4,7 +4,7 @@ Sometimes your server needs to access other servers and make an HTTP Request, fo
 
 ```lua
 -- Import
-local http = require("astra.lua.http")
+local http = require("http")
 
 -- By default its always a GET request
 local response = http.request("https://example.com/"):execute()
@@ -53,7 +53,7 @@ local request_client = http.request({
 For more complex requests, such as API calls with authentication and JSON payloads:
 
 ```lua
-local http = require("astra.lua.http")
+local http = require("http")
 
 http.request({
     url = "https://example-ai-company.com",

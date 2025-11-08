@@ -3,7 +3,7 @@
 Astra provides date & time functionality as an extension to the standard library. It is loosely inspired by the [JavaScript Date](https://www.w3schools.com/jsref/jsref_obj_date.asp) implementation.
 
 ```lua
-local datetime = require("astra.lua.datetime")
+local datetime = require("datetime")
 
 -- Returns a DateTime object which corresponds to the current date, time & local offset from UTC.
 local dt = datetime.new()
