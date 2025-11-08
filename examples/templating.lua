@@ -22,7 +22,7 @@ template_engine:add_to_server(
 
 -- Partial hydration
 local count = 0
-server:get("/hydrate", function(request, response)
+server:get("/hydrate", function(_request, response)
 	-- your dynamic data
 	count = count + 1
 	-- response type
