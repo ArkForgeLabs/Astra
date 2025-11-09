@@ -43,8 +43,8 @@ mlua = { version = "0.11.4", features = [
 
 # http
 axum = { version = "0.8.6", features = ["macros", "multipart", "http2", "ws"] }
-axum-extra = { version = "0.10.3", features = ["cookie"] }
-reqwest = { version = "0.12.23", features = [
+axum-extra = { version = "0.12.1", features = ["cookie"] }
+reqwest = { version = "0.12.24", features = [
   "json",
   "rustls-tls",
   "charset",
@@ -53,6 +53,7 @@ reqwest = { version = "0.12.23", features = [
   "stream",
   "macos-system-configuration",
 ], default-features = false }
+reqwest-websocket = "=0.5.1"
 tower = { version = "0.5.2" }
 tower-http = { version = "0.6.6", features = [
   "fs",
@@ -60,7 +61,7 @@ tower-http = { version = "0.6.6", features = [
   "compression-full",
   "decompression-full",
 ] }
-time = "0.3.41"
+time = "0.3.44"
 minijinja = { version = "2.12.0", features = [
   "loader",
   "urlencode",
@@ -86,12 +87,12 @@ tokio = { version = "1.47.1", features = [
   "rt-multi-thread",
 ] }
 futures = "0.3.31"
-clap = { version = "4.5.48", features = ["cargo", "derive"] }
+clap = { version = "4.5.51", features = ["cargo", "derive"] }
 dotenvy = "0.15.7"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
-version-compare = "0.2.0"
-regex = "1.11.3"
+version-compare = "0.2.1"
+regex = "1.12.2"
 
 # database
 sqlx = { version = "0.8.6", features = [
@@ -110,7 +111,9 @@ opt-level = 3
 lto = true
 codegen-units = 1
 overflow-checks = false
+strip = true
 debug = 0
 [profile.release.package."*"]
 opt-level = 3
 codegen-units = 1
+strip = true

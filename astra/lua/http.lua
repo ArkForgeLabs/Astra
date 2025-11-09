@@ -83,7 +83,7 @@ local http = {}
 ---@field queries fun(self: HTTPServerRequest): table
 ---@field params fun(self: HTTPServerRequest): table
 ---@field headers fun(self: HTTPServerRequest): table
----@field body fun(self: HTTPServerRequest): HTTPBody Returns the body of the request, which can be a table or a string.
+---@field body fun(self: HTTPServerRequest): Buffer Returns the body of the request, which can be a table or a string.
 ---@field ip_address fun(self: HTTPServerRequest): IPAddress
 ---@field multipart fun(self: HTTPServerRequest): HTTPMultipart
 ---@field get_cookie fun(self: HTTPServerRequest, name: string): Cookie
