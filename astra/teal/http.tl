@@ -42,6 +42,7 @@ global type HTTPServerWSCallback = function(socket: WebSocket): any
 
 global interface HTTPRouteConfiguration
     body_limit: number | nil
+    compression: boolean | nil
 end
 
 global interface HTTPRoute

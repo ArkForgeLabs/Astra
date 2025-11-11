@@ -144,6 +144,7 @@ pub fn load_routes(server: mlua::Table) -> Router {
 
             let config = route_values.config.clone();
             let body_limit = config.body_limit;
+            let compression = config.compression;
 
             macro_rules! match_routes {
                 ($route_function:expr) => {{
@@ -151,6 +152,15 @@ pub fn load_routes(server: mlua::Table) -> Router {
                         $route_function(|request: Request<Body>| route(lua, route_values, request));
                     if let Some(body_limit) = body_limit {
                         route_function = route_function.layer(DefaultBodyLimit::max(body_limit))
+                    }
+                    if let Some(compression) = compression
+                        && compression
+                    {
+                        route_function = route_function.layer(
+                            tower::ServiceBuilder::new()
+                                .layer(tower_http::decompression::RequestDecompressionLayer::new())
+                                .layer(tower_http::compression::CompressionLayer::new()),
+                        )
                     }
 
                     router.route(path, route_function)

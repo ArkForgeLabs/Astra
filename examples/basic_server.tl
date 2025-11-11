@@ -36,7 +36,7 @@ server:post("/upload", function(request: HTTPServerRequest, response: HTTPServer
 	local file_name = multipart:file_name() or "Myfile"
 	-- optionally set name for the file you want to save
 	multipart:save_file(file_name)
-end)
+end, { body_limit = 1024 * 1024 * 64 }) -- with 64MB body limit
 
 pprint("🚀 Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port))
 
