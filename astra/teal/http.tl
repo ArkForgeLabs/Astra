@@ -34,6 +34,7 @@ global interface HTTPClientRequest is userdata
     execute: function(self: HTTPClientRequest): HTTPClientResponse
     execute_task: function(self: HTTPClientRequest, callback: http_client_callback)
     execute_streaming: function(self: HTTPClientRequest, callback: http_client_callback)
+    execute_websocket: function(self: HTTPClientRequest, callback: HTTPServerWSCallback)
 end
 
 global type HTTPServerCallback = function(request?: HTTPServerRequest, response?: HTTPServerResponse): any

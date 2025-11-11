@@ -1,8 +1,11 @@
+mod websocket;
+
 use crate::components::AstraBuffer;
 use futures::StreamExt;
-use mlua::{LuaSerdeExt, UserData};
+use mlua::{ExternalError, LuaSerdeExt, UserData};
 use reqwest::{Client, RequestBuilder};
-use std::collections::HashMap; // Add this for stream support
+use reqwest_websocket::RequestBuilderExt;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub enum HTTPClientRequestBodyTypes {
@@ -234,9 +237,7 @@ impl UserData for HTTPClientRequest {
             let request = this.request_builder().await;
             match request.send().await {
                 Ok(response) => Ok(Self::response_to_http_client_response(response).await),
-                Err(e) => Err(mlua::Error::runtime(format!(
-                    "HTTP Request did not execute successfully: {e}"
-                ))),
+                Err(e) => Err(e.into_lua_err()),
             }
         });
         methods.add_async_method(
@@ -311,6 +312,29 @@ impl UserData for HTTPClientRequest {
                             }
                         }
                     }
+                });
+                Ok(())
+            },
+        );
+        methods.add_async_method(
+            "execute_websocket",
+            |lua, this, callback: mlua::Function| async move {
+                tokio::spawn(async move {
+                    let request = this.request_builder().await.upgrade();
+                    if let Ok(response) = request.send().await
+                        && let Ok(response) = response.into_websocket().await
+                    {
+                        if let Err(e) = callback
+                            .call_async::<()>(
+                                lua.create_userdata(websocket::AstraWebSocket(response)),
+                            )
+                            .await
+                        {
+                            tracing::error!("Error running a task: {e}")
+                        }
+                    } else {
+                        tracing::error!("Websocket request did not execute successfully");
+                    };
                 });
                 Ok(())
             },
