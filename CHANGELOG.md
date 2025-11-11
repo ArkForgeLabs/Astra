@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.36.0](https://github.com/ArkForgeLabs/Astra/compare/v0.35.0..v0.36.0) - 2025-11-11
+
+### Features
+
+- websocket client added - ([9774fe9](https://github.com/ArkForgeLabs/Astra/commit/9774fe9413e539cc2251493b3bdae4ab91c403bd))
+
+### Refactoring
+
+- updated dependencies - ([5225768](https://github.com/ArkForgeLabs/Astra/commit/5225768aa11f6a664a1da31a234b67872421f7cc))
+
 ## [0.35.0](https://github.com/ArkForgeLabs/Astra/compare/v0.34.0..v0.35.0) - 2025-11-08
 
 ### Features
