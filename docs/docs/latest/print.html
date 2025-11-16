@@ -2325,7 +2325,7 @@ User2 updated:  Jane Doe        jane.doe@company.com
 </span>pub struct MyNewExtension {
     pub field: String,
 }
-impl crate::components::LuaComponents for MyNewExtension {
+impl crate::LuaComponents for MyNewExtension {
     async fn register_to_lua(lua: &amp;mlua::Lua) -&gt; mlua::Result&lt;()&gt; {
         let function = lua.create_async_function(|lua, param: mlua::Value| async move {
             /* Content */

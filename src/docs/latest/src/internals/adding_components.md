@@ -10,7 +10,7 @@ For extensions, you need a struct that implements `LuaComponents` trait implemen
 pub struct MyNewExtension {
     pub field: String,
 }
-impl crate::components::LuaComponents for MyNewExtension {
+impl crate::LuaComponents for MyNewExtension {
     async fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let function = lua.create_async_function(|lua, param: mlua::Value| async move {
             /* Content */
