@@ -1,0 +1,33 @@
+[package]
+name = "astra_runtime"
+version.workspace = true
+authors.workspace = true
+description = "Runtime and CLI for Astra"
+repository.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[features]
+default = ["luajit"]
+luajit = ["mlua/luajit"]
+luajit52 = ["mlua/luajit52"]
+luau = ["mlua/luau"]
+lua51 = ["mlua/lua51"]
+lua52 = ["mlua/lua52"]
+lua53 = ["mlua/lua53"]
+lua54 = ["mlua/lua54"]
+
+[dependencies]
+common = { path = "../common" }
+astra_small = { path = "../astra_small" }
+astra_http = { path = "../astra_http" }
+astra_serde = { path = "../astra_serde" }
+clap = { workspace = true }
+mlua = { workspace = true }
+tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
+tokio = { workspace = true }
+include_dir = { workspace = true }
+tracing = { workspace = true }
+reqwest = { workspace = true }
+serde_json = { workspace = true }
+version-compare = "0.2.1"

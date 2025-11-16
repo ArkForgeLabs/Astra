@@ -1,7 +1,11 @@
-pub use astra_small;
-pub use common::{
-    ASTRA_STD_LIBS, LUA, RUNTIME_FLAGS, RuntimeFlags, TEAL_IMPORT_SCRIPT, execute_teal_code,
-};
+mod commands;
+pub use commands::*;
+mod run;
+pub use run::*;
+mod upgrade;
+pub use upgrade::*;
+mod export;
+pub use export::*;
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     astra_small::import::register_import_function(lua).await?;

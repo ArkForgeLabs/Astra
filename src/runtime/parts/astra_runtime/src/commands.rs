@@ -1,4 +1,5 @@
-use lua_astra_standard_library::{ASTRA_STD_LIBS, execute_teal_code, register_components};
+use crate::register_components;
+use common::{ASTRA_STD_LIBS, execute_teal_code};
 
 static LUA_ASTRA_STDLIB_TABLE: tokio::sync::OnceCell<mlua::Table> =
     tokio::sync::OnceCell::const_new();

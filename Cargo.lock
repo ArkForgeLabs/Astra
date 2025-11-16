@@ -125,6 +125,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "astra_runtime"
+version = "0.37.0"
+dependencies = [
+ "astra_http",
+ "astra_serde",
+ "astra_small",
+ "clap",
+ "common",
+ "include_dir",
+ "mlua",
+ "reqwest",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "version-compare",
+]
+
+[[package]]
 name = "astra_serde"
 version = "0.37.0"
 dependencies = [
@@ -1412,22 +1431,6 @@ name = "lru-slab"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
-
-[[package]]
-name = "lua-astra"
-version = "0.37.0"
-dependencies = [
- "clap",
- "include_dir",
- "lua-astra-standard-library",
- "mlua",
- "reqwest",
- "serde_json",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "version-compare",
-]
 
 [[package]]
 name = "lua-astra-standard-library"

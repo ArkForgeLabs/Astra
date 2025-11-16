@@ -1,4 +1,5 @@
-use lua_astra_standard_library::{ASTRA_STD_LIBS, LUA, register_components};
+use crate::register_components;
+use common::{ASTRA_STD_LIBS, LUA};
 
 /// Exports the Lua bundle.
 pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Result<()> {
@@ -13,8 +14,8 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
     let _ = std::fs::create_dir_all(folder_path.join("astra"));
     ASTRA_STD_LIBS.extract(folder_path.join("astra"))?;
 
-    let tlconfig_file = include_str!("../../../tlconfig.lua");
-    let luarc_file = include_str!("../../../.luarc.json");
+    let tlconfig_file = include_str!("../../../../../tlconfig.lua");
+    let luarc_file = include_str!("../../../../../.luarc.json");
 
     std::fs::exists("tlconfig.lua")
         .map(|exists| !exists)

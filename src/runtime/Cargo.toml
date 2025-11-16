@@ -1,8 +1,8 @@
 [package]
-name = "lua-astra"
+name = "lua-astra-standard-library"
 version.workspace = true
 authors.workspace = true
-description.workspace = true
+description = "standard library for Lua"
 documentation.workspace = true
 repository.workspace = true
 keywords.workspace = true
@@ -11,28 +11,15 @@ edition.workspace = true
 license-file.workspace = true
 exclude.workspace = true
 
-[features]
-default = ["luajit"]
-luajit = ["mlua/luajit"]
-luajit52 = ["mlua/luajit52"]
-luau = ["mlua/luau"]
-lua51 = ["mlua/lua51"]
-lua52 = ["mlua/lua52"]
-lua53 = ["mlua/lua53"]
-lua54 = ["mlua/lua54"]
-
-[[bin]]
-name = "astra"
-path = "src/main.rs"
+[lib]
+path = "src/lib.rs"
+crate-type = ["lib"]
 
 [dependencies]
-lua-astra-standard-library = { path = "../standard_library" }
-clap = { version = "4.5.51", features = ["cargo", "derive"] }
+# Parts
+common = { path = "./parts/common" }
+astra_http = { path = "./parts/astra_http" }
+astra_serde = { path = "./parts/astra_serde" }
+astra_small = { path = "./parts/astra_small" }
+
 mlua = { workspace = true }
-tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
-tokio = { workspace = true }
-include_dir = { workspace = true }
-tracing = { workspace = true }
-reqwest = { workspace = true }
-serde_json = { workspace = true }
-version-compare = "0.2.1"

@@ -1,8 +1,5 @@
-use lua_astra_standard_library::{
-    LUA, RUNTIME_FLAGS, RuntimeFlags,
-    astra_small::database::{DATABASE_POOLS, DatabaseType},
-    execute_teal_code,
-};
+use astra_small::database::{DATABASE_POOLS, DatabaseType};
+use common::{LUA, RUNTIME_FLAGS, RuntimeFlags, execute_teal_code};
 use std::path::PathBuf;
 use tracing::error;
 

@@ -17,11 +17,7 @@ exclude = ["examples", "docs", ".github"]
 
 [workspace]
 default-members = ["src/runtime"]
-members = [
-  "src/runtime",
-  "src/standard_library",
-  "src/standard_library/parts/*",
-]
+members = ["src/runtime", "src/runtime/parts/*"]
 resolver = "3"
 
 [workspace.features]
@@ -35,6 +31,7 @@ lua53 = ["runtime/lua53"]
 lua54 = ["runtime/lua54"]
 
 [workspace.dependencies]
+clap = { version = "4.5.51", features = ["cargo", "derive"] }
 mlua = { version = "0.11.4", features = [
   "serialize",
   "vendored",
