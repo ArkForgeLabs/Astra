@@ -29,13 +29,13 @@ cargo install lua-astra --no-default-features --features lua54
 ### Linux install script
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ArkForgeLabs/Astra/refs/heads/main/linux_install.sh | bash
+curl -fsSL https://astra.arkforge.net/install.sh | bash
 ```
 
 ### Windows install script
 
 ```powershell
-powershell -c "irm https://raw.githubusercontent.com/ArkForgeLabs/Astra/refs/heads/main/windows_install.ps1 | iex"
+powershell -c "irm https://astra.arkforge.net/install.ps1 | iex"
 ```
 
 ## Example
