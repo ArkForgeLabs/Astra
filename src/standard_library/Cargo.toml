@@ -20,42 +20,6 @@ crate-type = ["lib"]
 common = { path = "./parts/common" }
 astra_http = { path = "./parts/astra_http" }
 astra_serde = { path = "./parts/astra_serde" }
+astra_small = { path = "./parts/astra_small" }
 
 mlua = { workspace = true }
-
-minijinja = { version = "2.12.0", features = [
-  "loader",
-  "urlencode",
-  "loop_controls",
-  "speedups",
-] }
-glob = "0.3.3"
-
-# data formats
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = { workspace = true }
-uuid = { version = "1.18.1", features = ["serde", "v4"] }
-sha2 = "0.10.9"
-sha3 = "0.10.8"
-base64 = "0.22.1"
-bytes = { workspace = true }
-chrono = { version = "0.4.42", features = ["serde"] }
-
-# runtime
-tokio = { workspace = true }
-futures = { workspace = true }
-dotenvy = "0.15.7"
-tracing = { workspace = true }
-regex = "1.12.2"
-include_dir = { workspace = true }
-
-# database
-sqlx = { version = "0.8.6", features = [
-  "runtime-tokio",
-  "tls-rustls",
-  "postgres",
-  "sqlite",
-  "json",
-  "chrono",
-  "uuid",
-] }

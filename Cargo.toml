@@ -1,5 +1,5 @@
 [workspace.package]
-version = "0.36.0"
+version = "0.37.0"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
 description = "🔥 Blazingly Fast 🔥 runtime for Lua"
 documentation = "https://astra.arkforge.net/docs/latest"

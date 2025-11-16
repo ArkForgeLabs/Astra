@@ -1,6 +1,6 @@
 use lua_astra_standard_library::{
     LUA, RUNTIME_FLAGS, RuntimeFlags,
-    database::{DATABASE_POOLS, DatabaseType},
+    astra_small::database::{DATABASE_POOLS, DatabaseType},
     execute_teal_code,
 };
 use std::path::PathBuf;

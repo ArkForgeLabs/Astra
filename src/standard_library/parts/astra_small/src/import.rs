@@ -1,4 +1,4 @@
-use crate::ASTRA_STD_LIBS;
+use common::ASTRA_STD_LIBS;
 
 pub async fn find_first_lua_match_with_content(
     lua: &mlua::Lua,
@@ -106,7 +106,7 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                     lua.globals()
                         .set("ASTRA_INTERNAL__CURRENT_SCRIPT", file_path.clone())?;
                     let result = if is_teal {
-                        super::execute_teal_code(&lua, &file_path, &content).await?
+                        common::execute_teal_code(&lua, &file_path, &content).await?
                     } else {
                         lua.load(content)
                             .set_name(file_path)
