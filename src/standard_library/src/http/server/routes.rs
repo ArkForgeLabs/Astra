@@ -1,6 +1,6 @@
 use crate::{
     LUA,
-    components::http::server::{
+    http::server::{
         configs::RouteConfiguration,
         requests::{self, RequestLua},
         responses::{self, CookieOperation},

@@ -1,4 +1,4 @@
-use crate::components::http::server::cookie::AstraHTTPCookie;
+use crate::http::server::cookie::AstraHTTPCookie;
 use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 
 // ! Support more cookie types like signed and private

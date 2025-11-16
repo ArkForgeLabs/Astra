@@ -10,6 +10,23 @@ pub mod http;
 mod import;
 mod templates;
 
+/// Global Lua instance.
+pub static LUA: std::sync::LazyLock<mlua::Lua> =
+    std::sync::LazyLock::new(|| unsafe { mlua::Lua::unsafe_new() });
+
+#[derive(Debug, Clone)]
+pub struct RuntimeFlags {
+    pub stdlib_path: std::path::PathBuf,
+    pub check_teal_code: bool,
+}
+pub static RUNTIME_FLAGS: tokio::sync::OnceCell<RuntimeFlags> = tokio::sync::OnceCell::const_new();
+
+/// Global standard libraries and type definitions from Astra
+pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
+    std::sync::LazyLock::new(|| include_dir::include_dir!("astra"));
+
+pub const TEAL_IMPORT_SCRIPT: &str = include_str!("./teal_check.lua");
+
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     import::register_import_function(lua).await?;
     global::register_to_lua(lua)?;

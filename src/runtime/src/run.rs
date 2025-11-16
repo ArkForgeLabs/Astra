@@ -1,4 +1,8 @@
-use crate::{LUA, RUNTIME_FLAGS, components::database::DATABASE_POOLS};
+use lua_astra_standard_library::{
+    LUA, RUNTIME_FLAGS, RuntimeFlags,
+    database::{DATABASE_POOLS, DatabaseType},
+    execute_teal_code,
+};
 use std::path::PathBuf;
 use tracing::error;
 
@@ -21,7 +25,7 @@ pub async fn run_command(
     if let Some(is_teal) = PathBuf::from(&file_path).extension()
         && is_teal == "tl"
     {
-        if let Err(e) = crate::components::execute_teal_code(lua, &file_path, &user_file).await {
+        if let Err(e) = execute_teal_code(lua, &file_path, &user_file).await {
             error!("{e}");
         }
     } else if let Err(e) = lua.load(user_file).set_name(file_path).exec_async().await {
@@ -54,7 +58,7 @@ async fn run_command_prerequisite(
 
     let stdlib_path = stdlib_path.unwrap_or("astra".to_string());
 
-    if let Err(e) = RUNTIME_FLAGS.set(crate::RuntimeFlags {
+    if let Err(e) = RUNTIME_FLAGS.set(RuntimeFlags {
         stdlib_path: PathBuf::from(stdlib_path.clone()),
         check_teal_code,
     }) {
@@ -124,8 +128,8 @@ fn spawn_termination_task() {
         let database_pools = DATABASE_POOLS.lock().await.clone();
         for i in database_pools {
             match i {
-                crate::components::database::DatabaseType::Postgres(pool) => pool.close().await,
-                crate::components::database::DatabaseType::Sqlite(pool) => pool.close().await,
+                DatabaseType::Postgres(pool) => pool.close().await,
+                DatabaseType::Sqlite(pool) => pool.close().await,
             }
         }
 

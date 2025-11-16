@@ -1,6 +1,6 @@
 mod websocket;
 
-use crate::components::AstraBuffer;
+use crate::AstraBuffer;
 use futures::StreamExt;
 use mlua::{ExternalError, LuaSerdeExt, UserData};
 use reqwest::{Client, RequestBuilder};
@@ -46,7 +46,7 @@ impl HTTPClientRequest {
                         Some(HTTPClientRequestBodyTypes::String(value.to_string_lossy()))
                     }
                     mlua::Value::Table(value) => {
-                        if crate::components::is_table_json(&value)? {
+                        if crate::is_table_json(&value)? {
                             if !headers.contains_key("Content-Type") {
                                 headers.insert(
                                     "Content-Type".to_string(),
@@ -56,7 +56,7 @@ impl HTTPClientRequest {
                             Some(HTTPClientRequestBodyTypes::Json(
                                 lua.from_value::<serde_json::Value>(body.clone())?,
                             ))
-                        } else if crate::components::is_table_byte_array(&value)? {
+                        } else if crate::is_table_byte_array(&value)? {
                             Some(HTTPClientRequestBodyTypes::Bytes(
                                 lua.from_value::<Vec<u8>>(body.clone())?,
                             ))

@@ -5,24 +5,13 @@ use clap::{Parser, command, crate_authors, crate_version};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod commands;
-mod components;
-
-/// Global Lua instance.
-pub static LUA: std::sync::LazyLock<mlua::Lua> =
-    std::sync::LazyLock::new(|| unsafe { mlua::Lua::unsafe_new() });
-
-#[derive(Debug, Clone)]
-pub struct RuntimeFlags {
-    pub stdlib_path: std::path::PathBuf,
-    pub check_teal_code: bool,
-}
-pub static RUNTIME_FLAGS: tokio::sync::OnceCell<RuntimeFlags> = tokio::sync::OnceCell::const_new();
-
-/// Global standard libraries and type definitions from Astra
-pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
-    std::sync::LazyLock::new(|| include_dir::include_dir!("astra"));
-
-pub const TEAL_IMPORT_SCRIPT: &str = include_str!("components/teal_check.lua");
+pub use commands::*;
+mod run;
+pub use run::*;
+mod upgrade;
+pub use upgrade::*;
+mod export;
+pub use export::*;
 
 /// Command-line interface for Astra.
 #[derive(Parser)]
@@ -88,10 +77,10 @@ pub async fn main() -> std::io::Result<()> {
             stdlib_path,
             check_teal_code,
             extra_args,
-        } => commands::run_command(file_path, stdlib_path, check_teal_code, extra_args).await,
-        AstraCLI::ExportBundle { path } => commands::export_bundle_command(path).await?,
+        } => run_command(file_path, stdlib_path, check_teal_code, extra_args).await,
+        AstraCLI::ExportBundle { path } => export_bundle_command(path).await?,
         AstraCLI::Upgrade { user_agent } => {
-            if let Err(e) = commands::upgrade_command(user_agent).await {
+            if let Err(e) = upgrade_command(user_agent).await {
                 eprintln!("Could not update to the latest version: {e}");
             }
         }

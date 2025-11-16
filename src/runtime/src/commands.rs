@@ -1,11 +1,4 @@
-use crate::ASTRA_STD_LIBS;
-
-mod run;
-pub use run::*;
-mod upgrade;
-pub use upgrade::*;
-mod export;
-pub use export::*;
+use lua_astra_standard_library::{ASTRA_STD_LIBS, execute_teal_code, register_components};
 
 static LUA_ASTRA_STDLIB_TABLE: tokio::sync::OnceCell<mlua::Table> =
     tokio::sync::OnceCell::const_new();
@@ -14,7 +7,7 @@ async fn stdlib_to_lua_table(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
         .get_or_try_init(|| async {
             let lua_astra_stdlib = lua.create_table()?;
 
-            for dir in crate::ASTRA_STD_LIBS.dirs() {
+            for dir in ASTRA_STD_LIBS.dirs() {
                 for file in dir.files() {
                     let file_path = file
                         .path()
@@ -32,8 +25,8 @@ async fn stdlib_to_lua_table(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
         .cloned()
 }
 
-async fn registration(lua: &mlua::Lua, stdlib_path: String) -> mlua::Result<()> {
-    crate::components::register_components(lua).await?;
+pub async fn registration(lua: &mlua::Lua, stdlib_path: String) -> mlua::Result<()> {
+    register_components(lua).await?;
 
     let stdlib_path = std::path::PathBuf::from(stdlib_path);
     async fn read_from_stdlib(
@@ -86,7 +79,7 @@ async fn registration(lua: &mlua::Lua, stdlib_path: String) -> mlua::Result<()> 
         )
         .await
         {
-            crate::components::execute_teal_code(lua, "astra.d.tl", &content).await?;
+            execute_teal_code(lua, "astra.d.tl", &content).await?;
         }
     }
 
