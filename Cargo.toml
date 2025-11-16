@@ -17,7 +17,11 @@ exclude = ["examples", "docs", ".github"]
 
 [workspace]
 default-members = ["src/runtime"]
-members = ["src/standard_library", "src/runtime"]
+members = [
+  "src/runtime",
+  "src/standard_library",
+  "src/standard_library/parts/*",
+]
 resolver = "3"
 
 [workspace.features]
@@ -55,7 +59,10 @@ tokio = { version = "1.48.0", features = [
   "signal",
   "rt-multi-thread",
 ] }
+futures = "0.3.31"
 include_dir = "0.7.4"
+bytes = { version = "1.11.0", features = ["serde"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.145" }
 
 [profile.release]

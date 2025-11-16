@@ -1,4 +1,4 @@
-use crate::LUA;
+use common::LUA;
 use minijinja::ErrorKind::UndefinedError;
 use mlua::{ExternalError, FromLua, LuaSerdeExt, UserData};
 use std::sync::Arc;

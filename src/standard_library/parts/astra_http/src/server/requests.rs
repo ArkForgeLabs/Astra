@@ -1,11 +1,11 @@
 use super::cookie::AstraHTTPCookie;
-use crate::AstraBuffer;
 use axum::{
     body::Body,
     extract::{ConnectInfo, FromRequest, FromRequestParts, Multipart, RawPathParams, State},
     http::{Request, request::Parts},
 };
 use axum_extra::extract::{CookieJar, cookie::Cookie};
+use common::AstraBuffer;
 use mlua::{ExternalError, LuaSerdeExt, UserData};
 use std::collections::HashMap;
 use tokio::io::AsyncWriteExt;

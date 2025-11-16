@@ -1,0 +1,31 @@
+[package]
+name = "astra_http"
+version.workspace = true
+authors.workspace = true
+description = "HTTP support for Astra"
+repository.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[dependencies]
+common = { path = "../common" }
+
+mlua = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true }
+bytes = { workspace = true }
+tracing = { workspace = true }
+serde_json = { workspace = true }
+axum = { version = "0.8.7", features = ["macros", "multipart", "http2", "ws"] }
+axum-extra = { version = "0.12.2", features = ["cookie"] }
+reqwest = { workspace = true }
+reqwest-websocket = "=0.5.1"
+tower = { version = "0.5.2" }
+tower-http = { version = "0.6.6", features = [
+    "fs",
+    "trace",
+    "compression-full",
+    "decompression-full",
+] }
+time = "0.3.44"
+futures = { workspace = true }

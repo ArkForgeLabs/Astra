@@ -104,6 +104,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a23eb6b1614318a8071c9b2521f36b424b2c83db5eb3a0fead4a6c0809af6e61"
 
 [[package]]
+name = "astra_http"
+version = "0.36.0"
+dependencies = [
+ "axum",
+ "axum-extra",
+ "bytes",
+ "common",
+ "futures",
+ "mlua",
+ "reqwest",
+ "reqwest-websocket",
+ "serde",
+ "serde_json",
+ "time",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+]
+
+[[package]]
+name = "astra_serde"
+version = "0.36.0"
+dependencies = [
+ "mlua",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "async-compression"
 version = "0.4.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -408,6 +438,16 @@ name = "colorchoice"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
+
+[[package]]
+name = "common"
+version = "0.36.0"
+dependencies = [
+ "bytes",
+ "mlua",
+ "serde_json",
+ "tokio",
+]
 
 [[package]]
 name = "compression-codecs"
@@ -1367,11 +1407,12 @@ dependencies = [
 name = "lua-astra-standard-library"
 version = "0.36.0"
 dependencies = [
- "axum",
- "axum-extra",
+ "astra_http",
+ "astra_serde",
  "base64",
  "bytes",
  "chrono",
+ "common",
  "dotenvy",
  "futures",
  "glob",
@@ -1379,17 +1420,12 @@ dependencies = [
  "minijinja",
  "mlua",
  "regex",
- "reqwest",
- "reqwest-websocket",
  "serde",
  "serde_json",
  "sha2",
  "sha3",
  "sqlx",
- "time",
  "tokio",
- "tower",
- "tower-http",
  "tracing",
  "uuid",
 ]

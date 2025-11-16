@@ -1,4 +1,4 @@
-use super::AstraBufferMut;
+use common::AstraBufferMut;
 use mlua::{ExternalError, LuaSerdeExt, UserData};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -56,7 +56,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
                     Ok(tokio::fs::write(path, contents.to_string_lossy()).await?)
                 }
                 mlua::Value::Table(contents) => {
-                    if super::is_table_byte_array(&contents)? {
+                    if common::is_table_byte_array(&contents)? {
                         Ok(tokio::fs::write(path, lua.from_value::<Vec<u8>>(value)?).await?)
                     } else if let Ok(contents) = serde_json::to_string(&contents) {
                         Ok(tokio::fs::write(path, contents).await?)
@@ -133,7 +133,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
 
 #[derive(Debug)]
 struct AstraFile(tokio::fs::File);
-super::macros::impl_deref!(AstraFile, tokio::fs::File);
+common::macros::impl_deref!(AstraFile, tokio::fs::File);
 impl UserData for AstraFile {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         macro_rules! file_io_methods {
@@ -170,7 +170,7 @@ impl UserData for AstraFile {
 
 #[derive(Debug, Clone)]
 struct AstraFileMetadata(std::fs::Metadata);
-super::macros::impl_deref!(AstraFileMetadata, std::fs::Metadata);
+common::macros::impl_deref!(AstraFileMetadata, std::fs::Metadata);
 impl UserData for AstraFileMetadata {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         macro_rules! file_metadata_methods {
@@ -198,7 +198,7 @@ impl UserData for AstraFileMetadata {
 
 #[derive(Debug, Clone)]
 struct AstraFilePermissions(std::fs::Permissions);
-super::macros::impl_deref!(AstraFilePermissions, std::fs::Permissions);
+common::macros::impl_deref!(AstraFilePermissions, std::fs::Permissions);
 impl UserData for AstraFilePermissions {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("is_readonly", |_, this, ()| Ok(this.readonly()));
@@ -211,7 +211,7 @@ impl UserData for AstraFilePermissions {
 
 #[derive(Debug, Clone)]
 struct AstraFileType(std::fs::FileType);
-super::macros::impl_deref!(AstraFileType, std::fs::FileType);
+common::macros::impl_deref!(AstraFileType, std::fs::FileType);
 impl UserData for AstraFileType {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("is_file", |_, this, ()| Ok(this.is_file()));
@@ -222,7 +222,7 @@ impl UserData for AstraFileType {
 
 #[derive(Debug)]
 struct AstraDirEntry(tokio::fs::DirEntry);
-super::macros::impl_deref!(AstraDirEntry, tokio::fs::DirEntry);
+common::macros::impl_deref!(AstraDirEntry, tokio::fs::DirEntry);
 impl UserData for AstraDirEntry {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("file_name", |_, this, ()| {
