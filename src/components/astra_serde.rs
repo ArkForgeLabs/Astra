@@ -1,4 +1,5 @@
 use mlua::{ExternalError, LuaSerdeExt};
+use paste::paste;
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     json_encode(lua)?;
@@ -12,9 +13,6 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
 
     ini_encode(lua)?;
     ini_decode(lua)?;
-
-    xml_encode(lua)?;
-    xml_decode(lua)?;
 
     toml_encode(lua)?;
     toml_decode(lua)?;
@@ -44,43 +42,40 @@ fn sanetize_lua_input(lua: &mlua::Lua, input: mlua::Value) -> mlua::Result<mlua:
     }
 }
 
-#[crabtime::function]
-fn gen_methods(crate_name: String, name: String) {
-    let encode_str = format!("\"astra_internal__{name}_encode\"");
-    let decode_str = format!("\"astra_internal__{name}_decode\"");
+macro_rules! gen_methods {
+    ($crate_name:ident, $name:ident) => {
+        paste! {
+            fn [<$name _encode>](lua: &mlua::Lua) -> mlua::Result<()> {
+                lua.globals().set(
+                    "astra_internal__".to_string() + stringify!($name) + "_encode",
+                    lua.create_function(|lua, input: mlua::Value| {
+                        let value =
+                            lua.from_value::<serde_json::Value>(sanetize_lua_input(lua, input)?)?;
+                        match $crate_name::to_string(&value) {
+                            Ok(serialized) => Ok(lua.to_value(&serialized)?),
+                            Err(e) => Err(e.into_lua_err()),
+                        }
+                    })?,
+                )
+            }
 
-    crabtime::output!(
-        fn {{name}}_encode(lua: &mlua::Lua) -> mlua::Result<()> {
-            lua.globals().set(
-                {{encode_str}},
-                lua.create_function(|lua, input: mlua::Value| {
-                    let value =
-                        lua.from_value::<serde_value::Value>(sanetize_lua_input(lua, input)?)?;
-                    match {{crate_name}}::to_string(&value) {
-                        Ok(serialized) => Ok(lua.to_value(&serialized)?),
-                        Err(e) => Err(e.into_lua_err()),
-                    }
-                })?,
-            )
+            fn [<$name _decode>](lua: &mlua::Lua) -> mlua::Result<()> {
+                lua.globals().set(
+                    "astra_internal__".to_string() + stringify!($name) + "_decode",
+                    lua.create_function(|lua, input: String| {
+                        match $crate_name::from_str::<serde_json::Value>(&input) {
+                            Ok(deserialized) => lua.to_value(&deserialized),
+                            Err(e) => Err(e.into_lua_err()),
+                        }
+                    })?,
+                )
+            }
         }
-
-        fn {{name}}_decode(lua: &mlua::Lua) -> mlua::Result<()> {
-            lua.globals().set(
-                {{decode_str}},
-                lua.create_function(|lua, input: String| {
-                    match {{crate_name}}::from_str::<serde_value::Value>(&input) {
-                        Ok(deserialized) => lua.to_value(&deserialized),
-                        Err(e) => Err(e.into_lua_err()),
-                    }
-                })?,
-            )
-        }
-    )
+    };
 }
 
-gen_methods!("serde_json", "json");
-gen_methods!("serde_json5", "json5");
-gen_methods!("serde_yaml", "yaml");
-gen_methods!("serde_ini", "ini");
-gen_methods!("serde_xml_rs", "xml");
-gen_methods!("toml", "toml");
+gen_methods!(serde_json, json);
+gen_methods!(serde_json5, json5);
+gen_methods!(serde_yaml, yaml);
+gen_methods!(serde_ini, ini);
+gen_methods!(toml, toml);
