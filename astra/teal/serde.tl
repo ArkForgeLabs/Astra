@@ -68,6 +68,33 @@ function ini.decode(value: string): any
 	return astra_internal__ini_decode(value)
 end
 
+global record CSVOptions
+	buffer_capacity: number | nil
+	delimiter: string | nil
+	quote: string | nil
+	escape: string | nil
+	comment: string | nil
+	flexible: boolean | nil
+	quoting: boolean | nil
+	double_quote: boolean | nil
+	has_headers: boolean | nil
+end
+global record CSV
+	headers: {string}
+	body: {any}
+end
+
+local csv = {}
+
+local type astra_internal__csv_decode = function(value: any, options: CSVOptions): {{any}}
+function csv.decode(value: string, options: CSVOptions): CSV
+  local result = astra_internal__csv_decode(value, options)
+  return {
+    body = result[1],
+    headers = result[2] as {string} or nil
+  }
+end
+
 return {
 	json = json,
 	json5 = json5,

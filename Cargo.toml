@@ -13,8 +13,8 @@ categories = [
   "network-programming",
 ]
 edition = "2024"
-license = "Apache-2.0"
-exclude = ["examples", "docs"]
+license-file = "LICENSE"
+exclude = [".github", "examples", "docs", "tests"]
 
 [[bin]]
 name = "astra"
@@ -77,7 +77,6 @@ serde_json = { version = "1.0.145" }
 serde_json5 = { version = "0.2.1" }
 serde_yaml = { version = "0.9.34" }
 serde_ini = { version = "0.2.0" }
-serde-xml-rs = { version = "0.8.2" }
 csv = { version = "1.4.0" }
 toml = { version = "0.9.8" }
 uuid = { version = "1.18.1", features = ["serde", "v4"] }
@@ -113,6 +112,7 @@ sqlx = { version = "0.8.6", features = [
   "uuid",
 ] }
 include_dir = "0.7.4"
+quick-xml = { version = "0.38.4", features = ["async-tokio", "encoding", "escape-html", "overlapped-lists", "serialize"] }
 
 [profile.release]
 opt-level = 3
