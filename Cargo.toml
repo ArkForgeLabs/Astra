@@ -1,6 +1,6 @@
 [package]
 name = "lua-astra"
-version = "0.36.0"
+version = "0.37.0"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
 description = "🔥 Blazingly Fast 🔥 web server runtime for Lua"
 documentation = "https://astra.arkforge.net/docs/latest"
@@ -78,6 +78,13 @@ serde_json5 = { version = "0.2.1" }
 serde_yaml = { version = "0.9.34" }
 serde_ini = { version = "0.2.0" }
 csv = { version = "1.4.0" }
+quick-xml = { version = "0.38.4", features = [
+  "async-tokio",
+  "encoding",
+  "escape-html",
+  "overlapped-lists",
+  "serialize",
+] }
 toml = { version = "0.9.8" }
 uuid = { version = "1.18.1", features = ["serde", "v4"] }
 sha2 = "0.10.9"
@@ -112,7 +119,6 @@ sqlx = { version = "0.8.6", features = [
   "uuid",
 ] }
 include_dir = "0.7.4"
-quick-xml = { version = "0.38.4", features = ["async-tokio", "encoding", "escape-html", "overlapped-lists", "serialize"] }
 
 [profile.release]
 opt-level = 3

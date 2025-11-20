@@ -68,6 +68,20 @@ function ini.decode(value: string): any
 	return astra_internal__ini_decode(value)
 end
 
+local xml = {}
+
+local type astra_internal__xml_encode = function(value: any): string
+---Encodes the value into a valid JSON string
+function xml.encode(value: any): string
+	return astra_internal__xml_encode(value)
+end
+
+local type astra_internal__xml_decode = function(value: string): any
+---Decodes the JSON string into a valid lua value
+function xml.decode(value: string): any
+	return astra_internal__xml_decode(value)
+end
+
 global record CSVOptions
 	buffer_capacity: number | nil
 	delimiter: string | nil
@@ -100,5 +114,7 @@ return {
 	json5 = json5,
 	yaml = yaml,
 	toml = toml,
-	ini = ini
+	ini = ini,
+	xml = xml,
+	csv = csv
 }

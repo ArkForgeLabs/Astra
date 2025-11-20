@@ -19,6 +19,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
 
     csv_decode(lua)?;
 
+    xml_encode(lua)?;
     xml_decode(lua)?;
 
     Ok(())
@@ -54,7 +55,7 @@ macro_rules! gen_methods {
                     "astra_internal__".to_string() + stringify!($name) + "_encode",
                     lua.create_function(|lua, input: mlua::Value| {
                         let value =
-                            lua.from_value::<serde_json::Value>(sanetize_lua_input(lua, input)?)?;
+                            lua.from_value::<serde_json::Value>(sanetize_lua_input(&lua, input)?)?;
                         match $crate_name::to_string(&value) {
                             Ok(serialized) => Ok(lua.to_value(&serialized)?),
                             Err(e) => Err(e.into_lua_err()),
@@ -83,6 +84,34 @@ gen_methods!(serde_json5, json5);
 gen_methods!(serde_yaml, yaml);
 gen_methods!(serde_ini, ini);
 gen_methods!(toml, toml);
+
+fn xml_encode(lua: &mlua::Lua) -> mlua::Result<()> {
+    lua.globals().set(
+        "astra_internal__xml_encode",
+        lua.create_async_function(|lua, (root, input): (String, mlua::Value)| async move {
+            //
+            let value = lua.from_value::<serde_value::Value>(sanetize_lua_input(&lua, input)?)?;
+            match quick_xml::se::to_string_with_root(&root, &value) {
+                Ok(serialized) => Ok(lua.to_value(&serialized)?),
+                Err(e) => Err(e.into_lua_err()),
+            }
+        })?,
+    )
+}
+
+fn xml_decode(lua: &mlua::Lua) -> mlua::Result<()> {
+    lua.globals().set(
+        "astra_internal__xml_decode",
+        lua.create_function(|lua, input: String| {
+            let result = quick_xml::de::from_str::<serde_value::Value>(&input);
+
+            match result {
+                Ok(res) => lua.to_value(&res),
+                Err(e) => Err(e.into_lua_err()),
+            }
+        })?,
+    )
+}
 
 fn csv_decode(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
@@ -144,22 +173,6 @@ fn csv_decode(lua: &mlua::Lua) -> mlua::Result<()> {
                 .collect::<Vec<_>>();
 
             lua.to_value(&(body, header))
-        })?,
-    )
-}
-
-fn xml_decode(lua: &mlua::Lua) -> mlua::Result<()> {
-    lua.globals().set(
-        "astra_internal__xml_decode",
-        lua.create_function(|lua, input: String| {
-            let result = quick_xml::de::from_str::<serde_json::Value>(&input);
-
-            println!("{result:?}");
-
-            match result {
-                Ok(res) => lua.to_value(&res),
-                Err(e) => Err(e.into_lua_err()),
-            }
         })?,
     )
 }
