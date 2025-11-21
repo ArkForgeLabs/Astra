@@ -1,8 +1,12 @@
-local source = [====================================================================================================[@SOURCE
+local source =
+[====================================================================================================[@SOURCE
 ]====================================================================================================]
 local file_name = [[@FILE_NAME]]
 
-local tlconfig = { global_env_def = "astra/teal/astra" }
+local tlconfig = {
+    global_env_def = "astra/teal/astra",
+    include_dir = { "astra/teal" }
+}
 tlconfig._init_env_modules = tlconfig._init_env_modules or {}
 table.insert(tlconfig._init_env_modules, 1, tlconfig.global_env_def)
 

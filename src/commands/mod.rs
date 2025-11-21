@@ -23,6 +23,13 @@ async fn stdlib_to_lua_table(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
                         .replace("/", std::path::MAIN_SEPARATOR_STR);
                     let content = file.contents_utf8().unwrap_or("");
                     lua_astra_stdlib.set(std::path::Path::new("astra").join(file_path), content)?;
+                    #[allow(clippy::expect_used)]
+                    lua_astra_stdlib.set(
+                        file.path()
+                            .file_name()
+                            .expect("Could not set the filename for stdlib"),
+                        content,
+                    )?;
                 }
             }
 
