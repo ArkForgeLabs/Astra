@@ -95,7 +95,7 @@ pub async fn execute_teal_code(
     let module_content = if module_name.ends_with(".tl") {
         let module_name = module_name.replace("\\", "/");
         format!(
-            "Astra.teal.load([{ONE_HUNDRED_EQUAL_SIGNS}[{module_content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{module_name}\")()"
+            "TEAL_COMPILER.load([{ONE_HUNDRED_EQUAL_SIGNS}[{module_content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{module_name}\")()"
         )
     } else {
         module_content.to_string()
@@ -182,4 +182,53 @@ fn is_table_byte_array(table: &mlua::Table) -> mlua::Result<bool> {
         i += 1;
     }
     Ok(true)
+}
+
+pub async fn read_from_stdlib(
+    stdlib_path: &std::path::Path,
+    path: std::path::PathBuf,
+) -> Option<String> {
+    if let Ok(content) = tokio::fs::read_to_string(stdlib_path.join(path.clone())).await {
+        return Some(content);
+    }
+
+    if let Some(file) = crate::ASTRA_STD_LIBS.get_file(path)
+        && let Some(content) = file.contents_utf8()
+    {
+        return Some(content.to_string());
+    }
+
+    None
+}
+
+pub async fn load_teal(lua: &mlua::Lua) -> mlua::Result<()> {
+    if !cfg!(feature = "luau") {
+        let stdlib_path = &crate::RUNTIME_FLAGS
+            .get_or_init(|| async {
+                crate::RuntimeFlags {
+                    stdlib_path: std::path::PathBuf::from("astra"),
+                    check_teal_code: false,
+                }
+            })
+            .await
+            .stdlib_path;
+
+        if let Some(content) =
+            read_from_stdlib(stdlib_path, std::path::PathBuf::from("teal.lua")).await
+        {
+            lua.load(content).set_name("teal.lua").exec_async().await?;
+        }
+
+        // astra.d.tl
+        if let Some(content) = read_from_stdlib(
+            stdlib_path,
+            std::path::PathBuf::from("teal").join("astra.d.tl"),
+        )
+        .await
+        {
+            crate::components::execute_teal_code(lua, "astra.d.tl", &content).await?;
+        }
+    }
+
+    Ok(())
 }

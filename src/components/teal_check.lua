@@ -18,9 +18,9 @@ local opts = {
     },
     predefined_modules = tlconfig._init_env_modules,
 }
-local env = Astra.teal.new_env(opts)
+local env = TEAL_COMPILER.new_env(opts)
 
-local check_errors = Astra.teal.check_string(source, env)
+local check_errors = TEAL_COMPILER.check_string(source, env)
 if check_errors ~= nil then
     local syntax_errors = check_errors.syntax_errors
     local type_errors = check_errors.type_errors

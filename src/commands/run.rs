@@ -21,11 +21,22 @@ pub async fn run_command(
     if let Some(is_teal) = PathBuf::from(&file_path).extension()
         && is_teal == "tl"
     {
-        if let Err(e) = crate::components::execute_teal_code(lua, &file_path, &user_file).await {
-            error!("{e}");
-        }
-    } else if let Err(e) = lua.load(user_file).set_name(file_path).exec_async().await {
-        error!("{e}");
+        #[allow(clippy::expect_used)]
+        crate::components::load_teal(lua)
+            .await
+            .expect("Could not load the Teal compiler...");
+
+        #[allow(clippy::expect_used)]
+        crate::components::execute_teal_code(lua, &file_path, &user_file)
+            .await
+            .expect("Could not run the teal code...");
+    } else {
+        #[allow(clippy::expect_used)]
+        lua.load(user_file)
+            .set_name(file_path)
+            .exec_async()
+            .await
+            .expect("Could no run the Lua code...");
     }
 
     // TODO: JOIN ALL TASKS HERE, AND EXIT IN CASE OF ERROR

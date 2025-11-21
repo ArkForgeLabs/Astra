@@ -68,6 +68,23 @@ pub async fn find_first_lua_match_with_content(
             {
                 return Some((candidate.to_path_buf(), content.to_string()));
             }
+
+            if let Some(file) = ASTRA_STD_LIBS.get_file(
+                std::path::PathBuf::from("teal")
+                    .join(file_path)
+                    .to_string_lossy()
+                    .replace("\\", "/"),
+            ) && let Some(content) = file.contents_utf8()
+            {
+                if !lua.globals().contains_key("TEAL_COMPILER").unwrap_or(false) {
+                    #[allow(clippy::expect_used)]
+                    super::load_teal(lua)
+                        .await
+                        .expect("Could not load the Teal compiler...");
+                }
+
+                return Some((candidate.to_path_buf(), content.to_string()));
+            }
         }
     }
 
