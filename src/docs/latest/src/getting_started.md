@@ -1,10 +1,32 @@
 # Getting Started
 
-## Dev environment
+## installation
 
-For development, we recommend [Emmylua Analyzer](https://github.com/EmmyLuaLs/emmylua-analyzer-rust?tab=readme-ov-file#-installation).
+You can install using an installer script:
 
-After your setup is complete, you will want to obtain a prebuilt binary of the runtime from the [releases page](https://github.com/ArkForgeLabs/Astra/releases). Alternatively you can get it with `wget` as well. For example for the latest version with LuaJIT VM:
+### Linux
+
+```bash
+curl -fsSL https://astra.arkforge.net/install.sh | bash
+```
+
+### Windows
+
+```powershell
+powershell -c "irm https://astra.arkforge.net/install.ps1 | iex"
+```
+
+### Cargo
+
+Alternatively you can also install through [cargo](https://doc.rust-lang.org/cargo/) tool, if you have it installed:
+
+```bash
+cargo install lua-astra
+```
+
+### Custom Installation
+
+You can also obtain a prebuilt binary of the runtime from the [releases page](https://github.com/ArkForgeLabs/Astra/releases). Alternatively you can get it with `wget` as well. For example for the latest version with LuaJIT VM:
 
 ```bash
 wget https://github.com/ArkForgeLabs/Astra/releases/latest/download/astra-luajit-linux-amd64
@@ -18,19 +40,17 @@ After getting your binary on linux, you'll want to change permissions to make it
 chmod +x astra-luajit-linux-amd64
 ```
 
-Alternatively you can also install through [cargo](https://doc.rust-lang.org/cargo/) tool, if you have it installed:
-
-```bash
-cargo install lua-astra
-```
+## Developer Experience
 
 Each release likely contains updates to the packaged bundle lua code that contains definitions you might need during development which you can omit and ignore during production release. You can obtain them through:
 
 ```bash
-./astra-luajit-linux-amd64 export-bundle
+./astra-luajit-linux-amd64 export
 ```
 
 which will create a new folder called `.astra` along with a new file `.luarc.json`. They are used for intellisense and references for the available functions. There are some pure lua utilities for example table validation, ... which are also included in the bundle by default.
+
+For development, we recommend [Emmylua Analyzer](https://github.com/EmmyLuaLs/emmylua-analyzer-rust?tab=readme-ov-file#-installation) for language server.
 
 ## Interal dev environment
 

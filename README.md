@@ -10,32 +10,28 @@ Astra is a web server runtime for Lua (5.1-5.4), Luau and LuaJIT written in Rust
 
 > MSRV: 1.88+
 
-## Installation
+## installation
 
-You can either get the binaries at [github releases](https://github.com/ArkForgeLabs/Astra/releases) or
+You can install using an installer script:
 
-### Using `cargo`:
+### Linux
+
+```bash
+curl -fsSL https://astra.arkforge.net/install.sh | bash
+```
+
+### Windows
+
+```powershell
+powershell -c "irm https://astra.arkforge.net/install.ps1 | iex"
+```
+
+### Cargo
+
+Alternatively you can also install through [cargo](https://doc.rust-lang.org/cargo/) tool, if you have it installed:
 
 ```bash
 cargo install lua-astra
-```
-
-To install with differet Lua VM, e.g. Lua 5.4:
-
-```bash
-cargo install lua-astra --no-default-features --features lua54
-```
-
-### Linux install script
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/ArkForgeLabs/Astra/refs/heads/main/linux_install.sh | bash
-```
-
-### Windows install script
-
-```powershell
-powershell -c "irm https://raw.githubusercontent.com/ArkForgeLabs/Astra/refs/heads/main/windows_install.ps1 | iex"
 ```
 
 ## Example

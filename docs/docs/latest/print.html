@@ -303,22 +303,32 @@
 
 </style>
 <h1 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h1>
-<h2 id="dev-environment"><a class="header" href="#dev-environment">Dev environment</a></h2>
-<p>For development, we recommend <a href="https://github.com/EmmyLuaLs/emmylua-analyzer-rust?tab=readme-ov-file#-installation">Emmylua Analyzer</a>.</p>
-<p>After your setup is complete, you will want to obtain a prebuilt binary of the runtime from the <a href="https://github.com/ArkForgeLabs/Astra/releases">releases page</a>. Alternatively you can get it with <code>wget</code> as well. For example for the latest version with LuaJIT VM:</p>
+<h2 id="installation"><a class="header" href="#installation">installation</a></h2>
+<p>You can install using an installer script:</p>
+<h3 id="linux"><a class="header" href="#linux">Linux</a></h3>
+<pre><code class="language-bash">curl -fsSL https://astra.arkforge.net/install.sh | bash
+</code></pre>
+<h3 id="windows"><a class="header" href="#windows">Windows</a></h3>
+<pre><code class="language-powershell">powershell -c "irm https://astra.arkforge.net/install.ps1 | iex"
+</code></pre>
+<h3 id="cargo"><a class="header" href="#cargo">Cargo</a></h3>
+<p>Alternatively you can also install through <a href="https://doc.rust-lang.org/cargo/">cargo</a> tool, if you have it installed:</p>
+<pre><code class="language-bash">cargo install lua-astra
+</code></pre>
+<h3 id="custom-installation"><a class="header" href="#custom-installation">Custom Installation</a></h3>
+<p>You can also obtain a prebuilt binary of the runtime from the <a href="https://github.com/ArkForgeLabs/Astra/releases">releases page</a>. Alternatively you can get it with <code>wget</code> as well. For example for the latest version with LuaJIT VM:</p>
 <pre><code class="language-bash">wget https://github.com/ArkForgeLabs/Astra/releases/latest/download/astra-luajit-linux-amd64
 </code></pre>
 <p>There are also windows binaries available if you are working on Windows, however we mostly assume your web server code will likely run linux, hence more support is geared towards it. Although the final code that runs should run well, agnostic of the platform it was written it (with the exception of OS specific additions).</p>
 <p>After getting your binary on linux, you'll want to change permissions to make it executable:</p>
 <pre><code class="language-bash">chmod +x astra-luajit-linux-amd64
 </code></pre>
-<p>Alternatively you can also install through <a href="https://doc.rust-lang.org/cargo/">cargo</a> tool, if you have it installed:</p>
-<pre><code class="language-bash">cargo install lua-astra
-</code></pre>
+<h2 id="developer-experience"><a class="header" href="#developer-experience">Developer Experience</a></h2>
 <p>Each release likely contains updates to the packaged bundle lua code that contains definitions you might need during development which you can omit and ignore during production release. You can obtain them through:</p>
-<pre><code class="language-bash">./astra-luajit-linux-amd64 export-bundle
+<pre><code class="language-bash">./astra-luajit-linux-amd64 export
 </code></pre>
 <p>which will create a new folder called <code>.astra</code> along with a new file <code>.luarc.json</code>. They are used for intellisense and references for the available functions. There are some pure lua utilities for example table validation, ... which are also included in the bundle by default.</p>
+<p>For development, we recommend <a href="https://github.com/EmmyLuaLs/emmylua-analyzer-rust?tab=readme-ov-file#-installation">Emmylua Analyzer</a> for language server.</p>
 <h2 id="interal-dev-environment"><a class="header" href="#interal-dev-environment">Interal dev environment</a></h2>
 <p>If you want to extend or modify Astra, you will need <a href="https://www.rust-lang.org/">Rust</a> and some form of C compiler such as <a href="https://clang.llvm.org/">clang</a> or <a href="https://gcc.gnu.org/">gcc</a> to be installed on the latest versio. You will also need to make sure a C linker, <code>Cargo</code>, <code>clippy</code> and <code>rust-analyzer</code> components are also installed. These components often are packaged alongside the basic installation. Your IDE may depend on whichever you are comfortable with as Rust have amazing support everywhere.</p>
 <p>Then you'll need to clone the repository:</p>
