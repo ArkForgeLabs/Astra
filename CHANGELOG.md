@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.37.0](https://github.com/ArkForgeLabs/Astra/compare/v0.36.0..v0.37.0) - 2025-11-21
+
+### Bug Fixes
+
+- teal check with the new path system - ([75a5d79](https://github.com/ArkForgeLabs/Astra/commit/75a5d79e2200f510d7d595bf4b57ae7e0ffba82e))
+- #118 - Teal running only when needed - ([27e3ddf](https://github.com/ArkForgeLabs/Astra/commit/27e3ddf0a7e2557da751d16f39c0fd96f08f91d2))
+
+### Features
+
+- added compression ability to each route - ([5d0062c](https://github.com/ArkForgeLabs/Astra/commit/5d0062c639077984794c6fac40f218a0286a9f55))
+- added major serde targets - ([78b4928](https://github.com/ArkForgeLabs/Astra/commit/78b4928285dbc31c8587d43d5d8ac44cfc7ceaf8))
+- added types for serde types - ([13a38d4](https://github.com/ArkForgeLabs/Astra/commit/13a38d4b93ec5b325ebfb031284605b3c9b72edb))
+- added support for csv - ([5ee17e8](https://github.com/ArkForgeLabs/Astra/commit/5ee17e8b5de5bdf3cb5b6632e3f8f02ea02c2b47))
+- added xml support - ([e1028de](https://github.com/ArkForgeLabs/Astra/commit/e1028def6837d754577c9ff9fcab6756bfb33ce9))
+
+### Refactoring
+
+- moved client.rs to its own directory - ([b3917e0](https://github.com/ArkForgeLabs/Astra/commit/b3917e0a464bacc2c0175c43f575f522f7f1e763))
+
 ## [0.36.0](https://github.com/ArkForgeLabs/Astra/compare/v0.35.0..v0.36.0) - 2025-11-11
 
 ### Features
