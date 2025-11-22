@@ -22,14 +22,14 @@ pub async fn run_command(
         && is_teal == "tl"
     {
         if let Err(e) = crate::components::load_teal(lua).await {
-            panic!("{}", e);
+            error!("{}", e);
         }
 
         if let Err(e) = crate::components::execute_teal_code(lua, &file_path, &user_file).await {
-            panic!("{}", e);
+            error!("{}", e);
         }
     } else if let Err(e) = lua.load(user_file).set_name(file_path).exec_async().await {
-        panic!("{}", e);
+        error!("{}", e);
     }
 
     // Wait for all Tokio tasks to finish.

@@ -8,7 +8,7 @@ pub async fn find_first_lua_match_with_content(
     if let Ok(path) = lua.load("return package.path").eval::<String>() {
         lua_path = path
     } else {
-        return None;
+        lua_path = "?".to_string();
     }
     let module_path = module_name.replace(".", std::path::MAIN_SEPARATOR_STR);
 
@@ -106,7 +106,6 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
             } else {
                 let current_script_path: String =
                     lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
-                // let is_current_script_teal = std::path::PathBuf::from(&current_script_path).ends_with("tl");
 
                 #[allow(clippy::collapsible_else_if)]
                 if let Some((file_path, content)) =
