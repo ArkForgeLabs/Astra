@@ -1,33 +1,34 @@
-local lust = require 'tests.lust'
-local describe, it, expect = lust.describe, lust.it, lust.expect
+local test = require("test")
+local validation = require("validation")
+local describe, it, expect = test.describe, test.it, test.expect
 
 -- Add lust method: to.be.falsy()
-lust.paths.falsy = {
+test.paths.falsy = {
     test = function(value)
-      local ok = (value == false)
-      return ok,
-        'expected ' .. tostring(value) .. ' to be falsy',
-        'expected ' .. tostring(value) .. ' to not be falsy'
+        local ok = (value == false)
+        return ok,
+            'expected ' .. tostring(value) .. ' to be falsy',
+            'expected ' .. tostring(value) .. ' to not be falsy'
     end
-  }
-  table.insert(lust.paths.be, 'falsy')
+}
+table.insert(test.paths.be, 'falsy')
 
 -- helper functions
 local function expect_valid(example, schema)
-    local ok, err = Astra.validate_table(example, schema)
+    local ok, err = validation.validate_table(example, schema)
     expect(ok).to.be.truthy()
 end
 
 local function expect_invalid(example, schema)
-    local ok, _ = Astra.validate_table(example, schema)
+    local ok, _ = validation.validate_table(example, schema)
     expect(ok).to.be.falsy()
 end
 
 -- test cases
 describe('BasicSchema', function()
     local schema = {
-        id   = { type = 'number' },                  
-        name = { type = 'string', required = false } 
+        id   = { type = 'number' },
+        name = { type = 'string', required = false }
     }
 
     it('valid-type', function()
@@ -50,17 +51,17 @@ end)
 describe('NestedSchema', function()
     local schema = {
         user = {
-        type = 'table',
-        schema = {
-            profile = {
             type = 'table',
             schema = {
-                id   = { type = 'number' },
-                name = { type = 'string' },
-                is_student = { type = 'boolean', required = false}
+                profile = {
+                    type = 'table',
+                    schema = {
+                        id         = { type = 'number' },
+                        name       = { type = 'string' },
+                        is_student = { type = 'boolean', required = false }
+                    }
+                }
             }
-            }
-        }
         }
     }
 
@@ -83,28 +84,28 @@ end)
 
 describe('Arrays', function()
     local schema = {
-        numbers = { type = 'array', array_item_type = 'number' }, 
+        numbers = { type = 'array', array_item_type = 'number' },
         strings = { type = 'array', array_item_type = 'string' },
-        entries = {                                              
-        type = 'array',
-        schema = {
-            id   = { type = 'number' },
-            text = { type = 'string' }
-        }
+        entries = {
+            type = 'array',
+            schema = {
+                id   = { type = 'number' },
+                text = { type = 'string' }
+            }
         }
     }
 
     it('valid-array', function()
         local ex = {
-        numbers = { 1, 2, 3 },
-        strings = { 'a', 'b' },
-        entries = { { id = 1, text = 'hey' }, { id = 2, text = 'hello' } }
+            numbers = { 1, 2, 3 },
+            strings = { 'a', 'b' },
+            entries = { { id = 1, text = 'hey' }, { id = 2, text = 'hello' } }
         }
         expect_valid(ex, schema)
     end)
 
     it('invalid-arrays', function()
-        expect_invalid({ numbers = { 1, 'x' }, strings = {}, entries = {} }, schema) -- array level
+        expect_invalid({ numbers = { 1, 'x' }, strings = {}, entries = {} }, schema)                    -- array level
         expect_invalid({ numbers = {}, strings = {}, entries = { { id = 'x', text = 'ok' } } }, schema) -- table-in-array level
     end)
 end)

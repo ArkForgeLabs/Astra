@@ -1,6 +1,6 @@
-local lust = require("tests.lust")
+local test = require("test")
 local datetime = require("datetime")
-local describe, it, expect = lust.describe, lust.it, lust.expect
+local describe, it, expect = test.describe, test.it, test.expect
 
 -- helper functions
 local function expect_invalid_datetime(args)
