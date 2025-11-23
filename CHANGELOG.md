@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. See [conven
 
 - error messages displayed correctly - ([1bc37af](https://github.com/ArkForgeLabs/Astra/commit/1bc37af6ce8fce3bb2c6f1faaa08e76f1723348e))
 - #108 - Luau now works - ([7a8ff02](https://github.com/ArkForgeLabs/Astra/commit/7a8ff0274b9798ce81a001fa2eb14a956b0df1e2))
+- import paths interopability - ([2d41954](https://github.com/ArkForgeLabs/Astra/commit/2d419541e3611ff92a1897b900d47f7562625daf))
 
 ## [0.37.0](https://github.com/ArkForgeLabs/Astra/compare/v0.36.0..v0.37.0) - 2025-11-21
 
