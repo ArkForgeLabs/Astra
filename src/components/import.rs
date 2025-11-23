@@ -25,12 +25,23 @@ pub async fn find_first_lua_match_with_content(
             pattern_path.join("init.tl"),
             pattern_path.join("d.lua"),
             pattern_path.join("d.tl"),
+            std::path::PathBuf::from("lua").join(&pattern_path),
+            std::path::PathBuf::from("teal").join(&pattern_path),
             pattern_path.clone(), // For directories or files without extensions
         ];
 
         // Check the file system
         for candidate in candidates.iter() {
             if let Ok(content) = tokio::fs::read_to_string(&candidate).await {
+                if candidate.extension().is_some_and(|ext| ext == "tl")
+                    && !lua.globals().contains_key("TEAL_COMPILER").unwrap_or(false)
+                {
+                    #[allow(clippy::expect_used)]
+                    if let Err(e) = super::load_teal(lua).await {
+                        tracing::error!("{e}")
+                    }
+                }
+
                 return Some((candidate.clone(), content));
             }
         }
@@ -51,36 +62,18 @@ pub async fn find_first_lua_match_with_content(
                 candidate
             };
 
-            // println!(
-            //     "FILE TO IMPORT: {:?}",
-            //     std::path::PathBuf::from("lua")
-            //         .join(file_path)
-            //         .to_string_lossy()
-            //         .replace("\\", "/")
-            // );
+            // println!("FILE TO IMPORT: {:?}", file_path);
 
-            if let Some(file) = ASTRA_STD_LIBS.get_file(
-                std::path::PathBuf::from("lua")
-                    .join(file_path)
-                    .to_string_lossy()
-                    .replace("\\", "/"),
-            ) && let Some(content) = file.contents_utf8()
+            if let Some(file) = ASTRA_STD_LIBS.get_file(file_path)
+                && let Some(content) = file.contents_utf8()
             {
-                return Some((candidate.to_path_buf(), content.to_string()));
-            }
-
-            if let Some(file) = ASTRA_STD_LIBS.get_file(
-                std::path::PathBuf::from("teal")
-                    .join(file_path)
-                    .to_string_lossy()
-                    .replace("\\", "/"),
-            ) && let Some(content) = file.contents_utf8()
-            {
-                if !lua.globals().contains_key("TEAL_COMPILER").unwrap_or(false) {
+                if file_path.extension().is_some_and(|ext| ext == "tl")
+                    && !lua.globals().contains_key("TEAL_COMPILER").unwrap_or(false)
+                {
                     #[allow(clippy::expect_used)]
-                    super::load_teal(lua)
-                        .await
-                        .expect("Could not load the Teal compiler...");
+                    if let Err(e) = super::load_teal(lua).await {
+                        tracing::error!("{e}")
+                    }
                 }
 
                 return Some((candidate.to_path_buf(), content.to_string()));

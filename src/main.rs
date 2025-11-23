@@ -79,7 +79,7 @@ pub async fn main() -> std::io::Result<()> {
                 format!("{}=debug,tower_http=debug", env!("CARGO_CRATE_NAME")).into()
             }),
         )
-        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::fmt::layer().compact())
         .init();
 
     match AstraCLI::parse() {
