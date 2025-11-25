@@ -95,6 +95,7 @@ end)
 ## Community Projects
 
 - Astra Trails - <https://github.com/0riginaln0/astra-trails>
+- Hack Club Clubs API - <https://github.com/hackclub/clubapi>
 
 If you have a project that uses or extends Astra, let us know about it by extending the list above or opening a new [issue](https://github.com/ArkForgeLabs/Astra/issues/new)
 
