@@ -88,8 +88,9 @@ describe("NewDatetimeFullArgs", function()
 		end
 	end)
 
-	-- it('invalid-millsec', function()
-	-- end) -- definition (range unknown)
+	it("invalid-millsec", function()
+		expect_invalid_setter(dt, "set_millisecond", { -1, "str", nil })
+	end)
 end)
 
 describe("NewDatetimeDefault", function()
@@ -208,6 +209,12 @@ describe("ToString", function()
 	end)
 end)
 
+it("timezone_handling", function()
+	local dt = datetime.new("2020-12-25T10:30:45.500-06:00")
+	expect(dt:to_locale_date_string()).to.equal("12/25/20")
+	expect(dt:to_locale_time_string()).to.equal("10:30:45")
+end)
+
 describe("EpochMillisecond", function()
 	local dt = datetime.new(1970)
 
@@ -223,11 +230,11 @@ describe("EpochMillisecond", function()
 
 	it("invalid-set_epoch_milliseconds()", function()
 		expect(function()
-			---@diagnostic disable-next-line: param-type-mismatch, param-type-not-match
+			---@diagnostic disable-next-line: param-type-mismatch
 			dt:set_epoch_milliseconds("str")
 		end).to.fail()
 		expect(function()
-			---@diagnostic disable-next-line: param-type-mismatch, param-type-not-match
+			---@diagnostic disable-next-line: param-type-mismatch
 			dt:set_epoch_milliseconds(nil)
 		end).to.fail()
 	end)

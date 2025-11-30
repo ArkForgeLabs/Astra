@@ -20,7 +20,7 @@ local function expect_valid(example, schema)
 end
 
 local function expect_invalid(example, schema)
-    local ok, _ = validation.validate_table(example, schema)
+    local ok, err = validation.validate_table(example, schema)
     expect(ok).to.be.falsy()
 end
 
