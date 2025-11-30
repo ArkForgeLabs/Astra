@@ -36,6 +36,12 @@ jobs:
           rustup override set 1.88.0
           rustup show
 
+      # - name: Min size builds...
+      #   run: RUSTFLAGS="-Zlocation-detail=none -Zfmt-debug=none -Zunstable-options -Cpanic=immediate-abort" cargo +nightly build \
+      #      -Z build-std=std,panic_abort \
+      #      -Z build-std-features="optimize_for_size" \
+      #      --target x86_64-unknown-linux-gnu --release
+
       - run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: LuaJIT

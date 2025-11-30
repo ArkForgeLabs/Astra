@@ -8,6 +8,8 @@
 
 Astra is a web server runtime for Lua (5.1-5.4), Luau and LuaJIT written in Rust with native support for Teal. The goal is to get as much performance as possible while writing the web server logic in Lua instead for faster iteration, fault-tolerance and no-build requirements. This project is internally used here at [ArkForge](https://arkforge.net) and many others.
 
+For Enterprise and business inquiries, send us an email at [contact@arkforge.net](mailto:contact@arkforge.net)
+
 > MSRV: 1.88+
 
 ## installation
@@ -17,7 +19,7 @@ You can install using an installer script:
 ### Linux
 
 ```bash
-curl -fsSL https://astra.arkforge.net/install.sh | bash
+sh -c "$(curl -fsSL http://127.0.0.1:8000/install.sh)"
 ```
 
 ### Windows
