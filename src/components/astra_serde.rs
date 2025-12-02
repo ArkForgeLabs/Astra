@@ -25,7 +25,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     Ok(())
 }
 
-fn sanetize_lua_input(lua: &mlua::Lua, input: mlua::Value) -> mlua::Result<mlua::Value> {
+pub fn sanetize_lua_input(lua: &mlua::Lua, input: mlua::Value) -> mlua::Result<mlua::Value> {
     if let Some(input) = input.as_table() {
         let new_input = lua.create_table()?;
 
@@ -55,7 +55,7 @@ macro_rules! gen_methods {
                     "astra_internal__".to_string() + stringify!($name) + "_encode",
                     lua.create_function(|lua, input: mlua::Value| {
                         let value =
-                            lua.from_value::<serde_json::Value>(sanetize_lua_input(&lua, input)?)?;
+                            lua.from_value::<serde_value::Value>(sanetize_lua_input(&lua, input)?)?;
                         match $crate_name::to_string(&value) {
                             Ok(serialized) => Ok(lua.to_value(&serialized)?),
                             Err(e) => Err(e.into_lua_err()),
@@ -68,7 +68,7 @@ macro_rules! gen_methods {
                 lua.globals().set(
                     "astra_internal__".to_string() + stringify!($name) + "_decode",
                     lua.create_function(|lua, input: String| {
-                        match $crate_name::from_str::<serde_json::Value>(&input) {
+                        match $crate_name::from_str::<serde_value::Value>(&input) {
                             Ok(deserialized) => lua.to_value(&deserialized),
                             Err(e) => Err(e.into_lua_err()),
                         }

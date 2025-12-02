@@ -1,6 +1,6 @@
 mod websocket;
 
-use crate::components::AstraBuffer;
+use crate::components::{AstraBuffer, astra_serde::sanetize_lua_input};
 use futures::StreamExt;
 use mlua::{ExternalError, LuaSerdeExt, UserData};
 use reqwest::{Client, RequestBuilder};
@@ -54,7 +54,10 @@ impl HTTPClientRequest {
                                 );
                             }
                             Some(HTTPClientRequestBodyTypes::Json(
-                                lua.from_value::<serde_json::Value>(body.clone())?,
+                                lua.from_value::<serde_json::Value>(sanetize_lua_input(
+                                    lua,
+                                    body.clone(),
+                                )?)?,
                             ))
                         } else if crate::components::is_table_byte_array(&value)? {
                             Some(HTTPClientRequestBodyTypes::Bytes(
@@ -219,7 +222,7 @@ impl UserData for HTTPClientRequest {
         methods.add_method_mut("set_json", |lua, this, body: mlua::Value| {
             let mut request = this.clone();
             request.body = Some(HTTPClientRequestBodyTypes::Json(
-                lua.from_value::<serde_json::Value>(body)?,
+                lua.from_value::<serde_json::Value>(sanetize_lua_input(lua, body)?)?,
             ));
             if !request.headers.contains_key("Content-Type") {
                 request
