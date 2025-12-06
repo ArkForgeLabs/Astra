@@ -352,7 +352,6 @@ function http.middleware.chain(chain)
     return function(handler)
         assert(type(handler) == "function",
             "Handler must be a function, got " .. type(handler))
-        assert(#chain >= 2, "Chain must have at least 2 middlewares")
         for i = #chain, 1, -1 do
             local middleware = chain[i]
             assert(type(middleware) == "function",
