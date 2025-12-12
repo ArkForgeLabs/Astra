@@ -342,11 +342,10 @@ end
 --- ```
 --- equals to
 --- ```lua
---- function(next_handler)
----     return function(request, response, ctx)
----         context(html(logger(next_handler(request, response, ctx))))
----     end
---- end
+--- (function(handler)
+---     handler = context(html(logger(handler)))
+---     return handler
+--- end)
 --- ```
 function http.middleware.chain(chain)
     return function(handler)
