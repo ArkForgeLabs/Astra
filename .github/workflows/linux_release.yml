@@ -100,14 +100,6 @@ jobs:
           asset_name: astra-lua54-linux-amd64
           tag: ${{ github.ref }}
 
-      - uses: chrnorm/deployment-action@v2
-        name: Create GitHub deployment
-        id: deployment
-        with:
-          token: "${{ github.token }}"
-          environment-url: https://github.com/ArkForgeLabs/Astra
-          environment: production
-
       # =========================================================== #
       # =========================== ARM =========================== #
       # =========================================================== #
