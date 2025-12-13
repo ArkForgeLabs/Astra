@@ -244,6 +244,10 @@ function HTTPServer:websocket(path: string, wscallback: HTTPServerWSCallback, co
     add_to_routes(self, "web_socket", path, function():nil end, wscallback, config)
 end
 
+function HTTPServer:fallback(callback: HTTPServerCallback)
+    add_to_routes(self, "fallback", "/", callback, nil, {})
+end
+
 local type astra_internal__start_server = function(HTTPServer)
 ---Runs the server
 function HTTPServer:run()

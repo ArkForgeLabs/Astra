@@ -24,6 +24,11 @@ server:get("/headers", function(request)
 	return request:headers()
 end)
 
+-- And catch all the routes that does not exist
+server:fallback(function(request)
+	return string.format("404, no way Jose! %s does not exist!", request:uri())
+end)
+
 -- Or accept files with multipart
 server:post("/upload", function(request, response)
 	local multipart = request:multipart()

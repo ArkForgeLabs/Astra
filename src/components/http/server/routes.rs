@@ -32,6 +32,7 @@ pub enum Method {
     StaticDir,
     StaticFile,
     WebSocket,
+    Fallback,
 }
 #[derive(Debug, Clone, mlua::FromLua)]
 pub struct Route {
@@ -150,6 +151,7 @@ pub fn load_routes(server: mlua::Table) -> Router {
                 ($route_function:expr) => {{
                     let mut route_function =
                         $route_function(|request: Request<Body>| route(lua, route_values, request));
+
                     if let Some(body_limit) = body_limit {
                         route_function = route_function.layer(DefaultBodyLimit::max(body_limit))
                     }
@@ -214,6 +216,9 @@ pub fn load_routes(server: mlua::Table) -> Router {
                         })
                     }),
                 ),
+                Method::Fallback => {
+                    router.fallback(|request: Request<Body>| route(lua, route_values, request))
+                }
             }
         }
 

@@ -24,6 +24,11 @@ server:get("/headers", function(request: HTTPServerRequest): table
 	return request:headers()
 end)
 
+-- And catch all the routes that does not exist
+server:fallback(function(request: HTTPServerRequest)
+	return string.format("404, no way Jose! %s does not exist!", request:uri())
+end)
+
 -- Or accept files with multipart
 server:post("/upload", function(request: HTTPServerRequest, response: HTTPServerResponse): nil
 	local multipart = request:multipart()

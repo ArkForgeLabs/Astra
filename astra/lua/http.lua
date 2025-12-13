@@ -279,6 +279,11 @@ function HTTPServer:websocket(path, wscallback, config)
     add_to_routes(self, "web_socket", path, wscallback, config)
 end
 
+---@param callback callback
+function HTTPServer:fallback(callback)
+    add_to_routes(self, "fallback", "", callback, {})
+end
+
 ---Runs the server
 function HTTPServer:run()
     ---@diagnostic disable-next-line: undefined-global
