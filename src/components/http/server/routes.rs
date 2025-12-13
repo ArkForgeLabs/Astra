@@ -69,6 +69,15 @@ pub async fn route(
             .call_async::<mlua::Value>((request, response.clone()))
             .await?;
 
+        let response_details = response.borrow::<responses::ResponseLua>()?;
+
+        if let Some(redirect_to) = &response_details.redirect {
+            return Ok((
+                cookie_jar,
+                axum::response::Redirect::temporary(redirect_to).into_response(),
+            ));
+        }
+
         let mut resulting_response = match result {
             mlua::Value::String(plain) => plain.to_string_lossy().into_response(),
             mlua::Value::Table(_) => {
@@ -76,8 +85,6 @@ pub async fn route(
             }
             _ => axum::http::StatusCode::OK.into_response(),
         };
-
-        let response_details = response.borrow::<responses::ResponseLua>()?;
         *resulting_response.status_mut() = response_details.status_code;
 
         for (key, value) in response_details.headers.iter() {

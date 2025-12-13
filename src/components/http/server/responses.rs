@@ -13,6 +13,7 @@ pub struct ResponseLua<'a> {
     pub status_code: StatusCode,
     pub headers: HeaderMap,
     pub cookie_operations: Vec<CookieOperation<'a>>,
+    pub redirect: Option<String>,
 }
 impl Default for ResponseLua<'_> {
     fn default() -> Self {
@@ -20,6 +21,7 @@ impl Default for ResponseLua<'_> {
             status_code: StatusCode::OK,
             headers: HeaderMap::new(),
             cookie_operations: Vec::new(),
+            redirect: None,
         }
     }
 }
@@ -35,6 +37,12 @@ impl mlua::UserData for ResponseLua<'_> {
                     "Could not set the response HTTP status code: {e:#?}"
                 ))),
             }
+        });
+
+        methods.add_method_mut("redirect_to", |_, this, redirect_to: String| {
+            this.redirect = Some(redirect_to);
+
+            Ok(())
         });
 
         methods.add_method_mut(

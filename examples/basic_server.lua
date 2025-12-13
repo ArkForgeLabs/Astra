@@ -6,6 +6,11 @@ server:get("/", function()
 	return "hello from default Astra instance! " .. Astra.version
 end)
 
+-- Redirect users somewhere else...
+server:get("/redirect", function(request, response)
+	response:redirect_to("/")
+end)
+
 -- The path parameters also works
 server:get("/{id}", function(request)
 	return "The value of id is: " .. request:params().id

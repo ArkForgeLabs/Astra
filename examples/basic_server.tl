@@ -6,6 +6,11 @@ server:get("/", function(): string
 	return "hello from default Astra instance!"
 end)
 
+-- Redirect users somewhere else...
+server:get("/redirect", function(request: HTTPServerRequest, response: HTTPServerResponse): nil
+	response:redirect_to("/")
+end)
+
 -- The path parameters also works
 server:get("/{id}", function(request: HTTPServerRequest): string
 	return "The value of id is: " .. tostring(request:params().id)
@@ -25,7 +30,7 @@ server:get("/headers", function(request: HTTPServerRequest): table
 end)
 
 -- And catch all the routes that does not exist
-server:fallback(function(request: HTTPServerRequest)
+server:fallback(function(request: HTTPServerRequest): string
 	return string.format("404, no way Jose! %s does not exist!", request:uri())
 end)
 
