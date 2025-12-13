@@ -1,6 +1,6 @@
 [package]
 name = "lua-astra"
-version = "0.37.1"
+version = "0.38.0"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
 description = "🔥 Blazingly Fast 🔥 web server runtime for Lua"
 documentation = "https://astra.arkforge.net/docs/latest"
@@ -15,6 +15,7 @@ categories = [
 edition = "2024"
 license-file = "LICENSE"
 exclude = [".github", "examples", "docs", "tests"]
+rust-version = "1.88"
 
 [[bin]]
 name = "astra"
@@ -31,7 +32,7 @@ lua53 = ["mlua/lua53"]
 lua54 = ["mlua/lua54"]
 
 [dependencies]
-mlua = { version = "0.11.4", features = [
+mlua = { version = "0.11.5", features = [
   "serialize",
   "vendored",
   "async",
@@ -44,7 +45,7 @@ mlua = { version = "0.11.4", features = [
 # http
 axum = { version = "0.8.7", features = ["macros", "multipart", "http2", "ws"] }
 axum-extra = { version = "0.12.2", features = ["cookie"] }
-reqwest = { version = "0.12.24", features = [
+reqwest = { version = "0.12.25", features = [
   "json",
   "rustls-tls",
   "charset",
@@ -55,14 +56,14 @@ reqwest = { version = "0.12.24", features = [
 ], default-features = false }
 reqwest-websocket = "0.5.1"
 tower = { version = "0.5.2" }
-tower-http = { version = "0.6.6", features = [
+tower-http = { version = "0.6.8", features = [
   "fs",
   "trace",
   "compression-full",
   "decompression-full",
 ] }
 time = "0.3.44"
-minijinja = { version = "2.12.0", features = [
+minijinja = { version = "2.14.0", features = [
   "loader",
   "urlencode",
   "loop_controls",
@@ -86,7 +87,7 @@ quick-xml = { version = "0.38.4", features = [
   "serialize",
 ] }
 toml = { version = "0.9.8" }
-uuid = { version = "1.18.1", features = ["serde", "v4"] }
+uuid = { version = "1.19.0", features = ["serde", "v4"] }
 sha2 = "0.10.9"
 sha3 = "0.10.8"
 base64 = "0.22.1"
@@ -100,10 +101,10 @@ tokio = { version = "1.48.0", features = [
   "rt-multi-thread",
 ] }
 futures = "0.3.31"
-clap = { version = "4.5.51", features = ["cargo", "derive"] }
+clap = { version = "4.5.53", features = ["cargo", "derive"] }
 dotenvy = "0.15.7"
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
+tracing = "0.1.43"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 version-compare = "0.2.1"
 regex = "1.12.2"
 paste = "1.0.15"
@@ -121,7 +122,7 @@ sqlx = { version = "0.8.6", features = [
 include_dir = "0.7.4"
 
 [profile.release]
-opt-level = "z"
+opt-level = 3
 lto = true
 codegen-units = 1
 overflow-checks = false

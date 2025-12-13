@@ -108,6 +108,74 @@ jobs:
           environment-url: https://github.com/ArkForgeLabs/Astra
           environment: production
 
+      # =========================================================== #
+      # =========================== ARM =========================== #
+      # =========================================================== #
+
+      - name: LuaJIT
+        run: cross build --release --target aarch64-unknown-linux-gnu --features default
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./target/aarch64-unknown-linux-gnu/release/astra
+          asset_name: astra-luajit-linux-arm64
+          tag: ${{ github.ref }}
+
+      - name: LuaJIT 52
+        run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features luajit52
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./target/aarch64-unknown-linux-gnu/release/astra
+          asset_name: astra-luajit52-linux-arm64
+          tag: ${{ github.ref }}
+      
+      - name: Luau
+        run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features luau
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./target/aarch64-unknown-linux-gnu/release/astra
+          asset_name: astra-luau-linux-arm64
+          tag: ${{ github.ref }}
+
+      - name: Lua 5.1
+        run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua51
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./target/aarch64-unknown-linux-gnu/release/astra
+          asset_name: astra-lua51-linux-arm64
+          tag: ${{ github.ref }}
+      
+      - name: Lua 5.2
+        run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua52
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./target/aarch64-unknown-linux-gnu/release/astra
+          asset_name: astra-lua52-linux-arm64
+          tag: ${{ github.ref }}
+      
+      - name: Lua 5.3
+        run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua53
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./target/aarch64-unknown-linux-gnu/release/astra
+          asset_name: astra-lua53-linux-arm64
+          tag: ${{ github.ref }}
+      
+      - name: Lua 5.4
+        run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua54
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./target/aarch64-unknown-linux-gnu/release/astra
+          asset_name: astra-lua54-linux-arm64
+          tag: ${{ github.ref }}
+
+      - uses: chrnorm/deployment-action@v2
+        name: Create GitHub deployment
+        id: deployment
+        with:
+          token: "${{ github.token }}"
+          environment-url: https://github.com/ArkForgeLabs/Astra
+          environment: production
+
       - name: Save Cache
         id: cache-cargo-save
         uses: actions/cache/save@v4
@@ -134,4 +202,3 @@ jobs:
           environment-url: ${{ steps.deployment.outputs.environment_url }}
           deployment-id: ${{ steps.deployment.outputs.deployment_id }}
           state: "failure"
-
