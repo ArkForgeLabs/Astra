@@ -44,7 +44,7 @@ enum AstraCLI {
     #[command(arg_required_else_help = true, about = "Runs a Lua script")]
     Run {
         /// Path to the Lua script file.
-        file_path: String,
+        file_path: Option<String>,
         /// Path to the standard library folder
         #[arg(short, long)]
         stdlib_path: Option<String>,
