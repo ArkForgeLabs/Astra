@@ -1,7 +1,7 @@
 #![deny(clippy::unwrap_used)]
 #![deny(clippy::expect_used)]
 
-use clap::{Parser, command, crate_authors, crate_version};
+use clap::{Parser, crate_authors, crate_version};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod commands;
