@@ -56,10 +56,13 @@ enum AstraCLI {
         extra_args: Option<Vec<String>>,
     },
     #[command(
-        about = "Exports the packages Lua bundle for import for IntelliSense",
+        about = "Exports the type definitions for language servers",
         alias = "export"
     )]
     ExportBundle {
+        /// Export Teal configuration and type definitions
+        #[arg(short, long, action)]
+        teal_export: bool,
         /// Path to the export file.
         path: Option<String>,
     },
@@ -89,7 +92,9 @@ pub async fn main() -> std::io::Result<()> {
             check_teal_code,
             extra_args,
         } => commands::run_command(file_path, stdlib_path, check_teal_code, extra_args).await,
-        AstraCLI::ExportBundle { path } => commands::export_bundle_command(path).await?,
+        AstraCLI::ExportBundle { teal_export, path } => {
+            commands::export_bundle_command(teal_export, path).await?
+        }
         AstraCLI::Upgrade { user_agent } => {
             if let Err(e) = commands::upgrade_command(user_agent).await {
                 eprintln!("Could not update to the latest version: {e}");
