@@ -36,12 +36,33 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      
+      - name: Restore cache
+        id: cache-cargo-restore
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-docs-cargo
 
       - name: Setup Environment
         run: |
           cargo install mdbook
           cargo install mdbook-pagetok
           cargo install mdbook-alerts
+      
+      - name: Save Cache
+        id: cache-cargo-save
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            path/to/dependencies
+            some/other/dependencies
+          key: ${{ runner.os }}-docs-cargo
         
       - name: Build docs
         run: |
@@ -51,6 +72,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'docs'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
