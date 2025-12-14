@@ -6,9 +6,9 @@
 [![Static Badge](https://img.shields.io/badge/Join-The_Discord-blue?style=flat&logo=discord&color=blue)](https://discord.com/invite/6PMjUx8x3b)
 [![Static Badge](https://img.shields.io/badge/Read_The_Docs-blue?style=flat&logo=docsdotrs&color=%23000000)](https://astra.arkforge.net/docs/latest)
 
-Astra is a web server runtime for Lua (5.1-5.4), Luau and LuaJIT written in Rust with native support for Teal. The goal is to get as much performance as possible while writing the web server logic in Lua instead for faster iteration, fault-tolerance and no-build requirements. This project is internally used here at [ArkForge](https://arkforge.net) and many others.
+Astra is a Rust based runtime environment for Lua (5.1-5.4), Luau and LuaJIT with native support for Teal. The goal is to get as much performance as possible while writing the logic in Lua instead for faster iteration, fault-tolerance and no-build requirements. This project is internally used here at [ArkForge](https://arkforge.net) and many others.
 
-For Enterprise and business inquiries, send us an email at [contact@arkforge.net](mailto:contact@arkforge.net)
+For enterprise and business inquiries, send us an email at [contact@arkforge.net](mailto:contact@arkforge.net)
 
 > MSRV: 1.88+
 
@@ -54,34 +54,7 @@ server.port = 3000
 server:run()
 ```
 
-You can also use the local variables within routes
-
-```lua
-local counter = 0
-server:get("/count", function()
-    counter = counter + 1
-    -- and also can return JSON
-    return { counter = counter }
-end)
-```
-
-Requests and Responses and their configuration are provided when needed
-
-```lua
-server:get("/", function(request, response)
-    -- set header code
-    response:set_status_code(300)
-    -- set headers
-    response:set_header("header-key", "header-value")
-
-    -- consume the request body
-    print(request:body():text())
-
-    return "Responding with Code 300 cuz why not"
-end)
-```
-
-There are also utilities provided such as a PostgreSQL/SQLite, http client requests, lua extra utils, and async tasks.
+Or fancy some multi threaded async code
 
 ```lua
 -- spawn an async task that does not block the running thread
@@ -93,6 +66,22 @@ spawn_task(function ()
     pprint(response:body():json())
 end)
 ```
+
+What about some databases and serialization?
+
+```lua
+local my_data = require("serde").json.decode('{"name": "John Astra", "age": 21}')
+
+local db = require("database").new("sqlite", ":memory:")
+db:execute([[
+    CREATE TABLE IF NOT EXISTS data (id INTEGER PRIMARY KEY, name TEXT, age INTEGER) strict;
+    INSERT INTO data (name, age) VALUES ($1, $2);
+]], { my_data.name, my_data.age })
+
+pprint(db:query_all("SELECT * FROM data"))
+```
+
+There is also support for cryptography, datetime, jinja2, pubsub/observers, structure validation, async filesystem, and many more, check them at at the [docs](https://astra.arkforge.net/docs/latest)
 
 ## Community Projects
 

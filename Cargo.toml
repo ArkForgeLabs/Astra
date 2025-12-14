@@ -2,7 +2,7 @@
 name = "lua-astra"
 version = "0.38.0"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
-description = "🔥 Blazingly Fast 🔥 web server runtime for Lua"
+description = "🔥 Blazingly Fast 🔥 runtime environment for Lua"
 documentation = "https://astra.arkforge.net/docs/latest"
 repository = "https://github.com/ArkForgeLabs/Astra"
 keywords = ["lua", "luau", "server", "webserver", "runtime"]

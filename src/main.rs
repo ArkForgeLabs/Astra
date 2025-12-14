@@ -38,7 +38,7 @@ pub const TEAL_IMPORT_SCRIPT: &str = include_str!("components/teal_check.lua");
  / ___ \ ___) || | |  _ <  / ___ \
 /_/   \_\____/ |_| |_| \_\/_/   \_\
 
-🔥 Blazingly Fast 🔥 web server runtime for Lua"#
+🔥 Blazingly Fast 🔥 runtime environment for Lua"#
 )]
 enum AstraCLI {
     #[command(arg_required_else_help = true, about = "Runs a Lua script")]
