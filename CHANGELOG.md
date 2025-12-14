@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.38.0](https://github.com/ArkForgeLabs/Astra/compare/v0.37.1..v0.38.0) - 2025-12-14
+
+### Bug Fixes
+
+- linux minor updates to README - ([191e034](https://github.com/ArkForgeLabs/Astra/commit/191e03467222ba747e9ef180200dd29c3fe540af))
+- potential HTTP client JSON serialization fix for requests - ([edc1550](https://github.com/ArkForgeLabs/Astra/commit/edc15502730542f20d063be8294dc9890579d1c5))
+- #123 - now teal export is optional - ([24404ba](https://github.com/ArkForgeLabs/Astra/commit/24404badce0fe87903de279dc0c3e20405719012))
+- fix CI for docs - ([19a9462](https://github.com/ArkForgeLabs/Astra/commit/19a9462bfdccf045ce1c633436f7adef4d93bcea))
+
+### Documentation
+
+- now automatically installs and builds the docs - ([c6c0924](https://github.com/ArkForgeLabs/Astra/commit/c6c092402629f796db1dc7567147a483abb4f66d))
+- added cache to docs ci - ([48d107c](https://github.com/ArkForgeLabs/Astra/commit/48d107cb1c7ca1d74cfc9f0cc427656535c38d65))
+- updated README to reflect the description better. fix: #121 - ([80bf314](https://github.com/ArkForgeLabs/Astra/commit/80bf314d072e864078ca34b15e735e652eb78f38))
+
+### Features
+
+- added fallback routes, fix #125 - ([044c6c9](https://github.com/ArkForgeLabs/Astra/commit/044c6c92f36f39dc6d937a3b31d1f5a0e6fe3f2d))
+- add support for server redirects. fix #127 - ([5bb7d32](https://github.com/ArkForgeLabs/Astra/commit/5bb7d3289e4fa2dd155e78e070488c78240079dd))
+- now init.lua or init.tl can be ran as default if no filename is provided. fix: #119 - ([e145040](https://github.com/ArkForgeLabs/Astra/commit/e145040091cc040f9107f06bfe85181b989e94f2))
+- added MacOS, ARM, and RISC-V support for compilation. fix #116 - ([3af6f3d](https://github.com/ArkForgeLabs/Astra/commit/3af6f3d6418c6514a5eba8d8ed4c79ecdc2df540))
+- now upgrade command can detect new architecture and OS - ([d0c6f01](https://github.com/ArkForgeLabs/Astra/commit/d0c6f011104d895ecdb321562ea41af6930f2aa0))
+
 ## [0.37.1](https://github.com/ArkForgeLabs/Astra/compare/v0.37.0..v0.37.1) - 2025-11-23
 
 ### Bug Fixes
