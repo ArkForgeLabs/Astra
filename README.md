@@ -2,6 +2,7 @@
 
 [![Release Linux](https://github.com/ArkForgeLabs/Astra/actions/workflows/linux_release.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/linux_release.yml)
 [![Release Windows](https://github.com/ArkForgeLabs/Astra/actions/workflows/windows_release.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/windows_release.yml)
+[![Release MacOS](https://github.com/ArkForgeLabs/Astra/actions/workflows/macos_release.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/macos_release.yml)
 [![Publish the crate](https://github.com/ArkForgeLabs/Astra/actions/workflows/crates_io_publish.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/crates_io_publish.yml)
 [![Static Badge](https://img.shields.io/badge/Join-The_Discord-blue?style=flat&logo=discord&color=blue)](https://discord.com/invite/6PMjUx8x3b)
 [![Static Badge](https://img.shields.io/badge/Read_The_Docs-blue?style=flat&logo=docsdotrs&color=%23000000)](https://astra.arkforge.net/docs/latest)
