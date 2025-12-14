@@ -33,8 +33,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      - name: Setup Environment
+        run: |
+          cargo install mdbook
+          cargo install mdbook-pagetok
+          cargo install mdbook-alerts
+        
+      - name: Build docs
+        run: |
+          cd src/docs/latest && mdbook build
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
