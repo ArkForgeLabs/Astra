@@ -128,7 +128,7 @@ local enum WebSocketMessageType "text" "bytes" "ping" "pong" "close" end
 
 global interface WebSocketMessage
     type: WebSocketMessageType
-    data: string
+    value: string
 end
 
 global interface WebSocket is userdata

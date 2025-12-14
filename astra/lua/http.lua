@@ -127,7 +127,7 @@ local http = {}
 
 ---@class WebSocketMessage
 ---@field type WebSocketMessageType
----@field data string
+---@field value string
 
 ---@class WebSocket
 ---Receive another message. Returns `nil` if the stream has closed.
