@@ -131,121 +131,121 @@ jobs:
 # =========================== ARM =========================== #
 # =========================================================== #
 
-  release_arm:
-    name: Release Windows ARM
-    runs-on: windows-11-arm
-    environment: production
+  # release_arm:
+  #   name: Release Windows ARM
+  #   runs-on: windows-11-arm
+  #   environment: production
 
-    env:
-      CARGO_INCREMENTAL: 0
+  #   env:
+  #     CARGO_INCREMENTAL: 0
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
       
-      - name: Restore cache
-        id: cache-cargo-restore
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-arm-cargo
+  #     - name: Restore cache
+  #       id: cache-cargo-restore
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin/
+  #           ~/.cargo/registry/index/
+  #           ~/.cargo/registry/cache/
+  #           ~/.cargo/git/db/
+  #           target/
+  #         key: ${{ runner.os }}-arm-cargo
       
-      - run: |
-          rustup toolchain install 1.88.0
-          rustup override set 1.88.0
-          rustup show
+  #     - run: |
+  #         rustup toolchain install 1.88.0
+  #         rustup override set 1.88.0
+  #         rustup show
 
-      - name: LuaJIT
-        run: cargo build --release --features default
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./target/release/astra.exe
-          asset_name: astra-luajit-windows-arm64.exe
-          tag: ${{ github.ref }}
+  #     - name: LuaJIT
+  #       run: cargo build --release --features default
+  #     - uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         file: ./target/release/astra.exe
+  #         asset_name: astra-luajit-windows-arm64.exe
+  #         tag: ${{ github.ref }}
 
-      - name: LuaJIT 52
-        run: cargo build --release --no-default-features --features luajit52
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./target/release/astra.exe
-          asset_name: astra-luajit52-windows-arm64.exe
-          tag: ${{ github.ref }}
+  #     - name: LuaJIT 52
+  #       run: cargo build --release --no-default-features --features luajit52
+  #     - uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         file: ./target/release/astra.exe
+  #         asset_name: astra-luajit52-windows-arm64.exe
+  #         tag: ${{ github.ref }}
       
-      - name: Luau
-        run: cargo build --release --no-default-features --features luau
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./target/release/astra.exe
-          asset_name: astra-luau-windows-arm64.exe
-          tag: ${{ github.ref }}
+  #     - name: Luau
+  #       run: cargo build --release --no-default-features --features luau
+  #     - uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         file: ./target/release/astra.exe
+  #         asset_name: astra-luau-windows-arm64.exe
+  #         tag: ${{ github.ref }}
 
-      - name: Lua 5.1
-        run: cargo build --release --no-default-features --features lua51
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./target/release/astra.exe
-          asset_name: astra-lua51-windows-arm64.exe
-          tag: ${{ github.ref }}
+  #     - name: Lua 5.1
+  #       run: cargo build --release --no-default-features --features lua51
+  #     - uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         file: ./target/release/astra.exe
+  #         asset_name: astra-lua51-windows-arm64.exe
+  #         tag: ${{ github.ref }}
       
-      - name: Lua 5.2
-        run: cargo build --release --no-default-features --features lua52
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./target/release/astra.exe
-          asset_name: astra-lua52-windows-arm64.exe
-          tag: ${{ github.ref }}
+  #     - name: Lua 5.2
+  #       run: cargo build --release --no-default-features --features lua52
+  #     - uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         file: ./target/release/astra.exe
+  #         asset_name: astra-lua52-windows-arm64.exe
+  #         tag: ${{ github.ref }}
       
-      - name: Lua 5.3
-        run: cargo build --release --no-default-features --features lua53
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./target/release/astra.exe
-          asset_name: astra-lua53-windows-arm64.exe
-          tag: ${{ github.ref }}
+  #     - name: Lua 5.3
+  #       run: cargo build --release --no-default-features --features lua53
+  #     - uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         file: ./target/release/astra.exe
+  #         asset_name: astra-lua53-windows-arm64.exe
+  #         tag: ${{ github.ref }}
       
-      - name: Lua 5.4
-        run: cargo build --release --no-default-features --features lua54
-      - uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./target/release/astra.exe
-          asset_name: astra-lua54-windows-arm64.exe
-          tag: ${{ github.ref }}
+  #     - name: Lua 5.4
+  #       run: cargo build --release --no-default-features --features lua54
+  #     - uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         file: ./target/release/astra.exe
+  #         asset_name: astra-lua54-windows-arm64.exe
+  #         tag: ${{ github.ref }}
 
-      - uses: chrnorm/deployment-action@v2
-        name: Create GitHub deployment
-        id: deployment
-        with:
-          token: "${{ github.token }}"
-          environment-url: https://github.com/ArkForgeLabs/Astra
-          environment: production
+  #     - uses: chrnorm/deployment-action@v2
+  #       name: Create GitHub deployment
+  #       id: deployment
+  #       with:
+  #         token: "${{ github.token }}"
+  #         environment-url: https://github.com/ArkForgeLabs/Astra
+  #         environment: production
 
-      - name: Save Cache
-        id: cache-cargo-save
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            path/to/dependencies
-            some/other/dependencies
-          key: ${{ runner.os }}-arm-cargo
+  #     - name: Save Cache
+  #       id: cache-cargo-save
+  #       uses: actions/cache/save@v4
+  #       with:
+  #         path: |
+  #           path/to/dependencies
+  #           some/other/dependencies
+  #         key: ${{ runner.os }}-arm-cargo
 
-      - name: Update deployment status (success)
-        if: success()
-        uses: chrnorm/deployment-status@v2
-        with:
-          token: "${{ github.token }}"
-          environment-url: ${{ steps.deployment.outputs.environment_url }}
-          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
-          state: "success"
+  #     - name: Update deployment status (success)
+  #       if: success()
+  #       uses: chrnorm/deployment-status@v2
+  #       with:
+  #         token: "${{ github.token }}"
+  #         environment-url: ${{ steps.deployment.outputs.environment_url }}
+  #         deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+  #         state: "success"
 
-      - name: Update deployment status (failure)
-        if: failure()
-        uses: chrnorm/deployment-status@v2
-        with:
-          token: "${{ github.token }}"
-          environment-url: ${{ steps.deployment.outputs.environment_url }}
-          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
-          state: "failure"
+  #     - name: Update deployment status (failure)
+  #       if: failure()
+  #       uses: chrnorm/deployment-status@v2
+  #       with:
+  #         token: "${{ github.token }}"
+  #         environment-url: ${{ steps.deployment.outputs.environment_url }}
+  #         deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+  #         state: "failure"
