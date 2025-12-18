@@ -3,6 +3,8 @@ global interface Database is userdata
     execute: function(database: Database, sql: string, parameters?: table)
     query_one: function(database: Database, sql: string, parameters?: table): table | nil
     query_all: function(database: Database, sql: string, parameters?: table): table | nil
+    query_pragma_int: function(database: Database, sql: string): number | nil
+    query_pragma_text: function(database: Database, sql: string): string | nil
     close: function(database: Database)
 end
 

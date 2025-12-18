@@ -1,4 +1,4 @@
-use mlua::{LuaSerdeExt, UserData};
+use mlua::{ExternalError, LuaSerdeExt, UserData};
 use sqlx::{Pool, Postgres, Row, Sqlite, migrate::MigrateDatabase};
 use std::sync::LazyLock;
 use tokio::sync::Mutex;
@@ -237,6 +237,45 @@ impl UserData for Database {
                 }
             },
         );
+
+        macro_rules! query_pragma {
+            ($type:ty, $lua:ident, $sql:ident, $db:ident) => {
+                match &$db {
+                    DatabaseType::Sqlite(pool) => {
+                        match sqlx::query_scalar::<_, $type>(&$sql)
+                            .fetch_optional(pool)
+                            .await
+                        {
+                            Ok(row) => $lua.to_value(&row),
+                            Err(e) => Err(e.into_lua_err()),
+                        }
+                    }
+                    DatabaseType::Postgres(pool) => {
+                        match sqlx::query_scalar::<_, $type>(&$sql)
+                            .fetch_optional(pool)
+                            .await
+                        {
+                            Ok(row) => $lua.to_value(&row),
+                            Err(e) => Err(e.into_lua_err()),
+                        }
+                    }
+                }
+            };
+        }
+
+        methods.add_async_method("query_pragma_int", |lua, this, sql: String| async move {
+            match &this.db {
+                Some(db) => query_pragma!(i32, lua, sql, db),
+                None => Err(mlua::Error::runtime("The connection is closed")),
+            }
+        });
+
+        methods.add_async_method("query_pragma_text", |lua, this, sql: String| async move {
+            match &this.db {
+                Some(db) => query_pragma!(String, lua, sql, db),
+                None => Err(mlua::Error::runtime("The connection is closed")),
+            }
+        });
 
         methods.add_async_method(
             "query_one",

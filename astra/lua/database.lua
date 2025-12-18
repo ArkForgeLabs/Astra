@@ -3,6 +3,8 @@
 ---@field execute fun(database: Database, sql: string, parameters: table | nil)
 ---@field query_one fun(database: Database, sql: string, parameters: table | nil): table | nil
 ---@field query_all fun(database: Database, sql: string, parameters: table | nil): table | nil
+---@field query_pragma_int fun(database: Database, sql: string): number | nil
+---@field query_pragma_text fun(database: Database, sql: string): string | nil
 ---@field close fun(database: Database)
 
 ---Opens a new SQL connection using the provided URL and returns a table representing the connection.
