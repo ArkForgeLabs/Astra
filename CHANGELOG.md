@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.39.0](https://github.com/ArkForgeLabs/Astra/compare/v0.38.0..v0.39.0) - 2025-12-18
+
+### Features
+
+- database pragma queries, fix: #132 - ([5112237](https://github.com/ArkForgeLabs/Astra/commit/511223789999e67576f88eb005956e933b237d1e))
+
 ## [0.38.0](https://github.com/ArkForgeLabs/Astra/compare/v0.37.1..v0.38.0) - 2025-12-14
 
 ### Bug Fixes
