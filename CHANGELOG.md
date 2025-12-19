@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.39.1](https://github.com/ArkForgeLabs/Astra/compare/v0.39.0..v0.39.1) - 2025-12-19
+
+### Bug Fixes
+
+- DB Pragma Query now returns proper lua nil when NULL value - ([86fa86e](https://github.com/ArkForgeLabs/Astra/commit/86fa86e1901c762b41bebf06cdcad54ba010ec3b))
+- imports the .init files correctly now - ([36f33db](https://github.com/ArkForgeLabs/Astra/commit/36f33db641b1cdbc1e3fb17f4520cc15f5bc499a))
+
+### Refactoring
+
+- removed windows ARM builds as its not supported with vendoring yet - ([455a544](https://github.com/ArkForgeLabs/Astra/commit/455a544a093bcf31646449992f1e1c7e2a451c79))
+
 ## [0.39.0](https://github.com/ArkForgeLabs/Astra/compare/v0.38.0..v0.39.0) - 2025-12-18
 
 ### Features
