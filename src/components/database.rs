@@ -246,7 +246,13 @@ impl UserData for Database {
                             .fetch_optional(pool)
                             .await
                         {
-                            Ok(row) => $lua.to_value(&row),
+                            Ok(row) => {
+                                if let Some(row) = row {
+                                    $lua.to_value(&row)
+                                } else {
+                                    Ok(mlua::Value::Nil)
+                                }
+                            }
                             Err(e) => Err(e.into_lua_err()),
                         }
                     }
@@ -255,7 +261,13 @@ impl UserData for Database {
                             .fetch_optional(pool)
                             .await
                         {
-                            Ok(row) => $lua.to_value(&row),
+                            Ok(row) => {
+                                if let Some(row) = row {
+                                    $lua.to_value(&row)
+                                } else {
+                                    Ok(mlua::Value::Nil)
+                                }
+                            }
                             Err(e) => Err(e.into_lua_err()),
                         }
                     }
@@ -265,7 +277,7 @@ impl UserData for Database {
 
         methods.add_async_method("query_pragma_int", |lua, this, sql: String| async move {
             match &this.db {
-                Some(db) => query_pragma!(i32, lua, sql, db),
+                Some(db) => query_pragma!(i32, lua, sql, db), // returns NULL not nil
                 None => Err(mlua::Error::runtime("The connection is closed")),
             }
         });
