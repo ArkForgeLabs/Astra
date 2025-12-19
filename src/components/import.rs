@@ -14,17 +14,23 @@ pub async fn find_first_lua_match_with_content(
 
     // check the lua paths if the module exist there
     for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
-        let pattern = pattern.replacen('?', &module_path, 1);
+        let pattern = pattern.replacen('?', &module_path, 1).replacen(
+            &(".".to_owned() + std::path::MAIN_SEPARATOR_STR),
+            "",
+            1,
+        );
         let pattern_path = std::path::PathBuf::from(&pattern);
+        let pattern_path_without_extension =
+            std::path::PathBuf::from(&pattern.replace(".tl", "").replace(".lua", ""));
 
         // Check all possible file patterns
         let candidates = vec![
             pattern_path.with_extension("lua"),
             pattern_path.with_extension("tl"),
-            pattern_path.join("init.lua"),
-            pattern_path.join("init.tl"),
-            pattern_path.join("d.lua"),
-            pattern_path.join("d.tl"),
+            pattern_path_without_extension.join("init.lua"),
+            pattern_path_without_extension.join("init.tl"),
+            pattern_path_without_extension.join("d.lua"),
+            pattern_path_without_extension.join("d.tl"),
             std::path::PathBuf::from("lua").join(&pattern_path),
             std::path::PathBuf::from("teal").join(&pattern_path),
             pattern_path.clone(), // For directories or files without extensions
