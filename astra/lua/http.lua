@@ -1,18 +1,18 @@
 ---@meta
 
 ---@class Buffer
----@field bytes fun(): number[]
----@field text fun(): string
----@field json fun(): table Returns the body parsed as JSON -> Lua Table
+---@field bytes fun(self: Buffer): number[]
+---@field text fun(self: Buffer): string
+---@field json fun(self: Buffer): table Returns the body parsed as JSON -> Lua Table
 
 local http = {}
 
 --- Represents an HTTP client response.
 ---@class HTTPClientResponse
----@field status_code fun(): number Gets the response HTTP Status code
----@field body fun(): Buffer Gets the response HTTP Body which further can be parsed
----@field headers fun(): table|nil Returns the entire headers list from the HTTP response
----@field remote_address fun(): string|nil Gets the remote address of the HTTP response server
+---@field status_code fun(self: HTTPClientResponse): number Gets the response HTTP Status code
+---@field body fun(self: HTTPClientResponse): Buffer Gets the response HTTP Body which further can be parsed
+---@field headers fun(self: HTTPClientResponse): table|nil Returns the entire headers list from the HTTP response
+---@field remote_address fun(self: HTTPClientResponse): string|nil Gets the remote address of the HTTP response server
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias http_client_callback fun(response: HTTPClientResponse)
@@ -100,7 +100,6 @@ local http = {}
 ---@field remove_header fun(self: HTTPServerResponse, key: string)
 ---@field set_cookie fun(self: HTTPServerResponse, cookie: Cookie)
 ---@field remove_cookie fun(self: HTTPServerResponse, cookie: Cookie)
----@field redirect_to fun(self: HTTPServerResponse, redirect_uri: string)
 
 ---@class Cookie
 ---@field set_name fun(self: Cookie, name: string)
@@ -127,7 +126,7 @@ local http = {}
 
 ---@class WebSocketMessage
 ---@field type WebSocketMessageType
----@field value string
+---@field data string
 
 ---@class WebSocket
 ---Receive another message. Returns `nil` if the stream has closed.
@@ -280,11 +279,6 @@ function HTTPServer:websocket(path, wscallback, config)
     add_to_routes(self, "web_socket", path, wscallback, config)
 end
 
----@param callback callback
-function HTTPServer:fallback(callback)
-    add_to_routes(self, "fallback", "", callback, {})
-end
-
 ---Runs the server
 function HTTPServer:run()
     ---@diagnostic disable-next-line: undefined-global
@@ -348,15 +342,17 @@ end
 --- ```
 --- equals to
 --- ```lua
---- (function(handler)
----     handler = context(html(logger(handler)))
----     return handler
---- end)
+--- function(next_handler)
+---     return function(request, response, ctx)
+---         context(html(logger(next_handler(request, response, ctx))))
+---     end
+--- end
 --- ```
 function http.middleware.chain(chain)
     return function(handler)
         assert(type(handler) == "function",
             "Handler must be a function, got " .. type(handler))
+        assert(#chain >= 2, "Chain must have at least 2 middlewares")
         for i = #chain, 1, -1 do
             local middleware = chain[i]
             assert(type(middleware) == "function",
