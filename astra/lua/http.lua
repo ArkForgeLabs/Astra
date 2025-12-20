@@ -9,10 +9,10 @@ local http = {}
 
 --- Represents an HTTP client response.
 ---@class HTTPClientResponse
----@field status_code fun(): number Gets the response HTTP Status code
----@field body fun(): Buffer Gets the response HTTP Body which further can be parsed
----@field headers fun(): table|nil Returns the entire headers list from the HTTP response
----@field remote_address fun(): string|nil Gets the remote address of the HTTP response server
+---@field status_code fun(self: HTTPClientResponse): number Gets the response HTTP Status code
+---@field body fun(self: HTTPClientResponse): Buffer Gets the response HTTP Body which further can be parsed
+---@field headers fun(self: HTTPClientResponse): table|nil Returns the entire headers list from the HTTP response
+---@field remote_address fun(self: HTTPClientResponse): string|nil Gets the remote address of the HTTP response server
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias http_client_callback fun(response: HTTPClientResponse)
