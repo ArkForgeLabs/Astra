@@ -54,7 +54,7 @@ pub async fn export_bundle_command(
 
         println!(
             "🚀 Successfully exported the bundled library!\
-\n\nTeal type definition and configuration have not been exported.\
+\n\nTeal type definition and configuration have not been exported.\n
 If you wish to export them as well, use the -t flag with astra export:\n\n\
 astra export -t"
         );
