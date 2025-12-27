@@ -84,6 +84,7 @@ global interface HTTPServerRequest is userdata
     queries: function(self: HTTPServerRequest): table
     params: function(self: HTTPServerRequest): table
     headers: function(self: HTTPServerRequest): table
+    form: function(self: HTTPServerRequest): table
     body: function(self: HTTPServerRequest): Buffer
     ip_address: function(self: HTTPServerRequest): IPAddress
     multipart: function(self: HTTPServerRequest): HTTPMultipart

@@ -2,7 +2,7 @@ use super::cookie::AstraHTTPCookie;
 use crate::components::AstraBuffer;
 use axum::{
     body::Body,
-    extract::{ConnectInfo, FromRequest, FromRequestParts, Multipart, RawPathParams, State},
+    extract::{ConnectInfo, FromRequest, FromRequestParts, Multipart, RawPathParams},
     http::{Request, request::Parts},
 };
 use axum_extra::extract::{CookieJar, cookie::Cookie};
@@ -86,14 +86,54 @@ impl UserData for RequestLua {
 
             Ok(AstraSocketAddr(connect_info.ip()))
         });
+        methods.add_async_method("form", |lua, this, ()| async move {
+            match &this.bytes {
+                Some(bytes) => {
+                    let request =
+                        Request::from_parts(this.parts.clone(), Body::from(bytes.clone()));
+
+                    match axum::Form::<Vec<Vec<serde_value::Value>>>::from_request(request, &())
+                        .await
+                    {
+                        Ok(form) => {
+                            let key_value = lua.create_table()?;
+
+                            for i in form.0 {
+                                let key = i.first().and_then(|key| {
+                                    key.clone().deserialize_into::<'_, String>().ok()
+                                });
+                                if key.is_none() {
+                                    continue;
+                                }
+
+                                if i.len() >= 2 {
+                                    let value = i.get(1);
+                                    if value.is_none() {
+                                        continue;
+                                    }
+
+                                    key_value.set(key.clone(), lua.to_value(&value)?)?;
+                                } else {
+                                    key_value.raw_push(key)?;
+                                }
+                            }
+
+                            Ok(key_value)
+                        }
+                        Err(e) => Err(e.into_lua_err()),
+                    }
+                }
+
+                None => Err(mlua::Error::runtime("No bytes found")),
+            }
+        });
         methods.add_async_method("multipart", |_, this, ()| async move {
             match &this.bytes {
                 Some(bytes) => {
-                    let state = State::<i32>::default();
                     let multipart_request =
                         Request::from_parts(this.parts.clone(), Body::from(bytes.clone()));
 
-                    match Multipart::from_request(multipart_request, &state).await {
+                    match Multipart::from_request(multipart_request, &()).await {
                         Ok(multipart) => AstraMultipart::new(multipart).await,
                         Err(e) => Err(e.into_lua_err()),
                     }

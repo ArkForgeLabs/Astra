@@ -157,7 +157,9 @@ pub fn load_routes(server: mlua::Table) -> Router {
             macro_rules! match_routes {
                 ($route_function:expr) => {{
                     let mut route_function =
-                        $route_function(|request: Request<Body>| route(lua, route_values, request));
+                        $route_function(move |request: Request<Body>| async move {
+                            route(lua, route_values, request).await
+                        });
 
                     if let Some(body_limit) = body_limit {
                         route_function = route_function.layer(DefaultBodyLimit::max(body_limit))
