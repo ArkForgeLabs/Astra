@@ -100,6 +100,7 @@ local http = {}
 ---@field remove_header fun(self: HTTPServerResponse, key: string)
 ---@field set_cookie fun(self: HTTPServerResponse, cookie: Cookie)
 ---@field remove_cookie fun(self: HTTPServerResponse, cookie: Cookie)
+---@field redirect_to fun(self: HTTPServerResponse, redirect_uri: string)
 
 ---@class Cookie
 ---@field set_name fun(self: Cookie, name: string)
@@ -126,7 +127,7 @@ local http = {}
 
 ---@class WebSocketMessage
 ---@field type WebSocketMessageType
----@field data string
+---@field value string
 
 ---@class WebSocket
 ---Receive another message. Returns `nil` if the stream has closed.
@@ -277,6 +278,11 @@ end
 ---@param config HTTPRouteConfiguration?
 function HTTPServer:websocket(path, wscallback, config)
     add_to_routes(self, "web_socket", path, wscallback, config)
+end
+
+---@param callback callback
+function HTTPServer:fallback(callback)
+    add_to_routes(self, "fallback", "", callback, {})
 end
 
 ---Runs the server
