@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.39.2](https://github.com/ArkForgeLabs/Astra/compare/v0.39.1..v0.39.2) - 2025-12-27
+
+### Bug Fixes
+
+- CI now saves cache properly - ([8c1bc1b](https://github.com/ArkForgeLabs/Astra/commit/8c1bc1b311d50db3ab2bb5f6e1ec688ffd9e639b))
+- Add newline in `astra export` cli output (#133) - ([5f47bf2](https://github.com/ArkForgeLabs/Astra/commit/5f47bf2b7baf97f2912f988106323cd133f21a25))
+- type definitions for http.lua was restored what was lost - ([bfac6d6](https://github.com/ArkForgeLabs/Astra/commit/bfac6d689734e765f32dcc4d518261c78aab532e))
+
+### Features
+
+- added correct self requirement for HTTPResponse - ([5543ce4](https://github.com/ArkForgeLabs/Astra/commit/5543ce4b1da63d957bac5743f928dbae5feed0af))
+- HTTP servers can now accept normal forms - ([274d1ba](https://github.com/ArkForgeLabs/Astra/commit/274d1baa29189e12d2a8ef68c031836aa36d92d6))
+
 ## [0.39.1](https://github.com/ArkForgeLabs/Astra/compare/v0.39.0..v0.39.1) - 2025-12-19
 
 ### Bug Fixes
