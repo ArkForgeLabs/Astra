@@ -18,6 +18,12 @@ function pprint(value)
 	astra_internal__pretty_print(value)
 end
 
+---@return string
+function uuid()
+	---@diagnostic disable-next-line: undefined-global
+	return astra_internal__uuid()
+end
+
 ---Invalidates imported module cache
 ---
 ---Modules are cached upon importing at Astra, you can use this

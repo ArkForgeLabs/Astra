@@ -6,6 +6,10 @@ global function pprint(value: any)
 	astra_internal__pretty_print(value)
 end
 
+global function uuid(): string
+	return astra_internal__uuid()
+end
+
 local type astra_internal__invalidate_cache = function(path: string)
 global function invalidate_cache(path: string)
 	astra_internal__invalidate_cache(path)

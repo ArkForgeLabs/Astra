@@ -5,6 +5,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     invalidate_cache(lua)?;
     pprint(lua)?;
     AstraRegex::register_to_lua(lua)?;
+    uuid_v4(lua)?;
     // env
     getenv(lua)?;
     setenv(lua)?;
@@ -64,6 +65,13 @@ pub fn setenv(lua: &mlua::Lua) -> mlua::Result<()> {
 
             Ok(())
         })?,
+    )
+}
+
+pub fn uuid_v4(lua: &mlua::Lua) -> mlua::Result<()> {
+    lua.globals().set(
+        "astra_internal__uuid",
+        lua.create_function(|lua, _: ()| lua.to_value(&uuid::Uuid::new_v4()))?,
     )
 }
 
