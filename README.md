@@ -20,7 +20,7 @@ You can install using an installer script:
 ### Linux
 
 ```bash
-sh -c "$(curl -fsSL http://127.0.0.1:8000/install.sh)"
+sh -c "$(curl -fsSL https://astra.arkforge.net/install.sh)"
 ```
 
 ### Windows
