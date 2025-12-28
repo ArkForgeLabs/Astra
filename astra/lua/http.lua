@@ -102,6 +102,8 @@ local http = {}
 ---@field set_cookie fun(self: HTTPServerResponse, cookie: Cookie)
 ---@field remove_cookie fun(self: HTTPServerResponse, cookie: Cookie)
 ---@field redirect_to fun(self: HTTPServerResponse, redirect_uri: string)
+---@field redirect_temporary fun(self: HTTPServerResponse, redirect_uri: string)
+---@field redirect_permanent fun(self: HTTPServerResponse, redirect_uri: string)
 
 ---@class Cookie
 ---@field set_name fun(self: Cookie, name: string)

@@ -72,10 +72,7 @@ pub async fn route(
         let response_details = response.borrow::<responses::ResponseLua>()?;
 
         if let Some(redirect_to) = &response_details.redirect {
-            return Ok((
-                cookie_jar,
-                axum::response::Redirect::temporary(redirect_to).into_response(),
-            ));
+            return Ok((cookie_jar, redirect_to.clone().into_response()));
         }
 
         let mut resulting_response = match result {

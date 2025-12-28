@@ -100,6 +100,8 @@ global interface HTTPServerResponse is userdata
     set_cookie: function(self: HTTPServerResponse, cookie: Cookie)
     remove_cookie: function(self: HTTPServerResponse, cookie: Cookie)
     redirect_to: function(self: HTTPServerResponse, redirect_uri: string)
+    redirect_temporary: function(self: HTTPServerResponse, redirect_uri: string)
+    redirect_permanent: function(self: HTTPServerResponse, redirect_uri: string)
 end
 
 global interface Cookie is userdata
