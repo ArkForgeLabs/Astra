@@ -1,6 +1,5 @@
 ---@meta
 
----
 ---Schema validation function with support for nested tables and arrays of tables
 ---@param input_table table
 ---@param schema table
@@ -23,6 +22,72 @@ local function validate_table(input_table, schema)
     -- Helper function to check if a value is within a range (if applicable)
     local function check_range(value, min, max)
         return not (min and value < min) and not (max and value > max)
+    end
+
+    -- Helper function to process schema constraints and extract parameters
+    local function process_schema_constraints(constraints, _key)
+        local field_info = {
+            type = nil,
+            required = true,
+            min = nil,
+            max = nil,
+            default = nil,
+            schema = nil,
+            array_item_type = nil
+        }
+
+        if type(constraints) == "string" then
+            -- Simple type constraint: "string"
+            field_info.type = constraints
+        elseif type(constraints) == "table" then
+            if #constraints > 0 then
+                -- Array format: { "array", "number" } or { "array", {...} } or { "string", false }
+                local first_elem = constraints[1]
+
+                if first_elem == "array" then
+                    -- Array type
+                    field_info.type = "array"
+                    if #constraints == 2 then
+                        if type(constraints[2]) == "string" then
+                            -- Array of primitives: { "array", "number" }
+                            field_info.array_item_type = constraints[2]
+                        elseif type(constraints[2]) == "table" then
+                            -- Array of tables: { "array", {...} }
+                            field_info.schema = constraints[2]
+                        end
+                    end
+                else
+                    -- Simple type with optional required flag: { "string", false }
+                    field_info.type = first_elem
+                    if #constraints == 2 and type(constraints[2]) == "boolean" then
+                        field_info.required = constraints[2]
+                    end
+                    -- Handle additional named parameters like min, max, default, etc.
+                    if constraints.min then field_info.min = constraints.min end
+                    if constraints.max then field_info.max = constraints.max end
+                    if constraints.default then field_info.default = constraints.default end
+                    if constraints.required == false then field_info.required = false end
+                end
+            else
+                -- Object format: { type = "string", min = 0, max = 100, default = "test", required = false }
+                if constraints.type then
+                    field_info.type = constraints.type
+                else
+                    -- Nested schema: { nested_field = "string" }
+                    field_info.type = "table"
+                    field_info.schema = constraints
+                    -- Handle required parameter for nested tables
+                    if constraints.required == false then field_info.required = false end
+                end
+
+                if constraints.min then field_info.min = constraints.min end
+                if constraints.max then field_info.max = constraints.max end
+                if constraints.default then field_info.default = constraints.default end
+                if constraints.required == false then field_info.required = false end
+            end
+        end
+
+        return field_info
     end
 
     -- Helper function to validate nested tables
@@ -63,15 +128,15 @@ local function validate_table(input_table, schema)
 
     -- Iterate over the schema
     for key, constraints in pairs(schema) do
+        local field_info = process_schema_constraints(constraints, key)
         local value = input_table[key]
-        local expected_type = constraints.type
-        local min = constraints.min
-        local max = constraints.max
-        local nested_schema = constraints.schema -- Schema for nested tables
-        local default_value = constraints.default
+        local expected_type = field_info.type
+        local min = field_info.min
+        local max = field_info.max
+        local nested_schema = field_info.schema
+        local default_value = field_info.default
         local path = key
-        local required = true
-        if constraints.required == false then required = false end
+        local required = field_info.required
 
         -- Check if the key exists in the table and is required
         if required and value == nil then
@@ -92,19 +157,20 @@ local function validate_table(input_table, schema)
             end
         end
 
-        -- If the value is an array of tables, validate each element
-        if expected_type == "array" and type(value) == "table" and nested_schema then
-            local is_valid, err = validate_array_of_tables(value, nested_schema, path)
-            if not is_valid then
-                return false, "\n" .. "Error in array of tables for key: " .. err
-            end
-        end
-
-        -- If the value is an array of primitive types, validate each element
-        if expected_type == "array" and type(value) == "table" and not nested_schema then
-            local is_valid, err = validate_array_of_primitives(value, constraints.array_item_type, path)
-            if not is_valid then
-                return false, "\n" .. "Error in array of primitives for key: " .. err
+        -- If the value is an array, validate its contents
+        if expected_type == "array" and type(value) == "table" then
+            if nested_schema then
+                -- Array of tables
+                local is_valid, err = validate_array_of_tables(value, nested_schema, path)
+                if not is_valid then
+                    return false, "\n" .. "Error in array of tables for key: " .. err
+                end
+            elseif field_info.array_item_type then
+                -- Array of primitive types
+                local is_valid, err = validate_array_of_primitives(value, field_info.array_item_type, path)
+                if not is_valid then
+                    return false, "\n" .. "Error in array of primitives for key: " .. err
+                end
             end
         end
 
