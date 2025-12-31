@@ -21,7 +21,17 @@ local function validate_table(input_table, schema)
 
     -- Helper function to check if a value is within a range (if applicable)
     local function check_range(value, min, max)
-        return not (min and value < min) and not (max and value > max)
+        -- Only check range for numbers
+        if type(value) == "number" then
+            return not (min and value < min) and not (max and value > max)
+        end
+        -- For strings, check length if min/max are numbers
+        if type(value) == "string" and type(min) == "number" and type(max) == "number" then
+            local length = #value
+            return not (min and length < min) and not (max and length > max)
+        end
+        -- For other types or when no range constraints, consider valid
+        return true
     end
 
     -- Helper function to process schema constraints and extract parameters
