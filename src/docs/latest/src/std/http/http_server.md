@@ -251,10 +251,6 @@ We decided to take an advantage of Lua functions being a [first-class values](ht
 > [!NOTE]
 > If you are familiar with this concept, feel free to go to the **Full example** at the bottom of the page.
 
-Astra has several built-in middlewares. You can modify or extend middlewares directly in `.astra/middleware.lua` (after running `astra export`) or in your own files. We are opened to PRs.
-
-For more details, see the [middleware.lua](https://github.com/ArkForgeLabs/Astra/blob/main/src/components/http/middleware.lua) and the [middleware_example.lua](https://github.com/ArkForgeLabs/Astra/tree/main/examples/middleware.lua).
-
 ### Basic middleware
 
 The following example shows the most basic middleware that changes the response headers.
@@ -489,6 +485,7 @@ server:get("/normal-day", chain { logger, html } (normal_day))
 server:get("/favourite-day", chain { ctx, logger, insert_datetime, html } (favourite_day))
 
 server:run()
+
 ```
 
 ## Deployment
