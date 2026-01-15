@@ -30,14 +30,20 @@ pub fn dotenv_function(lua: &mlua::Lua) -> mlua::Result<()> {
 pub fn pprint(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__pretty_print",
-        lua.create_function(|_, input: mlua::Value| {
-            if let Some(input) = input.as_string() {
-                println!("{}", input.to_string_lossy());
-            } else if input.is_userdata() {
-                println!("{input:?}");
-            } else {
-                println!("{input:#?}");
+        lua.create_function(|_, args: mlua::MultiValue| {
+            let mut parts = Vec::new();
+
+            for input in args {
+                let part = if let Some(s) = input.as_string() {
+                    s.to_string_lossy().to_string()
+                } else if input.is_userdata() {
+                    format!("{input:?}")
+                } else {
+                    format!("{input:#?}")
+                };
+                parts.push(part);
             }
+            println!("{}", parts.join("\t"));
 
             Ok(())
         })?,
