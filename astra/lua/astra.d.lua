@@ -13,9 +13,9 @@ ASTRA_INTERNAL__CURRENT_SCRIPT = ""
 
 ---Pretty prints any table or value
 ---@param value any
-function pprint(value)
+function pprint(...)
 	---@diagnostic disable-next-line: undefined-global
-	astra_internal__pretty_print(value)
+	astra_internal__pretty_print(...)
 end
 
 ---@return string
