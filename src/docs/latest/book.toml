@@ -8,20 +8,12 @@ src = "./src"
 build-dir = "../../../docs/docs/latest"
 
 [output.html]
-theme = "theme"
 default-theme = "dark"
-preferred-dark-theme = "arkforge"
+preferred-dark-theme = "coal"
 git-repository-url = "https://github.com/ArkForgeLabs/Astra"
-git-repository-icon = "fa-github"
 site-url = "/docs/latest/"
 edit-url-template = "https://github.com/ArkForgeLabs/Astra/edit/main/src/docs/latest/{path}"
-line-numbers = false
-additional-css = ["theme/pagetoc.css"]
-additional-js = ["theme/pagetoc.js"]
 
 [output.html.playground]
 copyable = true
 copy-js = true
-
-[preprocessor.pagetoc]
-[preprocessor.alerts]

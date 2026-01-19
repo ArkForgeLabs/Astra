@@ -248,7 +248,7 @@ Since Lua is a very flexible language, there are lots of ways to implement middl
 
 We decided to take an advantage of Lua functions being a [first-class values](https://www.lua.org/pil/6.html).
 
-> [!NOTE]
+> **Note:**
 > If you are familiar with this concept, feel free to go to the **Full example** at the bottom of the page.
 
 ### Basic middleware
@@ -338,7 +338,7 @@ server:run()
 
 To make it less tedious to compose middleware, we introduced the `chain` function, which combines all provided middleware into a single middleware.
 
-> [!NOTE]
+> **Note:**
 > Read more about why we can drop parenthesis while calling `chain` function here: [Writing a DSL in Lua](https://leafo.net/guides/dsl-in-lua.html)
 
 ```lua
