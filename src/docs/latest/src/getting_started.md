@@ -18,7 +18,7 @@ powershell -c "irm https://astra.arkforge.net/install.ps1 | iex"
 
 ### Cargo
 
-Alternatively you can also install through [cargo](https://doc.rust-lang.org/cargo/) tool, if you have it installed:
+Alternatively you can also install through [cargo](https://doc.rust-lang.org/cargo/) toolchain, if you have it installed:
 
 ```bash
 cargo install lua-astra
