@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.40.1](https://github.com/ArkForgeLabs/Astra/compare/v0.40.0..v0.40.1) - 2026-01-19
+
+### Features
+
+- updated CI MSRV - ([f693386](https://github.com/ArkForgeLabs/Astra/commit/f69338680b1b51844b9b9e6ebd5495be6fd9bcb7))
+
 ## [0.40.0](https://github.com/ArkForgeLabs/Astra/compare/v0.39.3..v0.40.0) - 2026-01-19
 
 ### Bug Fixes
