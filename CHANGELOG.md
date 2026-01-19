@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file. See [conven
 
 ## [0.40.1](https://github.com/ArkForgeLabs/Astra/compare/v0.40.0..v0.40.1) - 2026-01-19
 
+### Bug Fixes
+
+- docs CI failing when one dependency fails - ([e0de397](https://github.com/ArkForgeLabs/Astra/commit/e0de397744fd06feffe03672ab5ff3c10b4dad6b))
+
+### Documentation
+
+- fix builds and moved to mdbook 0.5 - ([3526309](https://github.com/ArkForgeLabs/Astra/commit/352630982249466766184619394bc722af13ab92))
+
 ### Features
 
 - updated CI MSRV - ([f693386](https://github.com/ArkForgeLabs/Astra/commit/f69338680b1b51844b9b9e6ebd5495be6fd9bcb7))
