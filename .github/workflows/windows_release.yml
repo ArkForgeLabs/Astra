@@ -32,8 +32,8 @@ jobs:
           key: ${{ runner.os }}-cargo
       
       - run: |
-          rustup toolchain install 1.88.0
-          rustup override set 1.88.0
+          rustup toolchain install 1.92.0
+          rustup override set 1.92.0
           rustup show
 
       - name: LuaJIT

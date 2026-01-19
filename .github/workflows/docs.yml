@@ -50,6 +50,7 @@ jobs:
           key: ${{ runner.os }}-docs-cargo
 
       - name: Setup Environment
+        continue-on-error: true
         run: |
           cargo install mdbook
           cargo install mdbook-alerts
