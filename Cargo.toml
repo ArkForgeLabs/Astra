@@ -55,14 +55,14 @@ reqwest = { version = "0.12.28", features = [
   "macos-system-configuration",
 ], default-features = false }
 reqwest-websocket = "0.5.1"
-tower = { version = "0.5.2" }
+tower = { version = "0.5.3" }
 tower-http = { version = "0.6.8", features = [
   "fs",
   "trace",
   "compression-full",
   "decompression-full",
 ] }
-time = "0.3.44"
+time = "0.3.45"
 minijinja = { version = "2.14.0", features = [
   "loader",
   "urlencode",
@@ -74,12 +74,12 @@ glob = "0.3.3"
 # data formats
 serde = { version = "1.0.228", features = ["derive"] }
 serde-value = { version = "0.7.0" }
-serde_json = { version = "1.0.148" }
+serde_json = { version = "1.0.149" }
 serde_json5 = { version = "0.2.1" }
 serde_yaml = { version = "0.9.34" }
 serde_ini = { version = "0.2.0" }
 csv = { version = "1.4.0" }
-quick-xml = { version = "0.38.4", features = [
+quick-xml = { version = "0.39.0", features = [
   "async-tokio",
   "encoding",
   "escape-html",
@@ -92,16 +92,16 @@ sha2 = "0.10.9"
 sha3 = "0.10.8"
 base64 = "0.22.1"
 bytes = { version = "1.11.0", features = ["serde"] }
-chrono = { version = "0.4.42", features = ["serde"] }
+chrono = { version = "0.4.43", features = ["serde"] }
 
 # runtime
-tokio = { version = "1.48.0", features = [
+tokio = { version = "1.49.0", features = [
   "macros",
   "signal",
   "rt-multi-thread",
 ] }
 futures = "0.3.31"
-clap = { version = "4.5.53", features = ["cargo", "derive"] }
+clap = { version = "4.5.54", features = ["cargo", "derive"] }
 dotenvy = "0.15.7"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
@@ -120,6 +120,7 @@ sqlx = { version = "0.8.6", features = [
   "uuid",
 ] }
 include_dir = "0.7.4"
+sqlite-vec = "0.1.6"
 
 [profile.release]
 opt-level = 3
