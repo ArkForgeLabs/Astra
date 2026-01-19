@@ -49,12 +49,17 @@ jobs:
             target/
           key: ${{ runner.os }}-docs-cargo
 
-      - name: Setup Environment
+      - name: Setup MDBook
         continue-on-error: true
-        run: |
-          cargo install mdbook
-          cargo install mdbook-alerts
-          cargo install --git https://github.com/slowsage/mdbook-pagetoc
+        run: cargo install mdbook
+      
+      - name: Setup MDBook Alerts
+        continue-on-error: true
+        run: cargo install mdbook-alerts
+
+      - name: Setup MDBook Pagetok
+        continue-on-error: true
+        run: cargo install --git https://github.com/slowsage/mdbook-pagetoc
       
       - name: Save Cache
         id: cache-cargo-save
