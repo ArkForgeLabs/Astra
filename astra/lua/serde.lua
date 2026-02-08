@@ -160,7 +160,7 @@ function csv.decode(value, options)
   local result = astra_internal__csv_decode(value, options)
   return {
     body = result[1],
-    headers = result[2] or nil
+    headers = result[2] or nil,
   }
 end
 
@@ -171,5 +171,5 @@ return {
   toml = toml,
   ini = ini,
   xml = xml,
-  csv = csv
+  csv = csv,
 }

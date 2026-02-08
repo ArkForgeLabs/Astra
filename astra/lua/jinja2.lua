@@ -18,90 +18,89 @@
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias template_function fun(args: table): any
 
-
 --- Returns a new templating engine
 ---@param dir? string path to the directory, for example: `"templates/**/[!exclude.html]*.html"`
 ---@return TemplateEngine
 ---@nodiscard
 local function new_engine(dir)
-	---@type TemplateEngine
-	---@diagnostic disable-next-line: undefined-global
-	local engine = astra_internal__new_templating_engine(dir)
-	---@type TemplateEngine
-	---@diagnostic disable-next-line: missing-fields
-	local TemplateEngineWrapper = { engine = engine }
-	local templates_re = regex([[(?:index)?\.(html|lua)$]])
+  ---@type TemplateEngine
+  ---@diagnostic disable-next-line: undefined-global
+  local engine = astra_internal__new_templating_engine(dir)
+  ---@type TemplateEngine
+  ---@diagnostic disable-next-line: missing-fields
+  local TemplateEngineWrapper = { engine = engine }
+  local templates_re = regex([[(?:index)?\.(html|lua)$]])
 
-	local function normalize_paths(path)
-		-- Ensure path starts with "/"
-		if path:sub(1, 1) ~= "/" then
-			path = "/" .. path
-		end
+  local function normalize_paths(path)
+    -- Ensure path starts with "/"
+    if path:sub(1, 1) ~= "/" then
+      path = "/" .. path
+    end
 
-		-- If empty, it's just the root
-		if path == "/" then
-			return { "/" }
-		end
+    -- If empty, it's just the root
+    if path == "/" then
+      return { "/" }
+    end
 
-		-- Return both with and without trailing slash
-		if path:sub(-1) == "/" then
-			return { path, path:sub(1, -2) }
-		else
-			return { path, path .. "/" }
-		end
-	end
+    -- Return both with and without trailing slash
+    if path:sub(-1) == "/" then
+      return { path, path:sub(1, -2) }
+    else
+      return { path, path .. "/" }
+    end
+  end
 
-	function TemplateEngineWrapper:add_to_server(server, context)
-		local names = self.engine:get_template_names()
-		for _, value in ipairs(names) do
-			local path = templates_re:replace(value, "")
-			local content = self.engine:render(value, context)
+  function TemplateEngineWrapper:add_to_server(server, context)
+    local names = self.engine:get_template_names()
+    for _, value in ipairs(names) do
+      local path = templates_re:replace(value, "")
+      local content = self.engine:render(value, context)
 
-			for _, route in ipairs(normalize_paths(path)) do
-				server:get(route, function(_, response)
-					response:set_header("Content-Type", "text/html")
-					return content
-				end)
-			end
-		end
-	end
+      for _, route in ipairs(normalize_paths(path)) do
+        server:get(route, function(_, response)
+          response:set_header("Content-Type", "text/html")
+          return content
+        end)
+      end
+    end
+  end
 
-	function TemplateEngineWrapper:add_to_server_debug(server, context)
-		local names = self.engine:get_template_names()
-		for _, value in ipairs(names) do
-			local path = templates_re:replace(value, "")
+  function TemplateEngineWrapper:add_to_server_debug(server, context)
+    local names = self.engine:get_template_names()
+    for _, value in ipairs(names) do
+      local path = templates_re:replace(value, "")
 
-			for _, route in ipairs(normalize_paths(path)) do
-				server:get(route, function(_, response)
-					self.engine:reload_templates()
-					response:set_header("Content-Type", "text/html")
-					return self.engine:render(value, context)
-				end)
-			end
-		end
-	end
+      for _, route in ipairs(normalize_paths(path)) do
+        server:get(route, function(_, response)
+          self.engine:reload_templates()
+          response:set_header("Content-Type", "text/html")
+          return self.engine:render(value, context)
+        end)
+      end
+    end
+  end
 
-	local templating_methods = {
-		"add_template",
-		"add_template_file",
-		"get_template_names",
-		"exclude_templates",
-		"reload_templates",
-		"context_add",
-		"context_remove",
-		"context_get",
-		"add_function",
-		"render",
-	}
+  local templating_methods = {
+    "add_template",
+    "add_template_file",
+    "get_template_names",
+    "exclude_templates",
+    "reload_templates",
+    "context_add",
+    "context_remove",
+    "context_get",
+    "add_function",
+    "render",
+  }
 
-	for _, method in ipairs(templating_methods) do
-		---@diagnostic disable-next-line: assign-type-mismatch
-		TemplateEngineWrapper[method] = function(self, ...)
-			return self.engine[method](self.engine, ...)
-		end
-	end
+  for _, method in ipairs(templating_methods) do
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    TemplateEngineWrapper[method] = function(self, ...)
+      return self.engine[method](self.engine, ...)
+    end
+  end
 
-	return TemplateEngineWrapper
+  return TemplateEngineWrapper
 end
 
 return { new = new_engine }
