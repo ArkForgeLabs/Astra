@@ -36,16 +36,16 @@
 ---@param differentiator? string | number This field can be used to determine the type of DateTime. On empty it creates a new local DateTime, on number it starts te sequence for letting you define the DateTime by parameters, and on string it allows you to parse a string to DateTime.
 ---@return DateTime
 local function new_datetime(differentiator, month, day, hour, min, sec, milli)
-	if type(differentiator) == "string" then
-		---@diagnostic disable-next-line: undefined-global
-		return astra_internal__datetime_new_parse(differentiator)
-	elseif type(differentiator) == "number" then
-		---@diagnostic disable-next-line: undefined-global
-		return astra_internal__datetime_new_from(differentiator, month, day, hour, min, sec, milli)
-	else
-		---@diagnostic disable-next-line: undefined-global
-		return astra_internal__datetime_new_now()
-	end
+  if type(differentiator) == "string" then
+    ---@diagnostic disable-next-line: undefined-global
+    return astra_internal__datetime_new_parse(differentiator)
+  elseif type(differentiator) == "number" then
+    ---@diagnostic disable-next-line: undefined-global
+    return astra_internal__datetime_new_from(differentiator, month, day, hour, min, sec, milli)
+  else
+    ---@diagnostic disable-next-line: undefined-global
+    return astra_internal__datetime_new_now()
+  end
 end
 
 ---@type fun(differentiator?: string | number, month: number?, day: number?, hour: number?, min: number?, sec: number?, milli: number?): DateTime
@@ -53,8 +53,8 @@ end
 ---@return DateTime
 --- Creates a wrapper for a DateTime-like object
 local function datetime_new(differentiator, month, day, hour, min, sec, milli)
-	-- Create real DateTime using datetime
-	return new_datetime(differentiator, month, day, hour, min, sec, milli)
+  -- Create real DateTime using datetime
+  return new_datetime(differentiator, month, day, hour, min, sec, milli)
 end
 
 return { new = datetime_new }

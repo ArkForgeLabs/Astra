@@ -2,7 +2,7 @@
 
 ---@class Astra
 Astra = {
-	version = "@ASTRA_VERSION",
+  version = "@ASTRA_VERSION",
 }
 
 ASTRA_INTERNAL__CURRENT_SCRIPT = ""
@@ -14,14 +14,14 @@ ASTRA_INTERNAL__CURRENT_SCRIPT = ""
 ---Pretty prints any table or value
 ---@param value any
 function pprint(...)
-	---@diagnostic disable-next-line: undefined-global
-	astra_internal__pretty_print(...)
+  ---@diagnostic disable-next-line: undefined-global
+  astra_internal__pretty_print(...)
 end
 
 ---@return string
 function uuid()
-	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__uuid()
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__uuid()
 end
 
 ---Invalidates imported module cache
@@ -30,8 +30,8 @@ end
 ---function to remove those caches
 ---@param path string
 function invalidate_cache(path)
-	---@diagnostic disable-next-line: undefined-global
-	astra_internal__invalidate_cache(path)
+  ---@diagnostic disable-next-line: undefined-global
+  astra_internal__invalidate_cache(path)
 end
 
 ---Represents an async task
@@ -43,8 +43,8 @@ end
 ---@param callback fun() The callback to run the content of the async task
 ---@return TaskHandler
 function spawn_task(callback)
-	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__spawn_task(callback)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__spawn_task(callback)
 end
 
 ---Starts a new async task with a delay in milliseconds
@@ -52,8 +52,8 @@ end
 ---@param timeout number The delay in milliseconds
 ---@return TaskHandler
 function spawn_timeout(callback, timeout)
-	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__spawn_timeout(callback, timeout)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__spawn_timeout(callback, timeout)
 end
 
 ---Starts a new async task that runs infinitely in a loop but with a delay in milliseconds
@@ -61,8 +61,8 @@ end
 ---@param timeout number The delay in milliseconds
 ---@return TaskHandler
 function spawn_interval(callback, timeout)
-	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__spawn_interval(callback, timeout)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__spawn_interval(callback, timeout)
 end
 
 ---Splits a sentence into an array given the separator
@@ -71,18 +71,18 @@ end
 ---@return table array
 ---@nodiscard
 function string.split(input_str, separator_str)
-	local result_table = {}
-	for word in input_str:gmatch("([^" .. separator_str .. "]+)") do
-		table.insert(result_table, word)
-	end
-	return result_table
+  local result_table = {}
+  for word in input_str:gmatch("([^" .. separator_str .. "]+)") do
+    table.insert(result_table, word)
+  end
+  return result_table
 end
 
 ---Load your own file into env
 ---@param file_path string
 function dotenv_load(file_path)
-	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__dotenv_load(file_path)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__dotenv_load(file_path)
 end
 
 dotenv_load(".env")
@@ -101,14 +101,14 @@ dotenv_load(".env.local")
 ---@param expression string
 ---@return Regex
 function regex(expression)
-	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__regex(expression)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__regex(expression)
 end
 
 ---@param key string
 function os.getenv(key)
-	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__getenv(key)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__getenv(key)
 end
 
 ---Sets the environment variable.
@@ -117,6 +117,6 @@ end
 ---@param key string
 ---@param value string
 function os.setenv(key, value)
-	---@diagnostic disable-next-line: undefined-global
-	return astra_internal__setenv(key, value)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__setenv(key, value)
 end

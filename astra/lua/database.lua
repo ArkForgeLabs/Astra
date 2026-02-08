@@ -22,19 +22,17 @@
 ---@return Database Database that represents the SQL connection.
 ---@nodiscard
 local function connect(database_type, url, connection_options)
-    if not connection_options then
-        connection_options = {}
-    end
-    connection_options.max_connections = connection_options.max_connections
-    connection_options.extensions = connection_options.extensions or {}
-    connection_options.extensions_with_entrypoint = connection_options.extensions_with_entrypoint or
-        {}    -- SQLite only
-    connection_options.is_immutable = connection_options.is_immutable ~= nil and connection_options.is_immutable or
-        false -- SQLite only
-    connection_options.other_options = connection_options.other_options or {}
+  if not connection_options then
+    connection_options = {}
+  end
+  connection_options.max_connections = connection_options.max_connections
+  connection_options.extensions = connection_options.extensions or {}
+  connection_options.extensions_with_entrypoint = connection_options.extensions_with_entrypoint or {} -- SQLite only
+  connection_options.is_immutable = connection_options.is_immutable ~= nil and connection_options.is_immutable or false -- SQLite only
+  connection_options.other_options = connection_options.other_options or {}
 
-    ---@diagnostic disable-next-line: undefined-global
-    return astra_internal__database_connect(database_type, url, connection_options)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__database_connect(database_type, url, connection_options)
 end
 
 return { new = connect }
