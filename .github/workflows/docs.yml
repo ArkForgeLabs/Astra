@@ -8,9 +8,6 @@ on:
     paths:
       - src/docs/**
 
-  release:
-    types: [published]
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -80,11 +77,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      - name: Zip and attach docs to release
-        if: github.event_name == 'release' && github.event.action == 'published'
-        run: |
-          cd docs/docs/latest && zip -r ../../../docs.zip .
-          gh release upload ${{ github.event.release.tag_name }} docs.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
