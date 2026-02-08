@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.41.0](https://github.com/ArkForgeLabs/Astra/compare/v0.40.1..v0.41.0) - 2026-02-08
+
+### Bug Fixes
+
+- #140 added shebang support - ([921ff2f](https://github.com/ArkForgeLabs/Astra/commit/921ff2f0c33a411dda498971ba1a5244f758ae7b))
+
+### Refactoring
+
+- removed the prebuild docs from here. added docs build and - ([783995c](https://github.com/ArkForgeLabs/Astra/commit/783995ca177944b48c15bab6fbda038e86348bb4))
+- upload to releases - ([783995c](https://github.com/ArkForgeLabs/Astra/commit/783995ca177944b48c15bab6fbda038e86348bb4))
+
 ## [0.40.1](https://github.com/ArkForgeLabs/Astra/compare/v0.40.0..v0.40.1) - 2026-01-19
 
 ### Bug Fixes
