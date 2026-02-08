@@ -1,22 +1,24 @@
 ---@meta
 
+---@enum (key) TypeMap
+local TypeMap = {
+  number = "number",
+  string = "string",
+  boolean = "boolean",
+  table = "table",
+  ["function"] = "function",
+  ["nil"] = "nil",
+  array = "table",
+}
+
 ---Schema validation function with support for nested tables and arrays of tables
 ---@param input_table table
----@param schema table
+---@param schema { [string]: TypeMap | TypeMap[] }
 ---@return boolean, string | nil
 local function validate_table(input_table, schema)
   -- Helper function to check if a value is of the expected type
   local function check_type(value, expected_type)
-    local type_map = {
-      number = "number",
-      string = "string",
-      boolean = "boolean",
-      table = "table",
-      ["function"] = "function",
-      ["nil"] = "nil",
-      array = "table",
-    }
-    return type(value) == type_map[expected_type]
+    return type(value) == TypeMap[expected_type]
   end
 
   -- Helper function to check if a value is within a range (if applicable)
