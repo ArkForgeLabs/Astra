@@ -1,7 +1,16 @@
 use mlua::{ExternalError, LuaSerdeExt, UserData};
 use sqlx::{Pool, Postgres, Row, Sqlite, migrate::MigrateDatabase};
-use std::sync::LazyLock;
+use std::{str::FromStr, sync::LazyLock};
 use tokio::sync::Mutex;
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct AstraSQLConnectionOption {
+    max_connections: Option<u32>,
+    extensions: Vec<String>,
+    extensions_with_entrypoint: Vec<(String, String)>,
+    is_immutable: bool,
+    other_options: Vec<(String, String)>,
+}
 
 pub static DATABASE_POOLS: LazyLock<Mutex<Vec<DatabaseType>>> =
     LazyLock::new(|| Mutex::new(Vec::new()));
@@ -19,8 +28,14 @@ pub struct Database {
 impl Database {
     pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         let database_constructor = lua.create_async_function(
-            |_, (database_type, url, max_connections): (String, String, Option<u32>)| async move {
-                let max_connections = max_connections.unwrap_or(10);
+            |lua,
+             (database_type, url, connection_options): (
+                String,
+                String,
+                mlua::Value,
+            )| async move {
+                let connection_options = lua.from_value::<AstraSQLConnectionOption>(connection_options)?;
+                let max_connections = connection_options.max_connections.unwrap_or(10);
 
                 // pre checkup
                 if database_type == *"sqlite" {
@@ -39,41 +54,68 @@ impl Database {
 
                 match database_type.as_str() {
                     "sqlite" => {
-                        match sqlx::sqlite::SqlitePoolOptions::new()
-                            .max_connections(max_connections)
-                            .connect(format!("sqlite:{url}").as_str())
-                            .await
-                        {
-                            Ok(pool) => {
-                                let pool = DatabaseType::Sqlite(pool);
+                        match sqlx::sqlite::SqliteConnectOptions::from_str(
+                            format!("sqlite:{url}").as_str(),
+                        ) {
+                            Ok(options) => {
+                                let mut options = options.create_if_missing(true);
 
-                                let mut database_pools = DATABASE_POOLS.lock().await;
-                                database_pools.push(pool.clone());
+                                for i in connection_options.extensions {
+                                    options = options.extension(i)
+                                }
+                                for (name, entry_point) in
+                                    connection_options.extensions_with_entrypoint
+                                {
+                                    options = options.extension_with_entrypoint(name, entry_point)
+                                }
+                                options = options.immutable(connection_options.is_immutable);
 
-                                Ok(Database { db: Some(pool) })
+                                match sqlx::sqlite::SqlitePoolOptions::new()
+                                    .max_connections(max_connections)
+                                    .connect_with(options)
+                                    .await
+                                {
+                                    Ok(pool) => {
+                                        let pool = DatabaseType::Sqlite(pool);
+
+                                        let mut database_pools = DATABASE_POOLS.lock().await;
+                                        database_pools.push(pool.clone());
+
+                                        Ok(Database { db: Some(pool) })
+                                    }
+                                    Err(e) => Err(mlua::Error::runtime(format!(
+                                        "Error connecting to Sqlite: {e:#?}"
+                                    ))),
+                                }
                             }
-                            Err(e) => Err(mlua::Error::runtime(format!(
-                                "Error connecting to Sqlite: {e:#?}"
-                            ))),
+                            Err(e) => Err(e.into_lua_err()),
                         }
                     }
-                    "postgres" => match sqlx::postgres::PgPoolOptions::new()
-                        .max_connections(max_connections)
-                        .connect(url.as_str())
-                        .await
-                    {
-                        Ok(pool) => {
-                            let pool = DatabaseType::Postgres(pool);
+                    "postgres" => {
+                        //
+                        match sqlx::postgres::PgConnectOptions::from_str(url.as_str()) {
+                            Ok(options) => {
+                                match sqlx::postgres::PgPoolOptions::new()
+                                    .max_connections(max_connections)
+                                    .connect_with(options.options(connection_options.other_options))
+                                    .await
+                                {
+                                    Ok(pool) => {
+                                        let pool = DatabaseType::Postgres(pool);
 
-                            let mut database_pools = DATABASE_POOLS.lock().await;
-                            database_pools.push(pool.clone());
+                                        let mut database_pools = DATABASE_POOLS.lock().await;
+                                        database_pools.push(pool.clone());
 
-                            Ok(Database { db: Some(pool) })
+                                        Ok(Database { db: Some(pool) })
+                                    }
+                                    Err(e) => Err(mlua::Error::runtime(format!(
+                                        "Error connecting to Postgres: {e:#?}"
+                                    ))),
+                                }
+                            }
+                            Err(e) => Err(e.into_lua_err()),
                         }
-                        Err(e) => Err(mlua::Error::runtime(format!(
-                            "Error connecting to Postgres: {e:#?}"
-                        ))),
-                    },
+                    }
                     _ => Err(mlua::Error::runtime(
                         "Could not recognize the database type",
                     )),

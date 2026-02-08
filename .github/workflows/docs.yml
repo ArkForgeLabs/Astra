@@ -36,7 +36,7 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      
+
       - name: Restore cache
         id: cache-cargo-restore
         uses: actions/cache@v4
@@ -49,12 +49,10 @@ jobs:
             target/
           key: ${{ runner.os }}-docs-cargo
 
-      - name: Setup Environment
-        run: |
-          cargo install mdbook
-          cargo install mdbook-alerts
-          cargo install --git https://github.com/slowsage/mdbook-pagetoc
-      
+      - name: Setup MDBook
+        continue-on-error: true
+        run: cargo install mdbook
+
       - name: Save Cache
         id: cache-cargo-save
         uses: actions/cache/save@v4
@@ -66,15 +64,15 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-docs-cargo
-        
+
       - name: Build docs
         run: |
           cd src/docs/latest && mdbook build
-      
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'docs'
+          path: "docs"
 
       - name: Deploy to GitHub Pages
         id: deployment

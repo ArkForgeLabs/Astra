@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.40.1](https://github.com/ArkForgeLabs/Astra/compare/v0.40.0..v0.40.1) - 2026-01-19
+
+### Bug Fixes
+
+- docs CI failing when one dependency fails - ([e0de397](https://github.com/ArkForgeLabs/Astra/commit/e0de397744fd06feffe03672ab5ff3c10b4dad6b))
+
+### Documentation
+
+- fix builds and moved to mdbook 0.5 - ([3526309](https://github.com/ArkForgeLabs/Astra/commit/352630982249466766184619394bc722af13ab92))
+
+### Features
+
+- updated CI MSRV - ([f693386](https://github.com/ArkForgeLabs/Astra/commit/f69338680b1b51844b9b9e6ebd5495be6fd9bcb7))
+
+## [0.40.0](https://github.com/ArkForgeLabs/Astra/compare/v0.39.3..v0.40.0) - 2026-01-19
+
+### Bug Fixes
+
+- the datetime_new was exposed to global - ([f7a336a](https://github.com/ArkForgeLabs/Astra/commit/f7a336abc18fa23a2d16227a4d1b2c47d6357285))
+
+### Features
+
+- support multiple arguments in pprint (#138) - ([a47ccad](https://github.com/ArkForgeLabs/Astra/commit/a47ccadf08dd5ce5a74d64b126869d59c6aad1ba))
+- sqlite extensions - ([c447b9f](https://github.com/ArkForgeLabs/Astra/commit/c447b9f110aef7be1db9a6512e0fce497341a750))
+
+### Refactoring
+
+- omit the use of vectors in pprint - ([b4a1d85](https://github.com/ArkForgeLabs/Astra/commit/b4a1d8521d35f483f6ff8c53f06347b5ee10dacd))
+
 ## [0.39.3](https://github.com/ArkForgeLabs/Astra/compare/v0.39.2..v0.39.3) - 2025-12-28
 
 ### Features
