@@ -41,6 +41,13 @@ pub async fn run_command(
     run_command_prerequisite(&actual_path, stdlib_path, check_teal_code, extra_args).await;
     spawn_termination_task();
 
+    // Remove the Shebang lines
+    let user_file = user_file
+        .lines()
+        .filter(|line| !line.starts_with("#!"))
+        .collect::<Vec<_>>()
+        .join("\n");
+
     if let Some(is_teal) = PathBuf::from(&actual_path).extension()
         && is_teal == "tl"
     {
