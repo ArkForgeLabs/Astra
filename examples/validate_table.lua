@@ -8,6 +8,7 @@ local schema = {
     {
       id = "number",
       text = "string",
+      optional = { "number", required = false },
     },
   },
 }
@@ -19,6 +20,7 @@ local table_to_validate = {
     {
       id = 123,
       text = "hey!",
+      optional = 123,
     },
     {
       id = 456,
