@@ -4,7 +4,6 @@
 [![Release Windows](https://github.com/ArkForgeLabs/Astra/actions/workflows/windows_release.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/windows_release.yml)
 [![Release MacOS](https://github.com/ArkForgeLabs/Astra/actions/workflows/macos_release.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/macos_release.yml)
 [![Publish the crate](https://github.com/ArkForgeLabs/Astra/actions/workflows/crates_io_publish.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/crates_io_publish.yml)
-[![Static Badge](https://img.shields.io/badge/Join-The_Discord-blue?style=flat&logo=discord&color=blue)](https://discord.com/invite/6PMjUx8x3b)
 [![Static Badge](https://img.shields.io/badge/Read_The_Docs-blue?style=flat&logo=docsdotrs&color=%23000000)](https://astra.arkforge.net/docs/latest)
 
 Astra is a Rust based runtime environment for Lua (5.1-5.4), Luau and LuaJIT with native support for Teal. The goal is to get as much performance as possible while writing the logic in Lua instead for faster iteration, fault-tolerance and no-build requirements. This project is internally used here at [ArkForge](https://arkforge.net) and many others.
