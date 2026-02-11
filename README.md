@@ -90,6 +90,10 @@ There is also support for cryptography, datetime, jinja2, pubsub/observers, stru
 
 If you have a project that uses or extends Astra, let us know about it by extending the list above or opening a new [issue](https://github.com/ArkForgeLabs/Astra/issues/new)
 
+## Where is the community?
+
+In the past, we had a discord server where you could join and talk in, however we moved it to [GitHub discussions](https://github.com/ArkForgeLabs/Astra/discussions) instead. Please open conversations here from now on.
+
 ## Note
 
 This project may have breaking changes in minor versions until v1.0. Afterwhich semver will be followed. Contributions are always welcome!
