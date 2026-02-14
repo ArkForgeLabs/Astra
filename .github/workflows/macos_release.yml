@@ -51,7 +51,7 @@ jobs:
           file: ./target/release/astra
           asset_name: astra-luajit52-macos-arm64
           tag: ${{ github.ref }}
-      
+
       - name: Luau
         run: cargo build --release --no-default-features --features luau
       - uses: svenstaro/upload-release-action@v2
@@ -67,7 +67,7 @@ jobs:
           file: ./target/release/astra
           asset_name: astra-lua51-macos-arm64
           tag: ${{ github.ref }}
-      
+
       - name: Lua 5.2
         run: cargo build --release --no-default-features --features lua52
       - uses: svenstaro/upload-release-action@v2
@@ -75,7 +75,7 @@ jobs:
           file: ./target/release/astra
           asset_name: astra-lua52-macos-arm64
           tag: ${{ github.ref }}
-      
+
       - name: Lua 5.3
         run: cargo build --release --no-default-features --features lua53
       - uses: svenstaro/upload-release-action@v2
@@ -83,13 +83,21 @@ jobs:
           file: ./target/release/astra
           asset_name: astra-lua53-macos-arm64
           tag: ${{ github.ref }}
-      
+
       - name: Lua 5.4
         run: cargo build --release --no-default-features --features lua54
       - uses: svenstaro/upload-release-action@v2
         with:
           file: ./target/release/astra
           asset_name: astra-lua54-macos-arm64
+          tag: ${{ github.ref }}
+
+      - name: Lua 5.5
+        run: cargo build --release --no-default-features --features lua55
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./target/release/astra
+          asset_name: astra-lua55-macos-arm64
           tag: ${{ github.ref }}
 
       - uses: chrnorm/deployment-action@v2
@@ -129,4 +137,3 @@ jobs:
           environment-url: ${{ steps.deployment.outputs.environment_url }}
           deployment-id: ${{ steps.deployment.outputs.deployment_id }}
           state: "failure"
-

@@ -15,7 +15,7 @@ categories = [
 edition = "2024"
 license-file = "LICENSE"
 exclude = [".github", "examples", "docs", "tests"]
-rust-version = "1.88"
+rust-version = "1.92"
 
 [[bin]]
 name = "astra"
@@ -30,9 +30,10 @@ lua51 = ["mlua/lua51"]
 lua52 = ["mlua/lua52"]
 lua53 = ["mlua/lua53"]
 lua54 = ["mlua/lua54"]
+lua55 = ["mlua/lua55"]
 
 [dependencies]
-mlua = { version = "0.11.5", features = [
+mlua = { version = "0.11.6", features = [
   "serialize",
   "vendored",
   "async",
@@ -45,16 +46,16 @@ mlua = { version = "0.11.5", features = [
 # http
 axum = { version = "0.8.8", features = ["macros", "multipart", "http2", "ws"] }
 axum-extra = { version = "0.12.5", features = ["cookie"] }
-reqwest = { version = "0.12.28", features = [
+reqwest = { version = "0.13.2", features = [
   "json",
-  "rustls-tls",
+  "rustls",
   "charset",
   "multipart",
   "http2",
   "stream",
-  "macos-system-configuration",
+  "form",
 ], default-features = false }
-reqwest-websocket = "0.5.1"
+reqwest-websocket = "0.6.0"
 tower = { version = "0.5.3" }
 tower-http = { version = "0.6.8", features = [
   "fs",
@@ -62,8 +63,8 @@ tower-http = { version = "0.6.8", features = [
   "compression-full",
   "decompression-full",
 ] }
-time = "0.3.45"
-minijinja = { version = "2.14.0", features = [
+time = "0.3.47"
+minijinja = { version = "2.15.1", features = [
   "loader",
   "urlencode",
   "loop_controls",
@@ -86,12 +87,12 @@ quick-xml = { version = "0.39.0", features = [
   "overlapped-lists",
   "serialize",
 ] }
-toml = { version = "0.9.8" }
-uuid = { version = "1.19.0", features = ["serde", "v4"] }
+toml = { version = "1.0.1" }
+uuid = { version = "1.21.0", features = ["serde", "v4"] }
 sha2 = "0.10.9"
 sha3 = "0.10.8"
 base64 = "0.22.1"
-bytes = { version = "1.11.0", features = ["serde"] }
+bytes = { version = "1.11.1", features = ["serde"] }
 chrono = { version = "0.4.43", features = ["serde"] }
 
 # runtime
@@ -101,12 +102,12 @@ tokio = { version = "1.49.0", features = [
   "rt-multi-thread",
 ] }
 futures = "0.3.31"
-clap = { version = "4.5.54", features = ["cargo", "derive"] }
+clap = { version = "4.5.58", features = ["cargo", "derive"] }
 dotenvy = "0.15.7"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 version-compare = "0.2.1"
-regex = "1.12.2"
+regex = "1.12.3"
 paste = "1.0.15"
 
 # database

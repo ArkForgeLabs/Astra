@@ -19,7 +19,7 @@ They are fairly self explanitory and does not require further details. Example u
 
 ```lua
 local fs = require("fs")
-pprint(fs.get_script_path())
+pprintln(fs.get_script_path())
 ```
 
 The Filesystem also supports buffers and buffered read and write of files as well.

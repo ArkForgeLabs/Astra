@@ -1,9 +1,13 @@
 global ASTRA_INTERNAL__CURRENT_SCRIPT = ""
 
-local type astra_internal__pretty_print = function(value: any)
+local type astra_internal__pretty_print = function(...: any)
 ---Pretty prints any table or value
-global function pprint(value: any)
-	astra_internal__pretty_print(value)
+global function pprint(...: any)
+	astra_internal__pretty_print(...)
+end
+
+global function pprintln(...: any)
+	astra_internal__pretty_print(..., "\n")
 end
 
 global function uuid(): string

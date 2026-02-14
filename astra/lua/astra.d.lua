@@ -11,11 +11,18 @@ ASTRA_INTERNAL__CURRENT_SCRIPT = ""
     All of the smaller scale components that are not big enough to need their own files, are here
 ]]
 
----Pretty prints any table or value
----@param value any
+---Pretty prints any table or value continuesly
+---@param ... any
 function pprint(...)
   ---@diagnostic disable-next-line: undefined-global
   astra_internal__pretty_print(...)
+end
+
+---Pretty prints any table or value with linebreak
+---@param ... any
+function pprintln(...)
+  ---@diagnostic disable-next-line: undefined-global
+  astra_internal__pretty_print(..., "\n")
 end
 
 ---@return string

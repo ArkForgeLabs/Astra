@@ -48,7 +48,7 @@ server:post("/upload", function(request: HTTPServerRequest, response: HTTPServer
 	multipart:save_file(file_name)
 end, { body_limit = 1024 * 1024 * 64 }) -- with 64MB body limit
 
-pprint("🚀 Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port))
+pprintln("🚀 Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port))
 
 -- Run the server
 server:run()

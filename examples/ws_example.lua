@@ -5,7 +5,7 @@ local server = http.server.new()
 local function handle_socket(socket)
   print("Connection opened!")
   while true do
-    pprint(socket:recv())
+    pprintln(socket:recv())
     socket:send("text", "hello from the server")
     socket:send_close({
       code = 1000,
@@ -15,5 +15,7 @@ local function handle_socket(socket)
 end
 
 server:websocket("/", handle_socket)
+
+pprintln("🚀 Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port), "\n")
 
 server:run()

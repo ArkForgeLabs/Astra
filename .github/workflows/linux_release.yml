@@ -59,7 +59,7 @@ jobs:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-luajit52-linux-amd64
           tag: ${{ github.ref }}
-      
+
       - name: Luau
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features luau
       - uses: svenstaro/upload-release-action@v2
@@ -75,7 +75,7 @@ jobs:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-lua51-linux-amd64
           tag: ${{ github.ref }}
-      
+
       - name: Lua 5.2
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features lua52
       - uses: svenstaro/upload-release-action@v2
@@ -83,7 +83,7 @@ jobs:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-lua52-linux-amd64
           tag: ${{ github.ref }}
-      
+
       - name: Lua 5.3
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features lua53
       - uses: svenstaro/upload-release-action@v2
@@ -91,13 +91,21 @@ jobs:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-lua53-linux-amd64
           tag: ${{ github.ref }}
-      
+
       - name: Lua 5.4
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features lua54
       - uses: svenstaro/upload-release-action@v2
         with:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-lua54-linux-amd64
+          tag: ${{ github.ref }}
+
+      - name: Lua 5.5
+        run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features lua55
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./target/x86_64-unknown-linux-gnu/release/astra
+          asset_name: astra-lua55-linux-amd64
           tag: ${{ github.ref }}
 
       # =========================================================== #
@@ -119,7 +127,7 @@ jobs:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-luajit52-linux-arm64
           tag: ${{ github.ref }}
-      
+
       - name: Luau
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features luau
       - uses: svenstaro/upload-release-action@v2
@@ -135,7 +143,7 @@ jobs:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-lua51-linux-arm64
           tag: ${{ github.ref }}
-      
+
       - name: Lua 5.2
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua52
       - uses: svenstaro/upload-release-action@v2
@@ -143,7 +151,7 @@ jobs:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-lua52-linux-arm64
           tag: ${{ github.ref }}
-      
+
       - name: Lua 5.3
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua53
       - uses: svenstaro/upload-release-action@v2
@@ -151,13 +159,21 @@ jobs:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-lua53-linux-arm64
           tag: ${{ github.ref }}
-      
+
       - name: Lua 5.4
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua54
       - uses: svenstaro/upload-release-action@v2
         with:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-lua54-linux-arm64
+          tag: ${{ github.ref }}
+
+      - name: Lua 5.5
+        run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua55
+      - uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./target/aarch64-unknown-linux-gnu/release/astra
+          asset_name: astra-lua55-linux-arm64
           tag: ${{ github.ref }}
 
       - uses: chrnorm/deployment-action@v2

@@ -97,7 +97,7 @@ Example:
 ```lua
 server:get("/", function(req)
     -- access the headers
-    pprint(req:headers())
+    pprintln(req:headers())
 
     -- print the body as text
     print(req:body():text())
@@ -204,7 +204,7 @@ local function handle_socket(socket)
   print("Connection opened!")
 
   while true do
-    pprint(socket:recv())
+    pprintln(socket:recv())
   end
 end
 

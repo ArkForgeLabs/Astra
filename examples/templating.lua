@@ -31,7 +31,7 @@ server:get("/hydrate", function(_request, response)
   return template_engine:render("index.html", { count = count })
 end)
 
-pprint("🚀 Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port))
+pprintln("🚀 Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port))
 
 -- Run
 server:run()

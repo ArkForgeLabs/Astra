@@ -4,7 +4,7 @@ use crate::components::{AstraBuffer, astra_serde::sanetize_lua_input};
 use futures::StreamExt;
 use mlua::{ExternalError, LuaSerdeExt, UserData};
 use reqwest::{Client, RequestBuilder};
-use reqwest_websocket::RequestBuilderExt;
+use reqwest_websocket::Upgrade;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
