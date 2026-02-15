@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.42.0](https://github.com/ArkForgeLabs/Astra/compare/v0.41.0..v0.42.0) - 2026-02-15
+
+### Features
+
+- **(http)** return raw binary for Lua table byte arrays in route responses - ([88f743f](https://github.com/ArkForgeLabs/Astra/commit/88f743ff01215c9c27adf1ba0c514124ef5145a5))
+- added Lua 5.5 support - ([0dd6718](https://github.com/ArkForgeLabs/Astra/commit/0dd6718721fcb84d36a54db1a4353b9cea7588d5))
+- added pprintln function, as an auto line breaking version of pprint - ([0dd6718](https://github.com/ArkForgeLabs/Astra/commit/0dd6718721fcb84d36a54db1a4353b9cea7588d5))
+- Datetime Quality of Life (#150) - ([b385b91](https://github.com/ArkForgeLabs/Astra/commit/b385b9103d5229a8035ad8dccb282fcd4e9d4010))
+
+### Miscellaneous Chores
+
+- updated all dependencies - ([0dd6718](https://github.com/ArkForgeLabs/Astra/commit/0dd6718721fcb84d36a54db1a4353b9cea7588d5))
+
+### Refactoring
+
+- removed the docs from uploading on release - ([9b092fb](https://github.com/ArkForgeLabs/Astra/commit/9b092fb28b82db086cffc1394099a8552445712d))
+
 ## [0.41.0](https://github.com/ArkForgeLabs/Astra/compare/v0.40.1..v0.41.0) - 2026-02-08
 
 ### Bug Fixes
