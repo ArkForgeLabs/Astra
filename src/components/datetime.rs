@@ -1,5 +1,5 @@
 use chrono::{offset::LocalResult, prelude::*};
-use mlua::{FromLua, UserData};
+use mlua::{FromLua, MetaMethod, UserData};
 
 #[derive(Debug, Clone, FromLua)]
 pub struct AstraDateTime {
@@ -165,6 +165,203 @@ impl UserData for AstraDateTime {
             }
         });
 
+        // Granular time manipulation methods
+        methods.add_method("add_milliseconds", |_, this, millis: i64| {
+            match chrono::TimeDelta::try_milliseconds(millis) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid millisecond value")),
+            }
+        });
+
+        methods.add_method("add_seconds", |_, this, seconds: i64| {
+            match chrono::TimeDelta::try_seconds(seconds) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid second value")),
+            }
+        });
+
+        methods.add_method("add_minutes", |_, this, minutes: i64| {
+            match chrono::TimeDelta::try_minutes(minutes) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid minute value")),
+            }
+        });
+
+        methods.add_method(
+            "add_hours",
+            |_, this, hours: i64| match chrono::TimeDelta::try_hours(hours) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid hour value")),
+            },
+        );
+
+        methods.add_method(
+            "add_days",
+            |_, this, days: i64| match chrono::TimeDelta::try_days(days) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid day value")),
+            },
+        );
+
+        methods.add_method(
+            "add_weeks",
+            |_, this, weeks: i64| match chrono::TimeDelta::try_weeks(weeks) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid week value")),
+            },
+        );
+
+        methods.add_method("add_months", |_, this, months: i32| {
+            let current_month = this.dt.month() as i32;
+            let new_month = current_month + months;
+            if !(1..=12).contains(&new_month) {
+                return Err(mlua::Error::runtime("Month must be between 1-12"));
+            }
+            match this.dt.with_month(new_month as u32) {
+                Some(n) => Ok(Self { dt: n }),
+                None => Err(mlua::Error::runtime("Invalid month value")),
+            }
+        });
+
+        methods.add_method("add_years", |_, this, years: i32| {
+            let current_year = this.dt.year() + years;
+            match this.dt.with_year(current_year) {
+                Some(n) => Ok(Self { dt: n }),
+                None => Err(mlua::Error::runtime("Invalid year value")),
+            }
+        });
+
+        // Subtraction methods
+        methods.add_method("sub_milliseconds", |_, this, millis: i64| {
+            match chrono::TimeDelta::try_milliseconds(-millis) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid millisecond value")),
+            }
+        });
+
+        methods.add_method("sub_seconds", |_, this, seconds: i64| {
+            match chrono::TimeDelta::try_seconds(-seconds) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid second value")),
+            }
+        });
+
+        methods.add_method("sub_minutes", |_, this, minutes: i64| {
+            match chrono::TimeDelta::try_minutes(-minutes) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid minute value")),
+            }
+        });
+
+        methods.add_method(
+            "sub_hours",
+            |_, this, hours: i64| match chrono::TimeDelta::try_hours(-hours) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid hour value")),
+            },
+        );
+
+        methods.add_method(
+            "sub_days",
+            |_, this, days: i64| match chrono::TimeDelta::try_days(-days) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid day value")),
+            },
+        );
+
+        methods.add_method(
+            "sub_weeks",
+            |_, this, weeks: i64| match chrono::TimeDelta::try_weeks(-weeks) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid week value")),
+            },
+        );
+
+        methods.add_method("sub_months", |_, this, months: i32| {
+            let current_month = this.dt.month() as i32;
+            let new_month = current_month - months;
+            if !(1..=12).contains(&new_month) {
+                return Err(mlua::Error::runtime("Month must be between 1-12"));
+            }
+            match this.dt.with_month(new_month as u32) {
+                Some(n) => Ok(Self { dt: n }),
+                None => Err(mlua::Error::runtime("Invalid month value")),
+            }
+        });
+
+        methods.add_method("sub_years", |_, this, years: i32| {
+            let current_year = this.dt.year() - years;
+            match this.dt.with_year(current_year) {
+                Some(n) => Ok(Self { dt: n }),
+                None => Err(mlua::Error::runtime("Invalid year value")),
+            }
+        });
+
+        // Convenience methods
+        methods.add_method("add_duration", |_, this, millis: i64| {
+            match chrono::TimeDelta::try_milliseconds(millis) {
+                Some(delta) => Ok(Self {
+                    dt: this.dt + delta,
+                }),
+                None => Err(mlua::Error::runtime("Invalid duration")),
+            }
+        });
+
+        methods.add_method(
+            "set_time",
+            |_, this, (hour, minute, second, millis): (u32, u32, u32, u32)| {
+                let dt = this
+                    .dt
+                    .with_hour(hour)
+                    .and_then(|dt| dt.with_minute(minute))
+                    .and_then(|dt| dt.with_second(second))
+                    .and_then(|dt| dt.with_nanosecond(millis * 1_000_000));
+                match dt {
+                    Some(n) => Ok(Self { dt: n }),
+                    None => Err(mlua::Error::runtime("Invalid time values")),
+                }
+            },
+        );
+
+        methods.add_method(
+            "set_date",
+            |_, this, (year, month, day): (i32, u32, u32)| {
+                let dt = this
+                    .dt
+                    .with_year(year)
+                    .and_then(|dt| dt.with_month(month))
+                    .and_then(|dt| dt.with_day(day));
+                match dt {
+                    Some(n) => Ok(Self { dt: n }),
+                    None => Err(mlua::Error::runtime("Invalid date values")),
+                }
+            },
+        );
+
         methods.add_method("to_utc", |_, this, _: ()| {
             Ok(Self {
                 dt: this.dt.to_utc().fixed_offset(),
@@ -192,9 +389,34 @@ impl UserData for AstraDateTime {
         });
 
         // meta methods
-        methods.add_meta_method("__tostring", |_, this, _: ()| Ok(this.dt.to_rfc3339()));
-        methods.add_meta_method("__concat", |_, _, (a, b): (mlua::Value, mlua::Value)| {
-            Ok(a.to_string()? + &b.to_string()?)
+        methods.add_meta_method(MetaMethod::ToString, |_, this, _: ()| {
+            Ok(this.dt.to_rfc3339())
+        });
+        methods.add_meta_method(
+            MetaMethod::Concat,
+            |_, _, (a, b): (mlua::Value, mlua::Value)| Ok(a.to_string()? + &b.to_string()?),
+        );
+        methods.add_meta_method(MetaMethod::Eq, |_, this, other: Self| {
+            Ok(this.dt == other.dt)
+        });
+        methods.add_meta_method(MetaMethod::Le, |_, this, other: Self| {
+            Ok(this.dt <= other.dt)
+        });
+        methods.add_meta_method(
+            MetaMethod::Lt,
+            |_, this, other: Self| Ok(this.dt < other.dt),
+        );
+        methods.add_meta_method(MetaMethod::Add, |_, this, other: Self| {
+            let duration = other.dt - this.dt;
+            Ok(Self {
+                dt: this.dt + duration,
+            })
+        });
+        methods.add_meta_method(MetaMethod::Sub, |_, this, other: Self| {
+            let duration = other.dt - this.dt;
+            Ok(Self {
+                dt: this.dt - duration,
+            })
         });
     }
 }
