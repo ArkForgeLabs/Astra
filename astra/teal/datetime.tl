@@ -29,8 +29,29 @@ global interface DateTime is userdata
 	to_locale_date_string: function(self: DateTime): string
 	to_locale_time_string: function(self: DateTime): string
 	to_locale_datetime_string: function(self: DateTime): string
+	add_milliseconds: function(self: DateTime, millis: number): DateTime
+	add_seconds: function(self: DateTime, seconds: number): DateTime
+	add_minutes: function(self: DateTime, minutes: number): DateTime
+	add_hours: function(self: DateTime, hours: number): DateTime
+	add_days: function(self: DateTime, days: number): DateTime
+	add_weeks: function(self: DateTime, weeks: number): DateTime
+	add_months: function(self: DateTime, months: number): DateTime
+	add_years: function(self: DateTime, years: number): DateTime
+	sub_milliseconds: function(self: DateTime, millis: number): DateTime
+	sub_seconds: function(self: DateTime, seconds: number): DateTime
+	sub_minutes: function(self: DateTime, minutes: number): DateTime
+	sub_hours: function(self: DateTime, hours: number): DateTime
+	sub_days: function(self: DateTime, days: number): DateTime
+	sub_weeks: function(self: DateTime, weeks: number): DateTime
+	sub_months: function(self: DateTime, months: number): DateTime
+	sub_years: function(self: DateTime, years: number): DateTime
+	set_time: function(self: DateTime, hour: number, minute: number, second: number, millis: number): DateTime
+	set_date: function(self: DateTime, year: number, month: number, day: number): DateTime
 	metamethod __tostring: function(DateTime): string
-	metamethod __concat: function(any, any): string
+	metamethod __concat: function(DateTime, DateTime): string
+	metamethod __eq: function(DateTime, DateTime): boolean
+	metamethod __le: function(DateTime, DateTime): boolean
+	metamethod __lt: function(DateTime, DateTime): boolean
 end
 
 local type astra_internal__datetime_new_parse = function(differentiator?: string | number): DateTime

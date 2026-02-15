@@ -46,7 +46,11 @@ impl HTTPClientRequest {
                         Some(HTTPClientRequestBodyTypes::String(value.to_string_lossy()))
                     }
                     mlua::Value::Table(value) => {
-                        if crate::components::is_table_json(&value)? {
+                        if crate::components::is_table_byte_array(&value)? {
+                            Some(HTTPClientRequestBodyTypes::Bytes(
+                                lua.from_value::<Vec<u8>>(body.clone())?,
+                            ))
+                        } else if crate::components::is_table_json(&value)? {
                             if !headers.contains_key("Content-Type") {
                                 headers.insert(
                                     "Content-Type".to_string(),
@@ -58,10 +62,6 @@ impl HTTPClientRequest {
                                     lua,
                                     body.clone(),
                                 )?)?,
-                            ))
-                        } else if crate::components::is_table_byte_array(&value)? {
-                            Some(HTTPClientRequestBodyTypes::Bytes(
-                                lua.from_value::<Vec<u8>>(body.clone())?,
                             ))
                         } else {
                             None

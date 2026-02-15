@@ -19,6 +19,24 @@
 ---@field set_second fun(datetime:DateTime, sec: number)
 ---@field set_millisecond fun(datetime:DateTime, milli: number)
 ---@field set_epoch_milliseconds fun(datetime: DateTime, milli: number)
+---@field set_time fun(datetime: DateTime, hour: number, minute: number, second: number, millis: number): DateTime
+---@field set_date fun(datetime: DateTime, year: number, month: number, day: number): DateTime
+---@field add_milliseconds fun(datetime: DateTime, millis: number): DateTime
+---@field add_seconds fun(datetime: DateTime, seconds: number): DateTime
+---@field add_minutes fun(datetime: DateTime, minutes: number): DateTime
+---@field add_hours fun(datetime: DateTime, hours: number): DateTime
+---@field add_days fun(datetime: DateTime, days: number): DateTime
+---@field add_weeks fun(datetime: DateTime, weeks: number): DateTime
+---@field add_months fun(datetime: DateTime, months: number): DateTime
+---@field add_years fun(datetime: DateTime, years: number): DateTime
+---@field sub_milliseconds fun(datetime: DateTime, millis: number): DateTime
+---@field sub_seconds fun(datetime: DateTime, seconds: number): DateTime
+---@field sub_minutes fun(datetime: DateTime, minutes: number): DateTime
+---@field sub_hours fun(datetime: DateTime, hours: number): DateTime
+---@field sub_days fun(datetime: DateTime, days: number): DateTime
+---@field sub_weeks fun(datetime: DateTime, weeks: number): DateTime
+---@field sub_months fun(datetime: DateTime, months: number): DateTime
+---@field sub_years fun(datetime: DateTime, years: number): DateTime
 ---@field to_utc fun(datetime: DateTime): DateTime
 ---@field to_local fun(datetime: DateTime): DateTime
 ---@field to_rfc2822 fun(datetime: DateTime): string

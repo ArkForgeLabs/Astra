@@ -1,5 +1,5 @@
 use chrono::{offset::LocalResult, prelude::*};
-use mlua::{FromLua, UserData};
+use mlua::{FromLua, MetaMethod, UserData};
 
 #[derive(Debug, Clone, FromLua)]
 pub struct AstraDateTime {
@@ -124,6 +124,32 @@ impl UserData for AstraDateTime {
                 methods.add_method($method_name, |_, this, ()| Ok($operation));
             };
         }
+        macro_rules! add_to_datetime {
+            ($method_name:expr, $method:ident) => {
+                methods.add_method($method_name, |_, this, millis: i64| {
+                    match this
+                        .dt
+                        .checked_add_signed(chrono::TimeDelta::$method(millis))
+                    {
+                        Some(delta) => Ok(Self { dt: delta }),
+                        None => Err(mlua::Error::runtime("Invalid value")),
+                    }
+                });
+            };
+        }
+        macro_rules! sub_from_datetime {
+            ($method_name:expr, $method:ident) => {
+                methods.add_method($method_name, |_, this, millis: i64| {
+                    match this
+                        .dt
+                        .checked_sub_signed(chrono::TimeDelta::$method(millis))
+                    {
+                        Some(delta) => Ok(Self { dt: delta }),
+                        None => Err(mlua::Error::runtime("Invalid value")),
+                    }
+                });
+            };
+        }
 
         add_getter_method!("get_year", year);
         add_getter_method!("get_month", month);
@@ -165,6 +191,90 @@ impl UserData for AstraDateTime {
             }
         });
 
+        add_to_datetime!("add_milliseconds", milliseconds);
+        add_to_datetime!("add_seconds", seconds);
+        add_to_datetime!("add_minutes", minutes);
+        add_to_datetime!("add_hours", hours);
+        add_to_datetime!("add_days", days);
+        add_to_datetime!("add_weeks", weeks);
+
+        methods.add_method("add_months", |_, this, months: i32| {
+            let current_month = this.dt.month() as i32;
+            let new_month = current_month + months;
+            if !(1..=12).contains(&new_month) {
+                return Err(mlua::Error::runtime("Month must be between 1-12"));
+            }
+            match this.dt.with_month(new_month as u32) {
+                Some(n) => Ok(Self { dt: n }),
+                None => Err(mlua::Error::runtime("Invalid month value")),
+            }
+        });
+        methods.add_method("add_years", |_, this, years: i32| {
+            let current_year = this.dt.year() + years;
+            match this.dt.with_year(current_year) {
+                Some(n) => Ok(Self { dt: n }),
+                None => Err(mlua::Error::runtime("Invalid year value")),
+            }
+        });
+
+        sub_from_datetime!("sub_milliseconds", milliseconds);
+        sub_from_datetime!("sub_seconds", seconds);
+        sub_from_datetime!("sub_minutes", minutes);
+        sub_from_datetime!("sub_hours", hours);
+        sub_from_datetime!("sub_days", days);
+        sub_from_datetime!("sub_weeks", weeks);
+
+        methods.add_method("sub_months", |_, this, months: i32| {
+            let current_month = this.dt.month() as i32;
+            let new_month = current_month - months;
+            if !(1..=12).contains(&new_month) {
+                return Err(mlua::Error::runtime("Month must be between 1-12"));
+            }
+            match this.dt.with_month(new_month as u32) {
+                Some(n) => Ok(Self { dt: n }),
+                None => Err(mlua::Error::runtime("Invalid month value")),
+            }
+        });
+
+        methods.add_method("sub_years", |_, this, years: i32| {
+            let current_year = this.dt.year() - years;
+            match this.dt.with_year(current_year) {
+                Some(n) => Ok(Self { dt: n }),
+                None => Err(mlua::Error::runtime("Invalid year value")),
+            }
+        });
+
+        methods.add_method(
+            "set_time",
+            |_, this, (hour, minute, second, millis): (u32, u32, u32, u32)| {
+                let dt = this
+                    .dt
+                    .with_hour(hour)
+                    .and_then(|dt| dt.with_minute(minute))
+                    .and_then(|dt| dt.with_second(second))
+                    .and_then(|dt| dt.with_nanosecond(millis * 1_000_000));
+                match dt {
+                    Some(n) => Ok(Self { dt: n }),
+                    None => Err(mlua::Error::runtime("Invalid time values")),
+                }
+            },
+        );
+
+        methods.add_method(
+            "set_date",
+            |_, this, (year, month, day): (i32, u32, u32)| {
+                let dt = this
+                    .dt
+                    .with_year(year)
+                    .and_then(|dt| dt.with_month(month))
+                    .and_then(|dt| dt.with_day(day));
+                match dt {
+                    Some(n) => Ok(Self { dt: n }),
+                    None => Err(mlua::Error::runtime("Invalid date values")),
+                }
+            },
+        );
+
         methods.add_method("to_utc", |_, this, _: ()| {
             Ok(Self {
                 dt: this.dt.to_utc().fixed_offset(),
@@ -176,6 +286,7 @@ impl UserData for AstraDateTime {
                 dt: dt.fixed_offset(),
             })
         });
+
         add_getter_method!("to_rfc2822", to_rfc2822);
         add_getter_method!("to_rfc3339", to_rfc3339);
         add_getter_method!("to_datetime_string", to_rfc3339);
@@ -184,6 +295,7 @@ impl UserData for AstraDateTime {
         add_formatted_method!("to_locale_date_string", "%x");
         add_formatted_method!("to_locale_time_string", "%X");
         add_formatted_method!("to_locale_datetime_string", "%c");
+
         methods.add_method("to_iso_string", |_, this, ()| {
             Ok(this.dt.to_rfc3339_opts(SecondsFormat::Millis, false))
         });
@@ -192,9 +304,22 @@ impl UserData for AstraDateTime {
         });
 
         // meta methods
-        methods.add_meta_method("__tostring", |_, this, _: ()| Ok(this.dt.to_rfc3339()));
-        methods.add_meta_method("__concat", |_, _, (a, b): (mlua::Value, mlua::Value)| {
-            Ok(a.to_string()? + &b.to_string()?)
+        methods.add_meta_method(MetaMethod::ToString, |_, this, _: ()| {
+            Ok(this.dt.to_rfc3339())
         });
+        methods.add_meta_method(
+            MetaMethod::Concat,
+            |_, _, (a, b): (mlua::Value, mlua::Value)| Ok(a.to_string()? + &b.to_string()?),
+        );
+        methods.add_meta_method(MetaMethod::Eq, |_, this, other: Self| {
+            Ok(this.dt == other.dt)
+        });
+        methods.add_meta_method(MetaMethod::Le, |_, this, other: Self| {
+            Ok(this.dt <= other.dt)
+        });
+        methods.add_meta_method(
+            MetaMethod::Lt,
+            |_, this, other: Self| Ok(this.dt < other.dt),
+        );
     }
 }
