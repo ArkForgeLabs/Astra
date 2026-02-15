@@ -172,7 +172,7 @@ fn is_table_json(table: &mlua::Table) -> mlua::Result<bool> {
     Ok(has_string_key || has_non_sequential_integer_key)
 }
 
-fn is_table_byte_array(table: &mlua::Table) -> mlua::Result<bool> {
+pub(crate) fn is_table_byte_array(table: &mlua::Table) -> mlua::Result<bool> {
     let mut i = 1;
     for pair in table.pairs::<i64, i64>() {
         let (key, value) = pair?;
