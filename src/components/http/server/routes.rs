@@ -77,8 +77,13 @@ pub async fn route(
 
         let mut resulting_response = match result {
             mlua::Value::String(plain) => plain.to_string_lossy().into_response(),
-            mlua::Value::Table(_) => {
-                axum::Json(lua.from_value::<serde_json::Value>(result.clone())?).into_response()
+            mlua::Value::Table(ref table) => {
+                if let Ok(true) = crate::components::is_table_byte_array(table) {
+                    let bytes: Vec<u8> = lua.from_value(result.clone())?;
+                    Body::from(bytes).into_response()
+                } else {
+                    axum::Json(lua.from_value::<serde_json::Value>(result.clone())?).into_response()
+                }
             }
             _ => axum::http::StatusCode::OK.into_response(),
         };
