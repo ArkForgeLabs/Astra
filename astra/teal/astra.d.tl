@@ -7,7 +7,7 @@ global function pprint(...: any)
 end
 
 global function pprintln(...: any)
-	astra_internal__pretty_print(..., "\n")
+	astra_internal__pretty_println(...)
 end
 
 global function uuid(): string

@@ -37,7 +37,6 @@
 ---@field sub_weeks fun(datetime: DateTime, weeks: number): DateTime
 ---@field sub_months fun(datetime: DateTime, months: number): DateTime
 ---@field sub_years fun(datetime: DateTime, years: number): DateTime
----@field add_duration fun(datetime: DateTime, millis: number): DateTime
 ---@field to_utc fun(datetime: DateTime): DateTime
 ---@field to_local fun(datetime: DateTime): DateTime
 ---@field to_rfc2822 fun(datetime: DateTime): string

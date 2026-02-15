@@ -22,7 +22,7 @@ end
 ---@param ... any
 function pprintln(...)
   ---@diagnostic disable-next-line: undefined-global
-  astra_internal__pretty_print(..., "\n")
+  astra_internal__pretty_println(...)
 end
 
 ---@return string
