@@ -5,6 +5,7 @@ use tracing::error;
 /// Runs a Lua script.
 pub async fn run_command(
     file_path: Option<String>,
+    code: Option<String>,
     stdlib_path: Option<String>,
     check_teal_code: bool,
     extra_args: Option<Vec<String>>,
@@ -32,13 +33,19 @@ pub async fn run_command(
 
     // Load and execute the Lua script.
     #[allow(clippy::expect_used)]
-    let user_file = if let Some(file_path) = file_path {
-        check_for_default_file(file_path)
+    let (user_file, actual_path_str) = if let Some(code) = code {
+        actual_path = "<commandline>".to_string();
+        (code, actual_path.clone())
     } else {
-        check_for_default_file(".".to_string())
+        let file = if let Some(file_path) = file_path {
+            check_for_default_file(file_path)
+        } else {
+            check_for_default_file(".".to_string())
+        };
+        (file, actual_path.clone())
     };
 
-    run_command_prerequisite(&actual_path, stdlib_path, check_teal_code, extra_args).await;
+    run_command_prerequisite(&actual_path_str, stdlib_path, check_teal_code, extra_args).await;
     spawn_termination_task();
 
     // Remove the Shebang lines
@@ -48,17 +55,21 @@ pub async fn run_command(
         .collect::<Vec<_>>()
         .join("\n");
 
-    if let Some(is_teal) = PathBuf::from(&actual_path).extension()
+    if actual_path_str == "<commandline>" {
+        if let Err(e) = lua.load(user_file).set_name("<commandline>").exec_async().await {
+            error!("{}", e);
+        }
+    } else if let Some(is_teal) = PathBuf::from(&actual_path_str).extension()
         && is_teal == "tl"
     {
         if let Err(e) = crate::components::load_teal(lua).await {
             error!("{}", e);
         }
 
-        if let Err(e) = crate::components::execute_teal_code(lua, &actual_path, &user_file).await {
+        if let Err(e) = crate::components::execute_teal_code(lua, &actual_path_str, &user_file).await {
             error!("{}", e);
         }
-    } else if let Err(e) = lua.load(user_file).set_name(actual_path).exec_async().await {
+    } else if let Err(e) = lua.load(user_file).set_name(actual_path_str).exec_async().await {
         error!("{}", e);
     }
 
