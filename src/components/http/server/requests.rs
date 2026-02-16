@@ -273,27 +273,41 @@ impl UserData for AstraMultipart {
 
         methods.add_async_method_mut(
             "save_file",
-            |_, this, file_path: Option<String>| async move {
-                let mut file_path = if let Some(file_path) = file_path {
-                    Some(tokio::fs::File::create(file_path).await?)
-                } else {
-                    None
-                };
-
-                for field in &this.fields {
-                    if file_path.is_none()
-                        && let Some(filename) = &field.file_name
-                    {
-                        file_path = Some(tokio::fs::File::create(filename).await?);
+            |_lua, this, arg: mlua::Value| async move {
+                match arg {
+                    mlua::Value::String(s) => {
+                        let folder = s.to_str()?.to_string();
+                        let folder_path = std::path::PathBuf::from(&folder);
+                        if !folder_path.exists() {
+                            tokio::fs::create_dir_all(&folder_path).await?;
+                        }
+                        for field in &this.fields {
+                            let filename = field.file_name.as_ref().unwrap_or(&field.name);
+                            let file_path = folder_path.join(filename);
+                            let mut file = tokio::fs::File::create(file_path).await?;
+                            file.write_all(&field.data).await?;
+                        }
                     }
-                    if let Some(ref mut file) = file_path
-                        && let bytes = &field.data
-                        && let Err(err) = file.write(bytes).await
-                    {
-                        return Err(err.into_lua_err());
+                    mlua::Value::Table(map) => {
+                        for field in &this.fields {
+                            let path: String = map.get(field.name.clone())?;
+                            let mut file = tokio::fs::File::create(path).await?;
+                            file.write_all(&field.data).await?;
+                        }
+                    }
+                    mlua::Value::Nil => {
+                        for field in &this.fields {
+                            let filename = field.file_name.as_ref().unwrap_or(&field.name);
+                            let mut file = tokio::fs::File::create(filename).await?;
+                            file.write_all(&field.data).await?;
+                        }
+                    }
+                    _ => {
+                        return Err(mlua::Error::runtime(
+                            "save_file expects string (folder), table (mapping), or nil",
+                        ))
                     }
                 }
-
                 Ok(())
             },
         );
