@@ -14,6 +14,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     spawn_task(lua)?;
     spawn_interval(lua)?;
     spawn_timeout(lua)?;
+    is_main_script(lua)?;
 
     Ok(())
 }
@@ -201,6 +202,16 @@ fn spawn_interval(lua: &mlua::Lua) -> mlua::Result<()> {
                 }))
             },
         )?,
+    )
+}
+
+fn is_main_script(lua: &mlua::Lua) -> mlua::Result<()> {
+    lua.globals().set(
+        "astra_internal__is_main_script",
+        lua.create_function(|lua, current_file: String| {
+            let main_script: String = lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
+            Ok(current_file == main_script)
+        })?,
     )
 }
 

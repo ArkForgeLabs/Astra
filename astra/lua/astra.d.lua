@@ -127,3 +127,11 @@ function os.setenv(key, value)
   ---@diagnostic disable-next-line: undefined-global
   return astra_internal__setenv(key, value)
 end
+
+---Checks if the current script is the main script being executed (like Python's `if __name__ == '__main__'`)
+---@param current_file string
+---@return boolean
+function is_main_script(current_file)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__is_main_script(current_file)
+end

@@ -68,3 +68,9 @@ local type astra_internal__regex = function(expression: string): Regex
 global function regex(expression: string): Regex
 	return astra_internal__regex(expression)
 end
+
+local type astra_internal__is_main_script = function(current_file: string): boolean
+---Checks if the current script is the main script being executed (like Python's `if __name__ == '__main__'`)
+global function is_main_script(current_file: string): boolean
+	return astra_internal__is_main_script(current_file)
+end
