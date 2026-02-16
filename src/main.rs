@@ -45,6 +45,9 @@ enum AstraCLI {
     Run {
         /// Path to the Lua script file.
         file_path: Option<String>,
+        /// Execute code directly from command line instead of a file.
+        #[arg(short = 'e', long)]
+        code: Option<String>,
         /// Path to the standard library folder
         #[arg(short, long)]
         stdlib_path: Option<String>,
@@ -88,10 +91,11 @@ pub async fn main() -> std::io::Result<()> {
     match AstraCLI::parse() {
         AstraCLI::Run {
             file_path,
+            code,
             stdlib_path,
             check_teal_code,
             extra_args,
-        } => commands::run_command(file_path, stdlib_path, check_teal_code, extra_args).await,
+        } => commands::run_command(file_path, code, stdlib_path, check_teal_code, extra_args).await,
         AstraCLI::ExportBundle { teal_export, path } => {
             commands::export_bundle_command(teal_export, path).await?
         }
