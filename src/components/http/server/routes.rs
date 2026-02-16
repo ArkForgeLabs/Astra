@@ -190,27 +190,44 @@ pub fn load_routes(server: mlua::Table) -> Router {
                 Method::Trace => match_routes!(trace),
                 Method::StaticDir => {
                     if let Some(serve_path) = route_values.static_dir {
-                        if path == "/" {
-                            router.fallback_service(tower_http::services::ServeDir::new(serve_path))
+                        let service = tower_http::services::ServeDir::new(serve_path);
+                        let mut router_part = if path == "/" {
+                            router.fallback_service(service)
                         } else {
-                            router
-                                .nest_service(path, tower_http::services::ServeDir::new(serve_path))
+                            router.nest_service(path, service)
+                        };
+                        if let Some(headers) = &route_values.config.headers {
+                            for (k, v) in headers {
+                                if let Ok(header_name) = k.parse::<axum::http::HeaderName>() {
+                                    if let Ok(header_value) = v.parse::<axum::http::HeaderValue>() {
+                                        router_part = router_part.layer(tower_http::set_header::SetResponseHeaderLayer::overriding(header_name, header_value));
+                                    }
+                                }
+                            }
                         }
+                        router_part
                     } else {
                         router
                     }
                 }
                 Method::StaticFile => {
                     if let Some(serve_path) = route_values.static_file {
-                        if path == "/" {
-                            router
-                                .fallback_service(tower_http::services::ServeFile::new(serve_path))
+                        let service = tower_http::services::ServeFile::new(serve_path);
+                        let mut router_part = if path == "/" {
+                            router.fallback_service(service)
                         } else {
-                            router.nest_service(
-                                path,
-                                tower_http::services::ServeFile::new(serve_path),
-                            )
+                            router.nest_service(path, service)
+                        };
+                        if let Some(headers) = &route_values.config.headers {
+                            for (k, v) in headers {
+                                if let Ok(header_name) = k.parse::<axum::http::HeaderName>() {
+                                    if let Ok(header_value) = v.parse::<axum::http::HeaderValue>() {
+                                        router_part = router_part.layer(tower_http::set_header::SetResponseHeaderLayer::overriding(header_name, header_value));
+                                    }
+                                }
+                            }
                         }
+                        router_part
                     } else {
                         router
                     }

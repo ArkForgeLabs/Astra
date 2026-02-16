@@ -47,6 +47,7 @@ local http = {}
 ---@class HTTPRouteConfiguration
 ---@field body_limit? number
 ---@field compression? boolean
+---@field headers? table<string, string>
 
 ---@class HTTPRoute
 ---@field path string
