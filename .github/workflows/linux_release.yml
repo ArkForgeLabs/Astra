@@ -19,18 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Restore cache
-        id: cache-cargo-restore
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo
-
       - run: |
           rustup toolchain install 1.92.0
           rustup override set 1.92.0
@@ -183,18 +171,6 @@ jobs:
           token: "${{ github.token }}"
           environment-url: https://github.com/ArkForgeLabs/Astra
           environment: production
-
-      - name: Save Cache
-        id: cache-cargo-save
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo
 
       - name: Update deployment status (success)
         if: success()

@@ -2,8 +2,8 @@
 image = "ghcr.io/cross-rs/x86_64-unknown-linux-gnu:edge"
 pre-build = [
     'apt-get update && apt-get -y upgrade',
-    # Need to upgrade gcc to a version that does have a bug (because aws-lc-sys's custom build script errors with this:
-    #  ### COMPILER BUG DETECTED ###
-    #  Your compiler (cc) is not supported due to a memcmp related bug reported in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95189. We strongly recommend against using this compiler.
-    'apt-get -y install gcc-10 && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 60',
+    # Install clang
+    'apt-get -y install clang',
+    # Set clang as the default compiler
+    'update-alternatives --install /usr/bin/cc cc /usr/bin/clang 60',
 ]

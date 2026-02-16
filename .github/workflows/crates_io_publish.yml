@@ -20,5 +20,6 @@ jobs:
           rustup show
 
       - run: cargo publish --token ${CRATES_TOKEN}
+        continue-on-error: true
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
