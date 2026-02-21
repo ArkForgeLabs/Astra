@@ -28,20 +28,25 @@ pub fn dotenv_function(lua: &mlua::Lua) -> mlua::Result<()> {
     )
 }
 
+fn lua_print(args: mlua::MultiValue) {
+    for input in args.iter() {
+        if input.is_string()
+            && let Ok(s) = input.to_string()
+        {
+            print!("{} ", s);
+        } else if input.is_userdata() {
+            print!("{input:?} ")
+        } else {
+            print!("{input:#?} ")
+        }
+    }
+}
+
 pub fn pprint(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__pretty_print",
         lua.create_function(|_, args: mlua::MultiValue| {
-            for input in args.iter() {
-                if let Ok(s) = input.to_string() {
-                    print!("{} ", s);
-                } else if input.is_userdata() {
-                    print!("{input:?} ")
-                } else {
-                    print!("{input:#?} ")
-                };
-            }
-
+            lua_print(args);
             Ok(())
         })?,
     )
@@ -50,17 +55,8 @@ pub fn pprintln(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__pretty_println",
         lua.create_function(|_, args: mlua::MultiValue| {
-            for input in args.iter() {
-                if let Ok(s) = input.to_string() {
-                    print!("{} ", s);
-                } else if input.is_userdata() {
-                    print!("{input:?} ")
-                } else {
-                    print!("{input:#?} ")
-                };
-            }
+            lua_print(args);
             println!();
-
             Ok(())
         })?,
     )
