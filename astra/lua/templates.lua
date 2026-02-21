@@ -1,34 +1,34 @@
 ---@meta
 
 --- Jinja2 templating engine
----@class TemplateEngine
----@field add_template fun(templates: TemplateEngine, name: string, template: string)
----@field add_template_file fun(templates: TemplateEngine, name: string, path: string)
----@field get_template_names fun(template: TemplateEngine): string[]
+---@class Jinja2Engine
+---@field add_template fun(templates: Jinja2Engine, name: string, template: string)
+---@field add_template_file fun(templates: Jinja2Engine, name: string, path: string)
+---@field get_template_names fun(template: Jinja2Engine): string[]
 ---Excludes template files from being added to the server for rendering
----@field exclude_templates fun(templates: TemplateEngine, names: string[])
----@field reload_templates fun(templates: TemplateEngine) Refreshes the template code from the glob given at the start
----@field add_function fun(templates: TemplateEngine, name: string, function: template_function): any Add a function to the templates
+---@field exclude_templates fun(templates: Jinja2Engine, names: string[])
+---@field reload_templates fun(templates: Jinja2Engine) Refreshes the template code from the glob given at the start
+---@field add_function fun(templates: Jinja2Engine, name: string, function: template_function): any Add a function to the templates
 ---Renders the given template into a string with the available context
----@field render fun(templates: TemplateEngine, name: string, context?: table): string
----@field add_to_server fun(templates: TemplateEngine, server: HTTPServer, context?: table) Adds the templates to the server
+---@field render fun(templates: Jinja2Engine, name: string, context?: table): string
+---@field add_to_server fun(templates: Jinja2Engine, server: HTTPServer, context?: table) Adds the templates to the server
 ---Adds the templates to the server in debugging manner, where the content refreshes on each request
----@field add_to_server_debug fun(templates: TemplateEngine, server: HTTPServer, context?: table)
+---@field add_to_server_debug fun(templates: Jinja2Engine, server: HTTPServer, context?: table)
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias template_function fun(args: table): any
 
 --- Returns a new templating engine
 ---@param dir? string path to the directory, for example: `"templates/**/[!exclude.html]*.html"`
----@return TemplateEngine
+---@return Jinja2Engine
 ---@nodiscard
 local function new_engine(dir)
-  ---@type TemplateEngine
+  ---@type Jinja2Engine
   ---@diagnostic disable-next-line: undefined-global
   local engine = astra_internal__new_templating_engine(dir)
-  ---@type TemplateEngine
+  ---@type Jinja2Engine
   ---@diagnostic disable-next-line: missing-fields
-  local TemplateEngineWrapper = { engine = engine }
+  local Jinja2EngineWrapper = { engine = engine }
   local templates_re = regex([[(?:index)?\.(html|lua)$]])
 
   local function normalize_paths(path)
@@ -50,7 +50,7 @@ local function new_engine(dir)
     end
   end
 
-  function TemplateEngineWrapper:add_to_server(server, context)
+  function Jinja2EngineWrapper:add_to_server(server, context)
     local names = self.engine:get_template_names()
     for _, value in ipairs(names) do
       local path = templates_re:replace(value, "")
@@ -65,7 +65,7 @@ local function new_engine(dir)
     end
   end
 
-  function TemplateEngineWrapper:add_to_server_debug(server, context)
+  function Jinja2EngineWrapper:add_to_server_debug(server, context)
     local names = self.engine:get_template_names()
     for _, value in ipairs(names) do
       local path = templates_re:replace(value, "")
@@ -95,12 +95,12 @@ local function new_engine(dir)
 
   for _, method in ipairs(templating_methods) do
     ---@diagnostic disable-next-line: assign-type-mismatch
-    TemplateEngineWrapper[method] = function(self, ...)
+    Jinja2EngineWrapper[method] = function(self, ...)
       return self.engine[method](self.engine, ...)
     end
   end
 
-  return TemplateEngineWrapper
+  return Jinja2EngineWrapper
 end
 
 return { new = new_engine }

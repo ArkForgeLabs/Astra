@@ -21,6 +21,7 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     crypto::register_to_lua(lua)?;
     file_system::register_to_lua(lua)?;
     templates::TemplatingEngine::register_to_lua(lua)?;
+    templates::markdown_support(lua)?;
 
     Ok(())
 }
