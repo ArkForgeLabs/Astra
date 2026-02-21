@@ -1,6 +1,6 @@
 [package]
 name = "lua-astra"
-version = "0.42.0"
+version = "0.43.0"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
 description = "🔥 Blazingly Fast 🔥 runtime environment for Lua"
 documentation = "https://astra.arkforge.net/docs/latest"
@@ -65,7 +65,7 @@ tower-http = { version = "0.6.8", features = [
   "set-header",
 ] }
 time = "0.3.47"
-minijinja = { version = "2.15.1", features = [
+minijinja = { version = "2.16.0", features = [
   "loader",
   "urlencode",
   "loop_controls",
@@ -81,14 +81,14 @@ serde_json5 = { version = "0.2.1" }
 serde_yaml = { version = "0.9.34" }
 serde_ini = { version = "0.2.0" }
 csv = { version = "1.4.0" }
-quick-xml = { version = "0.39.0", features = [
+quick-xml = { version = "0.39.2", features = [
   "async-tokio",
   "encoding",
   "escape-html",
   "overlapped-lists",
   "serialize",
 ] }
-toml = { version = "1.0.1" }
+toml = { version = "1.0.3" }
 uuid = { version = "1.21.0", features = ["serde", "v4"] }
 sha2 = "0.10.9"
 sha3 = "0.10.8"
@@ -103,8 +103,8 @@ tokio = { version = "1.49.0", features = [
   "signal",
   "rt-multi-thread",
 ] }
-futures = "0.3.31"
-clap = { version = "4.5.58", features = ["cargo", "derive"] }
+futures = "0.3.32"
+clap = { version = "4.5.60", features = ["cargo", "derive"] }
 dotenvy = "0.15.7"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }

@@ -4,7 +4,7 @@ Astra supports jinja templating through [minijinja](https://github.com/mitsuhiko
 
 ```lua
 -- can also pass no arguments to make an empty templating engine
-local templating_engine = require("jinja2")
+local templating_engine = require("templates").jinja2
 local templates = templating_engine.new("examples/templates/**/*.html")
 
 -- Exclude files

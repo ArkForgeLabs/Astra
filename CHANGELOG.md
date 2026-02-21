@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.43.0](https://github.com/ArkForgeLabs/Astra/compare/v0.42.0..v0.43.0) - 2026-02-21
+
+### Bug Fixes
+
+- use clang instead of gcc for - ([9573fe0](https://github.com/ArkForgeLabs/Astra/commit/9573fe017f19109d09bf6925f3dc564c6d406314))
+- pprint and pprintln now printing tables correctly - ([8f4e60a](https://github.com/ArkForgeLabs/Astra/commit/8f4e60afc238aa016177e7b5341a49e40bd369a6))
+
+### Features
+
+- **(cli)** add -e flag to execute code from command line - ([2f687e7](https://github.com/ArkForgeLabs/Astra/commit/2f687e70b00243be4e5122eff7c56558d4c24bf7))
+- **(http)** add optional headers to static_dir and static_file routes (#146) - ([1712149](https://github.com/ArkForgeLabs/Astra/commit/1712149d3fd8bfb48e531474699884bf344dbe51))
+- [**breaking**] moved `jinja2` to `templates` - ([2b94613](https://github.com/ArkForgeLabs/Astra/commit/2b94613bfe2604db478d8ff50fb430d182cd66ba))
+- markdown support - ([14fa6ed](https://github.com/ArkForgeLabs/Astra/commit/14fa6ed781d5cd694034d639c576eab374549950))
+- databases now automatically close at the end of the script - ([67ef842](https://github.com/ArkForgeLabs/Astra/commit/67ef842b07b5625fd248e59aecbb276126851d39))
+
 ## [0.42.0](https://github.com/ArkForgeLabs/Astra/compare/v0.41.0..v0.42.0) - 2026-02-15
 
 ### Features

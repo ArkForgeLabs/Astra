@@ -79,7 +79,7 @@ db:execute([[
 pprintln(db:query_all("SELECT * FROM data"))
 ```
 
-There is also support for cryptography, datetime, jinja2, pubsub/observers, structure validation, async filesystem, and many more, check them at at the [docs](https://astra.arkforge.net/docs/latest)
+There is also support for cryptography, datetime, jinja2, markdown, pubsub/observers, structure validation, async filesystem, and many more, check them at at the [docs](https://astra.arkforge.net/docs/latest)
 
 ## Community Projects
 

@@ -198,10 +198,15 @@ pub fn load_routes(server: mlua::Table) -> Router {
                         };
                         if let Some(headers) = &route_values.config.headers {
                             for (k, v) in headers {
-                                if let Ok(header_name) = k.parse::<axum::http::HeaderName>() {
-                                    if let Ok(header_value) = v.parse::<axum::http::HeaderValue>() {
-                                        router_part = router_part.layer(tower_http::set_header::SetResponseHeaderLayer::overriding(header_name, header_value));
-                                    }
+                                if let Ok(header_name) = k.parse::<axum::http::HeaderName>()
+                                    && let Ok(header_value) = v.parse::<axum::http::HeaderValue>()
+                                {
+                                    router_part = router_part.layer(
+                                        tower_http::set_header::SetResponseHeaderLayer::overriding(
+                                            header_name,
+                                            header_value,
+                                        ),
+                                    );
                                 }
                             }
                         }
@@ -220,10 +225,15 @@ pub fn load_routes(server: mlua::Table) -> Router {
                         };
                         if let Some(headers) = &route_values.config.headers {
                             for (k, v) in headers {
-                                if let Ok(header_name) = k.parse::<axum::http::HeaderName>() {
-                                    if let Ok(header_value) = v.parse::<axum::http::HeaderValue>() {
-                                        router_part = router_part.layer(tower_http::set_header::SetResponseHeaderLayer::overriding(header_name, header_value));
-                                    }
+                                if let Ok(header_name) = k.parse::<axum::http::HeaderName>()
+                                    && let Ok(header_value) = v.parse::<axum::http::HeaderValue>()
+                                {
+                                    router_part = router_part.layer(
+                                        tower_http::set_header::SetResponseHeaderLayer::overriding(
+                                            header_name,
+                                            header_value,
+                                        ),
+                                    );
                                 }
                             }
                         }
