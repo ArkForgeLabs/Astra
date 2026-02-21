@@ -49,27 +49,31 @@ pub async fn run_command(
     spawn_termination_task();
 
     // Remove the Shebang lines
-    let user_file = user_file
+    let mut user_file = user_file
         .lines()
         .filter(|line| !line.starts_with("#!"))
-        .collect::<Vec<_>>()
-        .join("\n");
+        .collect::<Vec<_>>();
+    user_file.push("astra_internal__close_all_databases()");
+    let user_file = user_file.join("\n");
 
-    if actual_path_str == "<commandline>" {
-        if let Err(e) = lua.load(user_file).set_name("<commandline>").exec_async().await {
-            error!("{}", e);
-        }
-    } else if let Some(is_teal) = PathBuf::from(&actual_path_str).extension()
+    if let Some(is_teal) = PathBuf::from(&actual_path_str).extension()
         && is_teal == "tl"
     {
         if let Err(e) = crate::components::load_teal(lua).await {
             error!("{}", e);
         }
 
-        if let Err(e) = crate::components::execute_teal_code(lua, &actual_path_str, &user_file).await {
+        if let Err(e) =
+            crate::components::execute_teal_code(lua, &actual_path_str, &user_file).await
+        {
             error!("{}", e);
         }
-    } else if let Err(e) = lua.load(user_file).set_name(actual_path_str).exec_async().await {
+    } else if let Err(e) = lua
+        .load(user_file)
+        .set_name(actual_path_str)
+        .exec_async()
+        .await
+    {
         error!("{}", e);
     }
 
