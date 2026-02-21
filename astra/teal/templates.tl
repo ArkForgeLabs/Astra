@@ -109,4 +109,20 @@ local function new_engine(dir: string): Jinja2Engine
 	return Jinja2EngineWrapper
 end
 
-return { new = new_engine }
+local type astra_internal__new_markdown_ast = function(input: string): table
+local function markdown_to_ast(input: string): table
+	return astra_internal__new_markdown_ast(input)
+end
+
+local type astra_internal__new_markdown_html = function(input: string): string
+local function markdown_to_html(input: string): string
+	return astra_internal__new_markdown_html(input)
+end
+
+return {
+  jinja2 = { new = new_engine },
+  markdown = {
+    to_ast = markdown_ast,
+    to_html = markdown_html,
+  },
+}

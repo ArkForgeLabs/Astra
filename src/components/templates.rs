@@ -1,7 +1,6 @@
 use crate::LUA;
 use minijinja::ErrorKind::UndefinedError;
 use mlua::{ExternalError, FromLua, LuaSerdeExt, UserData};
-use serde::Serialize;
 use std::sync::Arc;
 
 /// Will include the name, path, and source
@@ -262,7 +261,7 @@ fn parse_glob_pattern(pattern: &str) -> Result<Vec<(String, String)>, mlua::Erro
 
 pub fn markdown_support(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
-        "astra_internal__new_markdown",
+        "astra_internal__new_markdown_ast",
         lua.create_function(|lua, input: String| {
             match markdown::to_mdast(&input, &markdown::ParseOptions::gfm()) {
                 Ok(result) => match serde_value::to_value(result) {
@@ -275,7 +274,7 @@ pub fn markdown_support(lua: &mlua::Lua) -> mlua::Result<()> {
     )?;
 
     lua.globals().set(
-        "astra_internal__new_html_markdown",
+        "astra_internal__new_markdown_html",
         lua.create_function(|_, input: String| {
             match markdown::to_html_with_options(&input, &markdown::Options::gfm()) {
                 Ok(result) => Ok(result),

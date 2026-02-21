@@ -103,4 +103,24 @@ local function new_engine(dir)
   return Jinja2EngineWrapper
 end
 
-return { new = new_engine }
+---@param input string
+---@return string
+local function markdown_ast(input)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__new_markdown_ast(input)
+end
+
+---@param input string
+---@return table
+local function markdown_html(input)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__new_markdown_html(input)
+end
+
+return {
+  jinja2 = { new = new_engine },
+  markdown = {
+    to_ast = markdown_ast,
+    to_html = markdown_html,
+  },
+}

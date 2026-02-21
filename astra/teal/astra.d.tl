@@ -6,6 +6,7 @@ global function pprint(...: any)
 	astra_internal__pretty_print(...)
 end
 
+local type astra_internal__pretty_println = function(...: any)
 global function pprintln(...: any)
 	astra_internal__pretty_println(...)
 end
