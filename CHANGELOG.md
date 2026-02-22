@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.44.0](https://github.com/ArkForgeLabs/Astra/compare/v0.42.0..v0.44.0) - 2026-02-22
+
+### Refactoring
+
+- removed pprintln as it was unnecessary and broke a lot of - ([6cdad66](https://github.com/ArkForgeLabs/Astra/commit/6cdad66e3d64bd0b0235af3a2daa7ac69b4c225e))
+
 ## [0.43.0](https://github.com/ArkForgeLabs/Astra/compare/v0.42.0..v0.43.0) - 2026-02-21
 
 ### Bug Fixes
