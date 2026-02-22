@@ -13,7 +13,7 @@ templates:exclude_templates({ "base.html" })
 -- You can also add functions to be used within the templates
 -- Example within templates: { test(key="value") }
 template_engine:add_function("test", function (args)
-    pprintln(args)
+    pprint(args)
     return "YEE HAW"
 end)
 ```

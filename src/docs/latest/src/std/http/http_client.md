@@ -8,10 +8,10 @@ local http = require("http")
 
 -- By default its always a GET request
 local response = http.request("https://example.com/"):execute()
-pprintln(response:status_code())
-pprintln(response:headers())
-pprintln(response:remote_address())
-pprintln(response:body():text()) -- or response:body():json() for json content
+pprint(response:status_code())
+pprint(response:headers())
+pprint(response:remote_address())
+pprint(response:body():text()) -- or response:body():json() for json content
 ```
 
 The `http.request` function returns a `HTTPClientRequest` object which can be further modified to the needs before execution. The way to do these modification is through chained setters.

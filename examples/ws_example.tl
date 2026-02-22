@@ -5,7 +5,7 @@ local server = http.server.new();
 local function handle_socket(socket: WebSocket): nil
 	print("Connection opened!")
 	while true do
-		pprintln(socket:recv())
+		pprint(socket:recv())
 		socket:send("text", "hello from the server")
 		socket:send_close({
 			code = 1000,

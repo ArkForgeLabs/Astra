@@ -5,7 +5,6 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     dotenv_function(lua)?;
     invalidate_cache(lua)?;
     pprint(lua)?;
-    pprintln(lua)?;
     AstraRegex::register_to_lua(lua)?;
     uuid_v4(lua)?;
     close_dbs(lua)?;
@@ -47,38 +46,21 @@ pub fn dotenv_function(lua: &mlua::Lua) -> mlua::Result<()> {
     )
 }
 
-fn lua_print(args: mlua::MultiValue) {
-    let mut padding = " ";
-    if args.len() == 1 {
-        padding = ""
-    }
-    for input in args.iter() {
-        if input.is_string()
-            && let Ok(s) = input.to_string()
-        {
-            print!("{}{padding}", s);
-        } else if input.is_userdata() {
-            print!("{input:?}{padding}")
-        } else {
-            print!("{input:#?}{padding}")
-        }
-    }
-}
-
 pub fn pprint(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__pretty_print",
         lua.create_function(|_, args: mlua::MultiValue| {
-            lua_print(args);
-            Ok(())
-        })?,
-    )
-}
-pub fn pprintln(lua: &mlua::Lua) -> mlua::Result<()> {
-    lua.globals().set(
-        "astra_internal__pretty_println",
-        lua.create_function(|_, args: mlua::MultiValue| {
-            lua_print(args);
+            for input in args.iter() {
+                if input.is_string()
+                    && let Ok(s) = input.to_string()
+                {
+                    print!("{} ", s);
+                } else if input.is_userdata() {
+                    print!("{input:?} ")
+                } else {
+                    print!("{input:#?} ")
+                }
+            }
             println!();
             Ok(())
         })?,

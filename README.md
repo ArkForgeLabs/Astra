@@ -61,7 +61,7 @@ Or fancy some multi threaded async code
 spawn_task(function ()
     -- HTTP Request to check your IP address
     local response = require("http").request("https://myip.wtf/json"):execute()
-    pprintln(response:status_code(), response:remote_address(), response:body():json())
+    pprint(response:status_code(), response:remote_address(), response:body():json())
 end)
 ```
 
@@ -76,7 +76,7 @@ db:execute([[
     INSERT INTO data (name, age) VALUES ($1, $2);
 ]], { my_data.name, my_data.age })
 
-pprintln(db:query_all("SELECT * FROM data"))
+pprint(db:query_all("SELECT * FROM data"))
 ```
 
 There is also support for cryptography, datetime, jinja2, markdown, pubsub/observers, structure validation, async filesystem, and many more, check them at at the [docs](https://astra.arkforge.net/docs/latest)

@@ -4,7 +4,7 @@ These are some of the smaller utilities and functionality that are usually globa
 
 ## Pretty Print
 
-`pprint` function is a wrapper over `print` function that also lets you print tables as well as other values. The `pprint` by default prints continuously without line break. If you wish to have a line break, use `pprintln` instead. It has the same functionality, but with `"\n"` as its last argument. 
+`pprint` function is a wrapper over `print` function that also lets you print tables as well as other values.
 
 ## String Split
 
@@ -33,21 +33,21 @@ Astra has support for a very performant regex engine. The regex code is advised 
 local my_re = regex([[(?:index)?\.(html|lua|tera)$]])
 
 -- Capture all of the hits as list of string lists (string[][])
-pprintln(my_re:captures([[
+pprint(my_re:captures([[
 path/to/file.html
 examples/templates/index.html
 src/components/base.tera
 ]]))
 
 -- Check for matches available
-pprintln(my_re:is_match("static/index.lua"))
+pprint(my_re:is_match("static/index.lua"))
 
 -- Or replace matches
 local content = "examples/templates/index.html"
 local to_replace_with = ""
 local number_of_replaces = 1 -- can omit it and not add it at all as argument
 local new_string = my_re:replace(content, to_replace_with, number_of_replaces)
-pprintln(new_string)
+pprint(new_string)
 ```
 
 ## Graceful Shutdowns
