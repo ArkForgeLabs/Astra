@@ -78,7 +78,7 @@ local http = {}
 ---@field fields fun(): table Returns all multipart fields as an array
 ---@field get_field fun(name: string): HTTPMultipartField Returns a specific field by name
 ---@field file_name fun(): string|nil Returns the first filename found in the multipart data
----@field save_file fun(multipart: HTTPMultipart, file_path: string | nil): string | nil Saves the multipart into disk
+---@field save_file fun(multipart: HTTPMultipart, file_path: string | table<string, string> | nil): string | nil Saves the multipart into disk
 
 ---@class HTTPServerRequest
 ---@field method fun(self: HTTPServerRequest): string Returns the HTTP method (e.g., "GET", "POST").
