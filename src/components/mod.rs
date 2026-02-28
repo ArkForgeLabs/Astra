@@ -11,7 +11,7 @@ mod import;
 mod templates;
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
-    import::register_import_function(lua).await?;
+    import::register_import_function(lua)?;
     global::register_to_lua(lua)?;
     astra_serde::register_to_lua(lua)?;
     http::server::register_to_lua(lua)?;

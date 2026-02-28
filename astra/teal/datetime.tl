@@ -70,9 +70,9 @@ local function new_datetime(differentiator?: string | number, month?: number, da
 	end
 end
 
---- Creates a wrapper for a DateTime-like object
-local function datetime(differentiator?: string | number, month?: number, day?: number, hour?: number, min?: number, sec?: number, milli?: number): DateTime
-	return new_datetime(differentiator, month, day, hour, min, sec, milli)
+local type astra_internal__datetime_sleep = function(amount: integer): nil
+local function sleep(amount: integer): nil
+  astra_internal__datetime_sleep(amount)
 end
 
-return { new = datetime }
+return { new = new_datetime, sleep = sleep }

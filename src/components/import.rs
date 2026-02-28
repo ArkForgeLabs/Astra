@@ -90,7 +90,7 @@ pub async fn find_first_lua_match_with_content(
     None
 }
 
-pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
+pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "require",
         lua.create_async_function(|lua, path: String| async move {

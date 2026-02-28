@@ -8,6 +8,14 @@ pub struct AstraDateTime {
 impl AstraDateTime {
     pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.globals().set(
+            "astra_internal__datetime_sleep",
+            lua.create_async_function(|_, amount: u64| async move {
+                tokio::time::sleep(std::time::Duration::from_millis(amount)).await;
+                Ok(())
+            })?,
+        )?;
+
+        lua.globals().set(
             "astra_internal__datetime_new_now",
             lua.create_function(|_, is_utc: bool| {
                 let dt = if is_utc {
