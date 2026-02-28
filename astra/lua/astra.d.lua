@@ -5,7 +5,10 @@ Astra = {
   version = "@ASTRA_VERSION",
 }
 
-ASTRA_INTERNAL__CURRENT_SCRIPT = ""
+--- The current running script
+CURRENT_SCRIPT = ""
+--- The first script that was ran in the commandline
+MAIN_SCRIPT = ""
 
 --[[
     All of the smaller scale components that are not big enough to need their own files, are here

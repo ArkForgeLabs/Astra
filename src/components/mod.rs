@@ -81,8 +81,7 @@ pub async fn execute_teal_code(
         .await;
 
     if runtime_flags.check_teal_code && module_name.ends_with(".tl") {
-        lua.globals()
-            .set("ASTRA_INTERNAL__CURRENT_SCRIPT", module_name)?;
+        lua.globals().set("CURRENT_SCRIPT", module_name)?;
         let compile_check_chunk = crate::TEAL_IMPORT_SCRIPT
             .replace("@SOURCE", module_content)
             .replace("@FILE_NAME", module_name);

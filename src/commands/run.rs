@@ -53,7 +53,8 @@ pub async fn run_command(
         .lines()
         .filter(|line| !line.starts_with("#!"))
         .collect::<Vec<_>>();
-    user_file.push("astra_internal__close_all_databases()");
+    user_file
+        .push("if CURRENT_SCRIPT == MAIN_SCRIPT then astra_internal__close_all_databases() end");
     let user_file = user_file.join("\n");
 
     if let Some(is_teal) = PathBuf::from(&actual_path_str).extension()
@@ -134,7 +135,12 @@ async fn run_command_prerequisite(
 
     #[allow(clippy::expect_used)]
     lua.globals()
-        .set("ASTRA_INTERNAL__CURRENT_SCRIPT", file_path)
+        .set("CURRENT_SCRIPT", file_path)
+        .expect("Couldn't set the script path");
+
+    #[allow(clippy::expect_used)]
+    lua.globals()
+        .set("MAIN_SCRIPT", file_path)
         .expect("Couldn't set the script path");
 }
 

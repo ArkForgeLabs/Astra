@@ -103,8 +103,7 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
             {
                 lua.registry_value::<mlua::Value>(&key)
             } else {
-                let current_script_path: String =
-                    lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
+                let current_script_path: String = lua.globals().get("CURRENT_SCRIPT")?;
 
                 #[allow(clippy::collapsible_else_if)]
                 if let Some((file_path, content)) =
@@ -118,8 +117,7 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                         .replace("./", "")
                         .replace(".\\", "");
 
-                    lua.globals()
-                        .set("ASTRA_INTERNAL__CURRENT_SCRIPT", file_path.clone())?;
+                    lua.globals().set("CURRENT_SCRIPT", file_path.clone())?;
                     let result = if is_teal {
                         super::execute_teal_code(&lua, &file_path, &content).await?
                     } else {
@@ -131,8 +129,7 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
 
                     let key = lua.create_registry_value(&result)?;
                     lua.globals().set(key_id, Some(key))?;
-                    lua.globals()
-                        .set("ASTRA_INTERNAL__CURRENT_SCRIPT", current_script_path)?;
+                    lua.globals().set("CURRENT_SCRIPT", current_script_path)?;
 
                     Ok(result)
                 } else {

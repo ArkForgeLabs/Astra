@@ -1,4 +1,5 @@
-global ASTRA_INTERNAL__CURRENT_SCRIPT = ""
+global CURRENT_SCRIPT = ""
+global MAIN_SCRIPT = ""
 
 local type astra_internal__pretty_print = function(...: any)
 ---Pretty prints any table or value
