@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.45.0](https://github.com/ArkForgeLabs/Astra/compare/v0.44.0..v0.45.0) - 2026-02-28
+
+### Features
+
+- #130 - added support for checking if current script is the original script that was ran - ([926a811](https://github.com/ArkForgeLabs/Astra/commit/926a811c3642ca5bc6a1a280a73984a591dad0db))
+- added sleep function to datetime - ([fcbecac](https://github.com/ArkForgeLabs/Astra/commit/fcbecac58e456722e748ccb6e51546f89b655ea8))
+
 ## [0.44.0](https://github.com/ArkForgeLabs/Astra/compare/v0.42.0..v0.44.0) - 2026-02-22
 
 ### Refactoring
