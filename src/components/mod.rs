@@ -175,11 +175,15 @@ fn is_table_json(table: &mlua::Table) -> mlua::Result<bool> {
 pub(crate) fn is_table_byte_array(table: &mlua::Table) -> mlua::Result<bool> {
     let mut i = 1;
     for pair in table.pairs::<i64, i64>() {
-        let (key, value) = pair?;
-        if key != i || !(0..=255).contains(&value) {
-            return Ok(false);
+        match pair {
+            Ok((key, value)) => {
+                if key != i || !(0..=255).contains(&value) {
+                    return Ok(false);
+                }
+                i += 1;
+            }
+            Err(_) => return Ok(false),
         }
-        i += 1;
     }
     Ok(true)
 }

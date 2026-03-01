@@ -36,7 +36,8 @@ impl HTTPClientRequest {
                 form: HashMap::new(),
             }),
             mlua::Value::Table(details) => {
-                let mut headers: HashMap<String, String> = details.get("headers")?;
+                let mut headers: HashMap<String, String> =
+                    details.get("headers").unwrap_or(HashMap::new());
                 let body = details.get::<mlua::Value>("body")?;
                 let body = match body.clone() {
                     mlua::Value::String(value) => {
