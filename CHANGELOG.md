@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.45.1](https://github.com/ArkForgeLabs/Astra/compare/v0.45.0..v0.45.1) - 2026-03-01
+
+### Bug Fixes
+
+- http request table style working now without headers - ([a7893e2](https://github.com/ArkForgeLabs/Astra/commit/a7893e2e78c105068ef0cc49c9832c867733cbb6))
+
 ## [0.45.0](https://github.com/ArkForgeLabs/Astra/compare/v0.44.0..v0.45.0) - 2026-02-28
 
 ### Features
