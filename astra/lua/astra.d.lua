@@ -96,18 +96,6 @@ dotenv_load(".env.dev")
 dotenv_load(".env.test")
 dotenv_load(".env.local")
 
----@class Regex
----@field captures fun(regex: Regex, content: string): string[][]
----@field replace fun(regex: Regex, content: string, replacement: string, limit: number?): string
----@field is_match fun(regex: Regex, content: string): boolean
-
----@param expression string
----@return Regex
-function regex(expression)
-  ---@diagnostic disable-next-line: undefined-global
-  return astra_internal__regex(expression)
-end
-
 ---@param key string
 function os.getenv(key)
   ---@diagnostic disable-next-line: undefined-global

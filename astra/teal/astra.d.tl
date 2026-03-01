@@ -53,15 +53,3 @@ dotenv_load(".env.development")
 dotenv_load(".env.dev")
 dotenv_load(".env.test")
 dotenv_load(".env.local")
-
-global interface Regex is userdata
-	captures: function(regex: Regex, content: string): {{string}}
-	replace: function(regex: Regex, content: string, replacement: string, limit?: number): string
-	is_match: function(regex: Regex, content: string): boolean
-end
-
-local type astra_internal__regex = function(expression: string): Regex
----@param expression string
-global function regex(expression: string): Regex
-	return astra_internal__regex(expression)
-end

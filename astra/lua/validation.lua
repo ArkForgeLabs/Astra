@@ -225,4 +225,16 @@ local function validate_table(input_table, schema)
   return true
 end
 
-return { validate_table = validate_table }
+---@class Regex
+---@field captures fun(regex: Regex, content: string): string[][]
+---@field replace fun(regex: Regex, content: string, replacement: string, limit: number?): string
+---@field is_match fun(regex: Regex, content: string): boolean
+
+---@param expression string
+---@return Regex
+function regex(expression)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__regex(expression)
+end
+
+return { validate_table = validate_table, regex = regex }
