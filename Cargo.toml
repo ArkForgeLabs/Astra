@@ -1,6 +1,6 @@
 [package]
 name = "lua-astra"
-version = "0.45.1"
+version = "0.45.2"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
 description = "🔥 Blazingly Fast 🔥 runtime environment for Lua"
 documentation = "https://astra.arkforge.net/docs/latest"

@@ -49,13 +49,11 @@ pub async fn run_command(
     spawn_termination_task();
 
     // Remove the Shebang lines
-    let mut user_file = user_file
+    let user_file = user_file
         .lines()
         .filter(|line| !line.starts_with("#!"))
-        .collect::<Vec<_>>();
-    user_file
-        .push("if CURRENT_SCRIPT == MAIN_SCRIPT then astra_internal__close_all_databases() end");
-    let user_file = user_file.join("\n");
+        .collect::<Vec<_>>()
+        .join("\n");
 
     if let Some(is_teal) = PathBuf::from(&actual_path_str).extension()
         && is_teal == "tl"
