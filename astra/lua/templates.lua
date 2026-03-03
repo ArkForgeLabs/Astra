@@ -29,7 +29,7 @@ local function new_engine(dir)
   ---@type Jinja2Engine
   ---@diagnostic disable-next-line: missing-fields
   local Jinja2EngineWrapper = { engine = engine }
-  local templates_re = regex([[(?:index)?\.(html|lua)$]])
+  local templates_re = require("validation").regex([[(?:index)?\.(html|lua)$]])
 
   local function normalize_paths(path)
     -- Ensure path starts with "/"
