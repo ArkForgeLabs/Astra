@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.45.3](https://github.com/ArkForgeLabs/Astra/compare/v0.45.1..v0.45.3) - 2026-03-03
+
+### Bug Fixes
+
+- templating is now not breaking due to regex - ([c36d803](https://github.com/ArkForgeLabs/Astra/commit/c36d803523e89066fdd723ad3c33236654d27ba1))
+
+### Refactoring
+
+- [**breaking**] moved `regex` from global to `validation.regex` - ([97b900c](https://github.com/ArkForgeLabs/Astra/commit/97b900c9aed01684c1368d62ba91b08b198e7498))
+- removed database closing at the end of the script - ([6d625e3](https://github.com/ArkForgeLabs/Astra/commit/6d625e3debaf9e4eef1ab826e45963009e7c3bd9))
+
 ## [0.45.1](https://github.com/ArkForgeLabs/Astra/compare/v0.45.0..v0.45.1) - 2026-03-01
 
 ### Bug Fixes
