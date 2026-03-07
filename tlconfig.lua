@@ -1,6 +1,6 @@
 -- Teal language configuration file
 
 return {
-    global_env_def = "astra/teal/astra",
-    include_dir = { "astra/teal" }
+  global_env_def = "astra/teal/astra",
+  include_dir = { "astra/teal" },
 }

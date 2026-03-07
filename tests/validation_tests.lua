@@ -1,5 +1,5 @@
 --- Validation tests using the validation module
-local validation = require("astra.lua.validation")
+local validation = require("validation")
 
 -- Test 1: Basic type validation
 print("=== Test 1: Basic type validation ===")
