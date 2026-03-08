@@ -1,23 +1,24 @@
-local lust = require("tests.lust")
-local describe, it, expect = lust.describe, lust.it, lust.expect
+local test = require("test")
+local validation = require("validation")
+local describe, it, expect = test.describe, test.it, test.expect
 
--- Add lust method: to.be.falsy()
-lust.paths.falsy = {
+-- Add test method: to.be.falsy()
+test.paths.falsy = {
   test = function(value)
     local ok = (value == false)
     return ok, "expected " .. tostring(value) .. " to be falsy", "expected " .. tostring(value) .. " to not be falsy"
   end,
 }
-table.insert(lust.paths.be, "falsy")
+table.insert(test.paths.be, "falsy")
 
 -- helper functions
 local function expect_valid(example, schema)
-  local ok, err = Astra.validate_table(example, schema)
+  local ok, err = validation.validate_table(example, schema)
   expect(ok).to.be.truthy()
 end
 
 local function expect_invalid(example, schema)
-  local ok, _ = Astra.validate_table(example, schema)
+  local ok, _ = validation.validate_table(example, schema)
   expect(ok).to.be.falsy()
 end
 

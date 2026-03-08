@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-field, deprecated, cast-local-type, redundant-value, ambiguity-1, need-check-nil, param-type-mismatch
 ---@meta
 
 local function is_windows()
@@ -1627,15 +1628,12 @@ end
         table.insert(ps.errs, { filename = ps.filename, y = eof.y, x = eof.x, msg = msg or "unexpected end of file" })
         return #ps.tokens
       end
-      table.insert(
-        ps.errs,
-        {
-          filename = ps.filename,
-          y = ps.tokens[i].y,
-          x = ps.tokens[i].x,
-          msg = assert(msg, "syntax error, but no error message provided"),
-        }
-      )
+      table.insert(ps.errs, {
+        filename = ps.filename,
+        y = ps.tokens[i].y,
+        x = ps.tokens[i].x,
+        msg = assert(msg, "syntax error, but no error message provided"),
+      })
       return math.min(#ps.tokens, i + 1)
     end
 
@@ -11421,8 +11419,7 @@ end
         self.errs:add(node, "cannot determine type of table literal")
         t = a_type(node, "map", {
           keys = self:expand_type(node, keys, a_type(node, "integer", {})),
-          values = 
-self:expand_type(node, values, elements),
+          values = self:expand_type(node, values, elements),
         })
       elseif is_record and is_array then
         t = a_type(node, "record", {
