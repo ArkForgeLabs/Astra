@@ -49,32 +49,32 @@ end)
 describe("NestedSchema", function()
   local schema = {
     user = {
-      type = "table",
-      schema = {
+      "table",
+      {
         profile = {
-          type = "table",
-          schema = {
-            id = { type = "number" },
-            name = { type = "string" },
-            is_student = { type = "boolean", required = false },
+          "table",
+          {
+            id = "number",
+            name = "string",
+            is_student = { "boolean", false },
           },
         },
       },
     },
   }
-
+  
   it("valid-nested-type", function()
     expect_valid({ user = { profile = { id = 7, name = "Grace", is_student = true } } }, schema)
   end)
-
+  
   it("invalid-nested-type", function()
     expect_invalid({ user = { profile = { id = "7", name = "Grace", is_student = true } } }, schema) -- wrong type
   end)
-
+  
   it("missing-required-field", function()
     expect_invalid({ user = { profile = { name = "Grace", is_student = true } } }, schema)
   end)
-
+  
   it("optional-field-absence", function()
     expect_valid({ user = { profile = { id = 7, name = "Grace" } } }, schema)
   end)
@@ -82,13 +82,13 @@ end)
 
 describe("Arrays", function()
   local schema = {
-    numbers = { type = "array", array_item_type = "number" },
-    strings = { type = "array", array_item_type = "string" },
+    numbers = { "array", "number" },
+    strings = { "array", "string" },
     entries = {
-      type = "array",
-      schema = {
-        id = { type = "number" },
-        text = { type = "string" },
+      "array",
+      {
+        id = "number",
+        text = "string",
       },
     },
   }

@@ -57,21 +57,25 @@ local function validate_table(input_table, schema)
               field_info.schema = constraints[2]
             end
           end
-        else
-          field_info.type = first_elem
-          if #constraints == 2 and type(constraints[2]) == "boolean" then
-            field_info.required = constraints[2]
-          end
-          if constraints.min then
-            field_info.min = constraints.min
-          end
-          if constraints.max then
-            field_info.max = constraints.max
-          end
-          if constraints.required == false then
-            field_info.required = false
-          end
-        end
+         else
+           field_info.type = first_elem
+           if #constraints == 2 then
+             if type(constraints[2]) == "boolean" then
+               field_info.required = constraints[2]
+             elseif type(constraints[2]) == "table" then
+               field_info.schema = constraints[2]
+             end
+           end
+           if constraints.min then
+             field_info.min = constraints.min
+           end
+           if constraints.max then
+             field_info.max = constraints.max
+           end
+           if constraints.required == false then
+             field_info.required = false
+           end
+         end
       else
         -- Object format: { type = "string", min = 0, max = 100, required = false }
         if constraints.type then
