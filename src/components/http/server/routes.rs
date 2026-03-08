@@ -32,6 +32,7 @@ pub enum Method {
     StaticDir,
     StaticFile,
     WebSocket,
+    Fallback,
 }
 #[derive(Debug, Clone, mlua::FromLua)]
 pub struct Route {
@@ -68,15 +69,24 @@ pub async fn route(
             .call_async::<mlua::Value>((request, response.clone()))
             .await?;
 
+        let response_details = response.borrow::<responses::ResponseLua>()?;
+
+        if let Some(redirect_to) = &response_details.redirect {
+            return Ok((cookie_jar, redirect_to.clone().into_response()));
+        }
+
         let mut resulting_response = match result {
             mlua::Value::String(plain) => plain.to_string_lossy().into_response(),
-            mlua::Value::Table(_) => {
-                axum::Json(lua.from_value::<serde_json::Value>(result.clone())?).into_response()
+            mlua::Value::Table(ref table) => {
+                if let Ok(true) = crate::components::is_table_byte_array(table) {
+                    let bytes: Vec<u8> = lua.from_value(result.clone())?;
+                    Body::from(bytes).into_response()
+                } else {
+                    axum::Json(lua.from_value::<serde_json::Value>(result.clone())?).into_response()
+                }
             }
             _ => axum::http::StatusCode::OK.into_response(),
         };
-
-        let response_details = response.borrow::<responses::ResponseLua>()?;
         *resulting_response.status_mut() = response_details.status_code;
 
         for (key, value) in response_details.headers.iter() {
@@ -149,7 +159,10 @@ pub fn load_routes(server: mlua::Table) -> Router {
             macro_rules! match_routes {
                 ($route_function:expr) => {{
                     let mut route_function =
-                        $route_function(|request: Request<Body>| route(lua, route_values, request));
+                        $route_function(move |request: Request<Body>| async move {
+                            route(lua, route_values, request).await
+                        });
+
                     if let Some(body_limit) = body_limit {
                         route_function = route_function.layer(DefaultBodyLimit::max(body_limit))
                     }
@@ -177,27 +190,54 @@ pub fn load_routes(server: mlua::Table) -> Router {
                 Method::Trace => match_routes!(trace),
                 Method::StaticDir => {
                     if let Some(serve_path) = route_values.static_dir {
-                        if path == "/" {
-                            router.fallback_service(tower_http::services::ServeDir::new(serve_path))
+                        let service = tower_http::services::ServeDir::new(serve_path);
+                        let mut router_part = if path == "/" {
+                            router.fallback_service(service)
                         } else {
-                            router
-                                .nest_service(path, tower_http::services::ServeDir::new(serve_path))
+                            router.nest_service(path, service)
+                        };
+                        if let Some(headers) = &route_values.config.headers {
+                            for (k, v) in headers {
+                                if let Ok(header_name) = k.parse::<axum::http::HeaderName>()
+                                    && let Ok(header_value) = v.parse::<axum::http::HeaderValue>()
+                                {
+                                    router_part = router_part.layer(
+                                        tower_http::set_header::SetResponseHeaderLayer::overriding(
+                                            header_name,
+                                            header_value,
+                                        ),
+                                    );
+                                }
+                            }
                         }
+                        router_part
                     } else {
                         router
                     }
                 }
                 Method::StaticFile => {
                     if let Some(serve_path) = route_values.static_file {
-                        if path == "/" {
-                            router
-                                .fallback_service(tower_http::services::ServeFile::new(serve_path))
+                        let service = tower_http::services::ServeFile::new(serve_path);
+                        let mut router_part = if path == "/" {
+                            router.fallback_service(service)
                         } else {
-                            router.nest_service(
-                                path,
-                                tower_http::services::ServeFile::new(serve_path),
-                            )
+                            router.nest_service(path, service)
+                        };
+                        if let Some(headers) = &route_values.config.headers {
+                            for (k, v) in headers {
+                                if let Ok(header_name) = k.parse::<axum::http::HeaderName>()
+                                    && let Ok(header_value) = v.parse::<axum::http::HeaderValue>()
+                                {
+                                    router_part = router_part.layer(
+                                        tower_http::set_header::SetResponseHeaderLayer::overriding(
+                                            header_name,
+                                            header_value,
+                                        ),
+                                    );
+                                }
+                            }
                         }
+                        router_part
                     } else {
                         router
                     }
@@ -214,6 +254,9 @@ pub fn load_routes(server: mlua::Table) -> Router {
                         })
                     }),
                 ),
+                Method::Fallback => {
+                    router.fallback(|request: Request<Body>| route(lua, route_values, request))
+                }
             }
         }
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Astra Installer Script
+# Astra Installer Script 
 # Downloads the specified version of Astra and installs it to /usr/bin
 # Supported runtimes: luajit, luajit52, luau, lua51, lua52, lua53, lua54
 # Default runtime: luajit

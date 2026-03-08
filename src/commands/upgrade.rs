@@ -53,7 +53,21 @@ pub async fn upgrade_command(user_agent: Option<String>) -> Result<(), Box<dyn s
         };
 
         let architecture = if cfg!(windows) {
-            "windows-amd64.exe"
+            if cfg!(target_arch = "aarch64") {
+                "windows-arm64.exe"
+            } else {
+                "windows-amd64.exe"
+            }
+        } else if cfg!(target_os = "linux") {
+            if cfg!(target_arch = "aarch64") {
+                "linux-arm64"
+            } else {
+                "linux-amd64"
+            }
+        } else if cfg!(target_os = "macos") {
+            "macos-arm64"
+        } else if cfg!(target_arch = "riscv64") {
+            "riscv-amd64"
         } else {
             "linux-amd64"
         };

@@ -95,5 +95,5 @@ spawn_timeout(function ()
 end, 5000)
 ```
 
-> [!NOTE]
+> **Note:**
 > The interval code runs immediately and then the delay happens before the loop starts again. In contrast the timeout's delay happen first before the code runs.

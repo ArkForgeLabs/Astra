@@ -43,6 +43,7 @@ global type HTTPServerWSCallback = function(socket: WebSocket): any
 global interface HTTPRouteConfiguration
     body_limit: number | nil
     compression: boolean | nil
+    headers: {string: string} | nil
 end
 
 global interface HTTPRoute
@@ -84,6 +85,7 @@ global interface HTTPServerRequest is userdata
     queries: function(self: HTTPServerRequest): table
     params: function(self: HTTPServerRequest): table
     headers: function(self: HTTPServerRequest): table
+    form: function(self: HTTPServerRequest): table
     body: function(self: HTTPServerRequest): Buffer
     ip_address: function(self: HTTPServerRequest): IPAddress
     multipart: function(self: HTTPServerRequest): HTTPMultipart
@@ -98,6 +100,9 @@ global interface HTTPServerResponse is userdata
     remove_header: function(self: HTTPServerResponse, key: string)
     set_cookie: function(self: HTTPServerResponse, cookie: Cookie)
     remove_cookie: function(self: HTTPServerResponse, cookie: Cookie)
+    redirect_to: function(self: HTTPServerResponse, redirect_uri: string)
+    redirect_temporary: function(self: HTTPServerResponse, redirect_uri: string)
+    redirect_permanent: function(self: HTTPServerResponse, redirect_uri: string)
 end
 
 global interface Cookie is userdata
@@ -127,7 +132,7 @@ local enum WebSocketMessageType "text" "bytes" "ping" "pong" "close" end
 
 global interface WebSocketMessage
     type: WebSocketMessageType
-    data: string
+    value: string
 end
 
 global interface WebSocket is userdata
@@ -244,6 +249,10 @@ function HTTPServer:websocket(path: string, wscallback: HTTPServerWSCallback, co
     add_to_routes(self, "web_socket", path, function():nil end, wscallback, config)
 end
 
+function HTTPServer:fallback(callback: HTTPServerCallback)
+    add_to_routes(self, "fallback", "/", callback, nil, {})
+end
+
 local type astra_internal__start_server = function(HTTPServer)
 ---Runs the server
 function HTTPServer:run()
@@ -257,7 +266,6 @@ function middleware.chain(chain: {function}): function
     return function(handler: function): function
         assert(type(handler) == "function",
             "Handler must be a function, got " .. type(handler))
-        assert(#chain >= 2, "Chain must have at least 2 middlewares")
         for i = #chain, 1, -1 do
             local http_middleware: middleware_HTTPServerCallback = chain[i]
             assert(type(http_middleware) == "function",

@@ -113,8 +113,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     lua_globals.set(
         "astra_internal__get_script_path",
         lua.create_function(|lua, ()| {
-            let current_script_path: String =
-                lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
+            let current_script_path: String = lua.globals().get("CURRENT_SCRIPT")?;
             let current_script_path = std::path::PathBuf::from(
                 current_script_path.replace(".", std::path::MAIN_SEPARATOR_STR),
             );

@@ -2,6 +2,168 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.45.3](https://github.com/ArkForgeLabs/Astra/compare/v0.45.1..v0.45.3) - 2026-03-03
+
+### Bug Fixes
+
+- templating is now not breaking due to regex - ([c36d803](https://github.com/ArkForgeLabs/Astra/commit/c36d803523e89066fdd723ad3c33236654d27ba1))
+
+### Refactoring
+
+- [**breaking**] moved `regex` from global to `validation.regex` - ([97b900c](https://github.com/ArkForgeLabs/Astra/commit/97b900c9aed01684c1368d62ba91b08b198e7498))
+- removed database closing at the end of the script - ([6d625e3](https://github.com/ArkForgeLabs/Astra/commit/6d625e3debaf9e4eef1ab826e45963009e7c3bd9))
+
+## [0.45.1](https://github.com/ArkForgeLabs/Astra/compare/v0.45.0..v0.45.1) - 2026-03-01
+
+### Bug Fixes
+
+- http request table style working now without headers - ([a7893e2](https://github.com/ArkForgeLabs/Astra/commit/a7893e2e78c105068ef0cc49c9832c867733cbb6))
+
+## [0.45.0](https://github.com/ArkForgeLabs/Astra/compare/v0.44.0..v0.45.0) - 2026-02-28
+
+### Features
+
+- #130 - added support for checking if current script is the original script that was ran - ([926a811](https://github.com/ArkForgeLabs/Astra/commit/926a811c3642ca5bc6a1a280a73984a591dad0db))
+- added sleep function to datetime - ([fcbecac](https://github.com/ArkForgeLabs/Astra/commit/fcbecac58e456722e748ccb6e51546f89b655ea8))
+
+## [0.44.0](https://github.com/ArkForgeLabs/Astra/compare/v0.42.0..v0.44.0) - 2026-02-22
+
+### Refactoring
+
+- removed pprintln as it was unnecessary and broke a lot of - ([6cdad66](https://github.com/ArkForgeLabs/Astra/commit/6cdad66e3d64bd0b0235af3a2daa7ac69b4c225e))
+
+## [0.43.0](https://github.com/ArkForgeLabs/Astra/compare/v0.42.0..v0.43.0) - 2026-02-21
+
+### Bug Fixes
+
+- use clang instead of gcc for - ([9573fe0](https://github.com/ArkForgeLabs/Astra/commit/9573fe017f19109d09bf6925f3dc564c6d406314))
+- pprint and pprintln now printing tables correctly - ([8f4e60a](https://github.com/ArkForgeLabs/Astra/commit/8f4e60afc238aa016177e7b5341a49e40bd369a6))
+
+### Features
+
+- **(cli)** add -e flag to execute code from command line - ([2f687e7](https://github.com/ArkForgeLabs/Astra/commit/2f687e70b00243be4e5122eff7c56558d4c24bf7))
+- **(http)** add optional headers to static_dir and static_file routes (#146) - ([1712149](https://github.com/ArkForgeLabs/Astra/commit/1712149d3fd8bfb48e531474699884bf344dbe51))
+- [**breaking**] moved `jinja2` to `templates` - ([2b94613](https://github.com/ArkForgeLabs/Astra/commit/2b94613bfe2604db478d8ff50fb430d182cd66ba))
+- markdown support - ([14fa6ed](https://github.com/ArkForgeLabs/Astra/commit/14fa6ed781d5cd694034d639c576eab374549950))
+- databases now automatically close at the end of the script - ([67ef842](https://github.com/ArkForgeLabs/Astra/commit/67ef842b07b5625fd248e59aecbb276126851d39))
+
+## [0.42.0](https://github.com/ArkForgeLabs/Astra/compare/v0.41.0..v0.42.0) - 2026-02-15
+
+### Features
+
+- **(http)** return raw binary for Lua table byte arrays in route responses - ([88f743f](https://github.com/ArkForgeLabs/Astra/commit/88f743ff01215c9c27adf1ba0c514124ef5145a5))
+- added Lua 5.5 support - ([0dd6718](https://github.com/ArkForgeLabs/Astra/commit/0dd6718721fcb84d36a54db1a4353b9cea7588d5))
+- added pprintln function, as an auto line breaking version of pprint - ([0dd6718](https://github.com/ArkForgeLabs/Astra/commit/0dd6718721fcb84d36a54db1a4353b9cea7588d5))
+- Datetime Quality of Life (#150) - ([b385b91](https://github.com/ArkForgeLabs/Astra/commit/b385b9103d5229a8035ad8dccb282fcd4e9d4010))
+
+### Miscellaneous Chores
+
+- updated all dependencies - ([0dd6718](https://github.com/ArkForgeLabs/Astra/commit/0dd6718721fcb84d36a54db1a4353b9cea7588d5))
+
+### Refactoring
+
+- removed the docs from uploading on release - ([9b092fb](https://github.com/ArkForgeLabs/Astra/commit/9b092fb28b82db086cffc1394099a8552445712d))
+
+## [0.41.0](https://github.com/ArkForgeLabs/Astra/compare/v0.40.1..v0.41.0) - 2026-02-08
+
+### Bug Fixes
+
+- #140 added shebang support - ([921ff2f](https://github.com/ArkForgeLabs/Astra/commit/921ff2f0c33a411dda498971ba1a5244f758ae7b))
+
+### Refactoring
+
+- removed the prebuild docs from here. added docs build and - ([783995c](https://github.com/ArkForgeLabs/Astra/commit/783995ca177944b48c15bab6fbda038e86348bb4))
+- upload to releases - ([783995c](https://github.com/ArkForgeLabs/Astra/commit/783995ca177944b48c15bab6fbda038e86348bb4))
+
+## [0.40.1](https://github.com/ArkForgeLabs/Astra/compare/v0.40.0..v0.40.1) - 2026-01-19
+
+### Bug Fixes
+
+- docs CI failing when one dependency fails - ([e0de397](https://github.com/ArkForgeLabs/Astra/commit/e0de397744fd06feffe03672ab5ff3c10b4dad6b))
+
+### Documentation
+
+- fix builds and moved to mdbook 0.5 - ([3526309](https://github.com/ArkForgeLabs/Astra/commit/352630982249466766184619394bc722af13ab92))
+
+### Features
+
+- updated CI MSRV - ([f693386](https://github.com/ArkForgeLabs/Astra/commit/f69338680b1b51844b9b9e6ebd5495be6fd9bcb7))
+
+## [0.40.0](https://github.com/ArkForgeLabs/Astra/compare/v0.39.3..v0.40.0) - 2026-01-19
+
+### Bug Fixes
+
+- the datetime_new was exposed to global - ([f7a336a](https://github.com/ArkForgeLabs/Astra/commit/f7a336abc18fa23a2d16227a4d1b2c47d6357285))
+
+### Features
+
+- support multiple arguments in pprint (#138) - ([a47ccad](https://github.com/ArkForgeLabs/Astra/commit/a47ccadf08dd5ce5a74d64b126869d59c6aad1ba))
+- sqlite extensions - ([c447b9f](https://github.com/ArkForgeLabs/Astra/commit/c447b9f110aef7be1db9a6512e0fce497341a750))
+
+### Refactoring
+
+- omit the use of vectors in pprint - ([b4a1d85](https://github.com/ArkForgeLabs/Astra/commit/b4a1d8521d35f483f6ff8c53f06347b5ee10dacd))
+
+## [0.39.3](https://github.com/ArkForgeLabs/Astra/compare/v0.39.2..v0.39.3) - 2025-12-28
+
+### Features
+
+- added UUID v4 - ([b712942](https://github.com/ArkForgeLabs/Astra/commit/b712942cc9c7b426e3b6ba0243edef6ecf585c14))
+- more redirect options - ([745b12e](https://github.com/ArkForgeLabs/Astra/commit/745b12e8b374b9949def8536750780271765db6e))
+
+## [0.39.2](https://github.com/ArkForgeLabs/Astra/compare/v0.39.1..v0.39.2) - 2025-12-27
+
+### Bug Fixes
+
+- CI now saves cache properly - ([8c1bc1b](https://github.com/ArkForgeLabs/Astra/commit/8c1bc1b311d50db3ab2bb5f6e1ec688ffd9e639b))
+- Add newline in `astra export` cli output (#133) - ([5f47bf2](https://github.com/ArkForgeLabs/Astra/commit/5f47bf2b7baf97f2912f988106323cd133f21a25))
+- type definitions for http.lua was restored what was lost - ([bfac6d6](https://github.com/ArkForgeLabs/Astra/commit/bfac6d689734e765f32dcc4d518261c78aab532e))
+
+### Features
+
+- added correct self requirement for HTTPResponse - ([5543ce4](https://github.com/ArkForgeLabs/Astra/commit/5543ce4b1da63d957bac5743f928dbae5feed0af))
+- HTTP servers can now accept normal forms - ([274d1ba](https://github.com/ArkForgeLabs/Astra/commit/274d1baa29189e12d2a8ef68c031836aa36d92d6))
+
+## [0.39.1](https://github.com/ArkForgeLabs/Astra/compare/v0.39.0..v0.39.1) - 2025-12-19
+
+### Bug Fixes
+
+- DB Pragma Query now returns proper lua nil when NULL value - ([86fa86e](https://github.com/ArkForgeLabs/Astra/commit/86fa86e1901c762b41bebf06cdcad54ba010ec3b))
+- imports the .init files correctly now - ([36f33db](https://github.com/ArkForgeLabs/Astra/commit/36f33db641b1cdbc1e3fb17f4520cc15f5bc499a))
+
+### Refactoring
+
+- removed windows ARM builds as its not supported with vendoring yet - ([455a544](https://github.com/ArkForgeLabs/Astra/commit/455a544a093bcf31646449992f1e1c7e2a451c79))
+
+## [0.39.0](https://github.com/ArkForgeLabs/Astra/compare/v0.38.0..v0.39.0) - 2025-12-18
+
+### Features
+
+- database pragma queries, fix: #132 - ([5112237](https://github.com/ArkForgeLabs/Astra/commit/511223789999e67576f88eb005956e933b237d1e))
+
+## [0.38.0](https://github.com/ArkForgeLabs/Astra/compare/v0.37.1..v0.38.0) - 2025-12-14
+
+### Bug Fixes
+
+- linux minor updates to README - ([191e034](https://github.com/ArkForgeLabs/Astra/commit/191e03467222ba747e9ef180200dd29c3fe540af))
+- potential HTTP client JSON serialization fix for requests - ([edc1550](https://github.com/ArkForgeLabs/Astra/commit/edc15502730542f20d063be8294dc9890579d1c5))
+- #123 - now teal export is optional - ([24404ba](https://github.com/ArkForgeLabs/Astra/commit/24404badce0fe87903de279dc0c3e20405719012))
+- fix CI for docs - ([19a9462](https://github.com/ArkForgeLabs/Astra/commit/19a9462bfdccf045ce1c633436f7adef4d93bcea))
+
+### Documentation
+
+- now automatically installs and builds the docs - ([c6c0924](https://github.com/ArkForgeLabs/Astra/commit/c6c092402629f796db1dc7567147a483abb4f66d))
+- added cache to docs ci - ([48d107c](https://github.com/ArkForgeLabs/Astra/commit/48d107cb1c7ca1d74cfc9f0cc427656535c38d65))
+- updated README to reflect the description better. fix: #121 - ([80bf314](https://github.com/ArkForgeLabs/Astra/commit/80bf314d072e864078ca34b15e735e652eb78f38))
+
+### Features
+
+- added fallback routes, fix #125 - ([044c6c9](https://github.com/ArkForgeLabs/Astra/commit/044c6c92f36f39dc6d937a3b31d1f5a0e6fe3f2d))
+- add support for server redirects. fix #127 - ([5bb7d32](https://github.com/ArkForgeLabs/Astra/commit/5bb7d3289e4fa2dd155e78e070488c78240079dd))
+- now init.lua or init.tl can be ran as default if no filename is provided. fix: #119 - ([e145040](https://github.com/ArkForgeLabs/Astra/commit/e145040091cc040f9107f06bfe85181b989e94f2))
+- added MacOS, ARM, and RISC-V support for compilation. fix #116 - ([3af6f3d](https://github.com/ArkForgeLabs/Astra/commit/3af6f3d6418c6514a5eba8d8ed4c79ecdc2df540))
+- now upgrade command can detect new architecture and OS - ([d0c6f01](https://github.com/ArkForgeLabs/Astra/commit/d0c6f011104d895ecdb321562ea41af6930f2aa0))
+
 ## [0.37.1](https://github.com/ArkForgeLabs/Astra/compare/v0.37.0..v0.37.1) - 2025-11-23
 
 ### Bug Fixes

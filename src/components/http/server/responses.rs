@@ -1,5 +1,8 @@
 use crate::components::http::server::cookie::AstraHTTPCookie;
-use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
+use axum::{
+    http::{HeaderMap, HeaderName, HeaderValue, StatusCode},
+    response::Redirect,
+};
 
 // ! Support more cookie types like signed and private
 #[derive(Debug, Clone)]
@@ -13,6 +16,7 @@ pub struct ResponseLua<'a> {
     pub status_code: StatusCode,
     pub headers: HeaderMap,
     pub cookie_operations: Vec<CookieOperation<'a>>,
+    pub redirect: Option<Redirect>,
 }
 impl Default for ResponseLua<'_> {
     fn default() -> Self {
@@ -20,6 +24,7 @@ impl Default for ResponseLua<'_> {
             status_code: StatusCode::OK,
             headers: HeaderMap::new(),
             cookie_operations: Vec::new(),
+            redirect: None,
         }
     }
 }
@@ -35,6 +40,19 @@ impl mlua::UserData for ResponseLua<'_> {
                     "Could not set the response HTTP status code: {e:#?}"
                 ))),
             }
+        });
+
+        methods.add_method_mut("redirect_to", |_, this, redirect_path: String| {
+            this.redirect = Some(Redirect::to(&redirect_path));
+            Ok(())
+        });
+        methods.add_method_mut("redirect_temporary", |_, this, redirect_path: String| {
+            this.redirect = Some(Redirect::temporary(&redirect_path));
+            Ok(())
+        });
+        methods.add_method_mut("redirect_permanent", |_, this, redirect_path: String| {
+            this.redirect = Some(Redirect::permanent(&redirect_path));
+            Ok(())
         });
 
         methods.add_method_mut(

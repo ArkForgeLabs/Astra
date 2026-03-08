@@ -19,6 +19,24 @@
 ---@field set_second fun(datetime:DateTime, sec: number)
 ---@field set_millisecond fun(datetime:DateTime, milli: number)
 ---@field set_epoch_milliseconds fun(datetime: DateTime, milli: number)
+---@field set_time fun(datetime: DateTime, hour: number, minute: number, second: number, millis: number): DateTime
+---@field set_date fun(datetime: DateTime, year: number, month: number, day: number): DateTime
+---@field add_milliseconds fun(datetime: DateTime, millis: number): DateTime
+---@field add_seconds fun(datetime: DateTime, seconds: number): DateTime
+---@field add_minutes fun(datetime: DateTime, minutes: number): DateTime
+---@field add_hours fun(datetime: DateTime, hours: number): DateTime
+---@field add_days fun(datetime: DateTime, days: number): DateTime
+---@field add_weeks fun(datetime: DateTime, weeks: number): DateTime
+---@field add_months fun(datetime: DateTime, months: number): DateTime
+---@field add_years fun(datetime: DateTime, years: number): DateTime
+---@field sub_milliseconds fun(datetime: DateTime, millis: number): DateTime
+---@field sub_seconds fun(datetime: DateTime, seconds: number): DateTime
+---@field sub_minutes fun(datetime: DateTime, minutes: number): DateTime
+---@field sub_hours fun(datetime: DateTime, hours: number): DateTime
+---@field sub_days fun(datetime: DateTime, days: number): DateTime
+---@field sub_weeks fun(datetime: DateTime, weeks: number): DateTime
+---@field sub_months fun(datetime: DateTime, months: number): DateTime
+---@field sub_years fun(datetime: DateTime, years: number): DateTime
 ---@field to_utc fun(datetime: DateTime): DateTime
 ---@field to_local fun(datetime: DateTime): DateTime
 ---@field to_rfc2822 fun(datetime: DateTime): string
@@ -36,25 +54,23 @@
 ---@param differentiator? string | number This field can be used to determine the type of DateTime. On empty it creates a new local DateTime, on number it starts te sequence for letting you define the DateTime by parameters, and on string it allows you to parse a string to DateTime.
 ---@return DateTime
 local function new_datetime(differentiator, month, day, hour, min, sec, milli)
-	if type(differentiator) == "string" then
-		---@diagnostic disable-next-line: undefined-global
-		return astra_internal__datetime_new_parse(differentiator)
-	elseif type(differentiator) == "number" then
-		---@diagnostic disable-next-line: undefined-global
-		return astra_internal__datetime_new_from(differentiator, month, day, hour, min, sec, milli)
-	else
-		---@diagnostic disable-next-line: undefined-global
-		return astra_internal__datetime_new_now()
-	end
+  if type(differentiator) == "string" then
+    ---@diagnostic disable-next-line: undefined-global
+    return astra_internal__datetime_new_parse(differentiator)
+  elseif type(differentiator) == "number" then
+    ---@diagnostic disable-next-line: undefined-global
+    return astra_internal__datetime_new_from(differentiator, month, day, hour, min, sec, milli)
+  else
+    ---@diagnostic disable-next-line: undefined-global
+    return astra_internal__datetime_new_now()
+  end
 end
 
----@type fun(differentiator?: string | number, month: number?, day: number?, hour: number?, min: number?, sec: number?, milli: number?): DateTime
----@param differentiator? string | number This field can be used to determine the type of DateTime. On empty it creates a new local DateTime, on number it starts te sequence for letting you define the DateTime by parameters, and on string it allows you to parse a string to DateTime.
----@return DateTime
---- Creates a wrapper for a DateTime-like object
-function datetime_new(differentiator, month, day, hour, min, sec, milli)
-	-- Create real DateTime using datetime
-	return new_datetime(differentiator, month, day, hour, min, sec, milli)
+---Stops the execution thread for a given amount of time in miliseconds
+---@param amount integer
+local function sleep(amount)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__datetime_sleep(amount)
 end
 
-return { new = datetime_new }
+return { new = new_datetime, sleep = sleep }

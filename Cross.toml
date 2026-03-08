@@ -1,0 +1,9 @@
+[target.x86_64-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/x86_64-unknown-linux-gnu:edge"
+pre-build = [
+    'apt-get update && apt-get -y upgrade',
+    # Install clang
+    'apt-get -y install clang',
+    # Set clang as the default compiler
+    'update-alternatives --install /usr/bin/cc cc /usr/bin/clang 60',
+]

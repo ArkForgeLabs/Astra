@@ -4,31 +4,75 @@ use tracing::error;
 
 /// Runs a Lua script.
 pub async fn run_command(
-    file_path: String,
+    file_path: Option<String>,
+    code: Option<String>,
     stdlib_path: Option<String>,
     check_teal_code: bool,
     extra_args: Option<Vec<String>>,
 ) {
     let lua = &LUA;
+    let mut actual_path: String = "init.lua".to_string();
 
-    run_command_prerequisite(&file_path, stdlib_path, check_teal_code, extra_args).await;
-    spawn_termination_task();
+    let mut check_for_default_file = |file_path: String| -> String {
+        actual_path = file_path.clone();
+        let file_path = std::path::Path::new(&file_path);
+
+        #[allow(clippy::expect_used)]
+        if file_path.exists() && file_path.is_file() {
+            std::fs::read_to_string(file_path).expect("Couldn't read file")
+        } else if file_path.join("init.lua").exists() {
+            actual_path = file_path.join("init.lua").to_string_lossy().to_string();
+            std::fs::read_to_string(file_path.join("init.lua")).expect("Couldn't read file")
+        } else if file_path.join("init.tl").exists() {
+            actual_path = file_path.join("init.tl").to_string_lossy().to_string();
+            std::fs::read_to_string(file_path.join("init.tl")).expect("Couldn't read file")
+        } else {
+            panic!("Could not find any file to run...");
+        }
+    };
 
     // Load and execute the Lua script.
     #[allow(clippy::expect_used)]
-    let user_file = std::fs::read_to_string(&file_path).expect("Couldn't read file");
+    let (user_file, actual_path_str) = if let Some(code) = code {
+        actual_path = "<commandline>".to_string();
+        (code, actual_path.clone())
+    } else {
+        let file = if let Some(file_path) = file_path {
+            check_for_default_file(file_path)
+        } else {
+            check_for_default_file(".".to_string())
+        };
+        (file, actual_path.clone())
+    };
 
-    if let Some(is_teal) = PathBuf::from(&file_path).extension()
+    run_command_prerequisite(&actual_path_str, stdlib_path, check_teal_code, extra_args).await;
+    spawn_termination_task();
+
+    // Remove the Shebang lines
+    let user_file = user_file
+        .lines()
+        .filter(|line| !line.starts_with("#!"))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    if let Some(is_teal) = PathBuf::from(&actual_path_str).extension()
         && is_teal == "tl"
     {
         if let Err(e) = crate::components::load_teal(lua).await {
             error!("{}", e);
         }
 
-        if let Err(e) = crate::components::execute_teal_code(lua, &file_path, &user_file).await {
+        if let Err(e) =
+            crate::components::execute_teal_code(lua, &actual_path_str, &user_file).await
+        {
             error!("{}", e);
         }
-    } else if let Err(e) = lua.load(user_file).set_name(file_path).exec_async().await {
+    } else if let Err(e) = lua
+        .load(user_file)
+        .set_name(actual_path_str)
+        .exec_async()
+        .await
+    {
         error!("{}", e);
     }
 
@@ -89,7 +133,12 @@ async fn run_command_prerequisite(
 
     #[allow(clippy::expect_used)]
     lua.globals()
-        .set("ASTRA_INTERNAL__CURRENT_SCRIPT", file_path)
+        .set("CURRENT_SCRIPT", file_path)
+        .expect("Couldn't set the script path");
+
+    #[allow(clippy::expect_used)]
+    lua.globals()
+        .set("MAIN_SCRIPT", file_path)
         .expect("Couldn't set the script path");
 }
 

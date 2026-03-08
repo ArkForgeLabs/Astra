@@ -1,7 +1,7 @@
 #![deny(clippy::unwrap_used)]
 #![deny(clippy::expect_used)]
 
-use clap::{Parser, command, crate_authors, crate_version};
+use clap::{Parser, crate_authors, crate_version};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod commands;
@@ -38,13 +38,16 @@ pub const TEAL_IMPORT_SCRIPT: &str = include_str!("components/teal_check.lua");
  / ___ \ ___) || | |  _ <  / ___ \
 /_/   \_\____/ |_| |_| \_\/_/   \_\
 
-🔥 Blazingly Fast 🔥 web server runtime for Lua"#
+🔥 Blazingly Fast 🔥 runtime environment for Lua"#
 )]
 enum AstraCLI {
     #[command(arg_required_else_help = true, about = "Runs a Lua script")]
     Run {
         /// Path to the Lua script file.
-        file_path: String,
+        file_path: Option<String>,
+        /// Execute code directly from command line instead of a file.
+        #[arg(short = 'e', long)]
+        code: Option<String>,
         /// Path to the standard library folder
         #[arg(short, long)]
         stdlib_path: Option<String>,
@@ -56,10 +59,13 @@ enum AstraCLI {
         extra_args: Option<Vec<String>>,
     },
     #[command(
-        about = "Exports the packages Lua bundle for import for IntelliSense",
+        about = "Exports the type definitions for language servers",
         alias = "export"
     )]
     ExportBundle {
+        /// Export Teal configuration and type definitions
+        #[arg(short, long, action)]
+        teal_export: bool,
         /// Path to the export file.
         path: Option<String>,
     },
@@ -85,11 +91,14 @@ pub async fn main() -> std::io::Result<()> {
     match AstraCLI::parse() {
         AstraCLI::Run {
             file_path,
+            code,
             stdlib_path,
             check_teal_code,
             extra_args,
-        } => commands::run_command(file_path, stdlib_path, check_teal_code, extra_args).await,
-        AstraCLI::ExportBundle { path } => commands::export_bundle_command(path).await?,
+        } => commands::run_command(file_path, code, stdlib_path, check_teal_code, extra_args).await,
+        AstraCLI::ExportBundle { teal_export, path } => {
+            commands::export_bundle_command(teal_export, path).await?
+        }
         AstraCLI::Upgrade { user_agent } => {
             if let Err(e) = commands::upgrade_command(user_agent).await {
                 eprintln!("Could not update to the latest version: {e}");

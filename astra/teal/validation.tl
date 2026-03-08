@@ -128,4 +128,16 @@ local function validate_table(input_table: { string: any }, schema: { string: an
 	return true
 end
 
-return { validate_table = validate_table }
+global interface Regex is userdata
+	captures: function(regex: Regex, content: string): {{string}}
+	replace: function(regex: Regex, content: string, replacement: string, limit?: number): string
+	is_match: function(regex: Regex, content: string): boolean
+end
+
+local type astra_internal__regex = function(expression: string): Regex
+---@param expression string
+global function regex(expression: string): Regex
+	return astra_internal__regex(expression)
+end
+
+return { validate_table = validate_table, regex = regex }

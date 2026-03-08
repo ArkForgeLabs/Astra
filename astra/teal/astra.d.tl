@@ -1,9 +1,14 @@
-global ASTRA_INTERNAL__CURRENT_SCRIPT = ""
+global CURRENT_SCRIPT = ""
+global MAIN_SCRIPT = ""
 
-local type astra_internal__pretty_print = function(value: any)
+local type astra_internal__pretty_print = function(...: any)
 ---Pretty prints any table or value
-global function pprint(value: any)
-	astra_internal__pretty_print(value)
+global function pprint(...: any)
+	astra_internal__pretty_print(...)
+end
+
+global function uuid(): string
+	return astra_internal__uuid()
 end
 
 local type astra_internal__invalidate_cache = function(path: string)
@@ -48,15 +53,3 @@ dotenv_load(".env.development")
 dotenv_load(".env.dev")
 dotenv_load(".env.test")
 dotenv_load(".env.local")
-
-global interface Regex is userdata
-	captures: function(regex: Regex, content: string): {{string}}
-	replace: function(regex: Regex, content: string, replacement: string, limit?: number): string
-	is_match: function(regex: Regex, content: string): boolean
-end
-
-local type astra_internal__regex = function(expression: string): Regex
----@param expression string
-global function regex(expression: string): Regex
-	return astra_internal__regex(expression)
-end

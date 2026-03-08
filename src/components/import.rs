@@ -14,17 +14,23 @@ pub async fn find_first_lua_match_with_content(
 
     // check the lua paths if the module exist there
     for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
-        let pattern = pattern.replacen('?', &module_path, 1);
+        let pattern = pattern.replacen('?', &module_path, 1).replacen(
+            &(".".to_owned() + std::path::MAIN_SEPARATOR_STR),
+            "",
+            1,
+        );
         let pattern_path = std::path::PathBuf::from(&pattern);
+        let pattern_path_without_extension =
+            std::path::PathBuf::from(&pattern.replace(".tl", "").replace(".lua", ""));
 
         // Check all possible file patterns
         let candidates = vec![
             pattern_path.with_extension("lua"),
             pattern_path.with_extension("tl"),
-            pattern_path.join("init.lua"),
-            pattern_path.join("init.tl"),
-            pattern_path.join("d.lua"),
-            pattern_path.join("d.tl"),
+            pattern_path_without_extension.join("init.lua"),
+            pattern_path_without_extension.join("init.tl"),
+            pattern_path_without_extension.join("d.lua"),
+            pattern_path_without_extension.join("d.tl"),
             std::path::PathBuf::from("lua").join(&pattern_path),
             std::path::PathBuf::from("teal").join(&pattern_path),
             pattern_path.clone(), // For directories or files without extensions
@@ -84,7 +90,7 @@ pub async fn find_first_lua_match_with_content(
     None
 }
 
-pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
+pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "require",
         lua.create_async_function(|lua, path: String| async move {
@@ -97,8 +103,7 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
             {
                 lua.registry_value::<mlua::Value>(&key)
             } else {
-                let current_script_path: String =
-                    lua.globals().get("ASTRA_INTERNAL__CURRENT_SCRIPT")?;
+                let current_script_path: String = lua.globals().get("CURRENT_SCRIPT")?;
 
                 #[allow(clippy::collapsible_else_if)]
                 if let Some((file_path, content)) =
@@ -112,8 +117,7 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                         .replace("./", "")
                         .replace(".\\", "");
 
-                    lua.globals()
-                        .set("ASTRA_INTERNAL__CURRENT_SCRIPT", file_path.clone())?;
+                    lua.globals().set("CURRENT_SCRIPT", file_path.clone())?;
                     let result = if is_teal {
                         super::execute_teal_code(&lua, &file_path, &content).await?
                     } else {
@@ -125,8 +129,7 @@ pub async fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
 
                     let key = lua.create_registry_value(&result)?;
                     lua.globals().set(key_id, Some(key))?;
-                    lua.globals()
-                        .set("ASTRA_INTERNAL__CURRENT_SCRIPT", current_script_path)?;
+                    lua.globals().set("CURRENT_SCRIPT", current_script_path)?;
 
                     Ok(result)
                 } else {

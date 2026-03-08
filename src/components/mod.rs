@@ -11,7 +11,7 @@ mod import;
 mod templates;
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
-    import::register_import_function(lua).await?;
+    import::register_import_function(lua)?;
     global::register_to_lua(lua)?;
     astra_serde::register_to_lua(lua)?;
     http::server::register_to_lua(lua)?;
@@ -21,6 +21,7 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     crypto::register_to_lua(lua)?;
     file_system::register_to_lua(lua)?;
     templates::TemplatingEngine::register_to_lua(lua)?;
+    templates::markdown_support(lua)?;
 
     Ok(())
 }
@@ -80,8 +81,7 @@ pub async fn execute_teal_code(
         .await;
 
     if runtime_flags.check_teal_code && module_name.ends_with(".tl") {
-        lua.globals()
-            .set("ASTRA_INTERNAL__CURRENT_SCRIPT", module_name)?;
+        lua.globals().set("CURRENT_SCRIPT", module_name)?;
         let compile_check_chunk = crate::TEAL_IMPORT_SCRIPT
             .replace("@SOURCE", module_content)
             .replace("@FILE_NAME", module_name);
@@ -172,14 +172,18 @@ fn is_table_json(table: &mlua::Table) -> mlua::Result<bool> {
     Ok(has_string_key || has_non_sequential_integer_key)
 }
 
-fn is_table_byte_array(table: &mlua::Table) -> mlua::Result<bool> {
+pub(crate) fn is_table_byte_array(table: &mlua::Table) -> mlua::Result<bool> {
     let mut i = 1;
     for pair in table.pairs::<i64, i64>() {
-        let (key, value) = pair?;
-        if key != i || !(0..=255).contains(&value) {
-            return Ok(false);
+        match pair {
+            Ok((key, value)) => {
+                if key != i || !(0..=255).contains(&value) {
+                    return Ok(false);
+                }
+                i += 1;
+            }
+            Err(_) => return Ok(false),
         }
-        i += 1;
     }
     Ok(true)
 }

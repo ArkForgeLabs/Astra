@@ -77,8 +77,7 @@ http.request({
 end)
 ```
 
-> > > > > > > Stashed changes
-> > > > > > > finally, you can execute the request to obtain the result:
+finally, you can execute the request to obtain the result:
 
 ```lua
 -- returns the result

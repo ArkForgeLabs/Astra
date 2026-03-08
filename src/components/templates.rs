@@ -254,3 +254,34 @@ fn parse_glob_pattern(pattern: &str) -> Result<Vec<(String, String)>, mlua::Erro
         Err(e) => Err(e.into_lua_err()),
     }
 }
+
+// ============================================================== //
+// ========================= Markdown =========================== //
+// ============================================================== //
+
+pub fn markdown_support(lua: &mlua::Lua) -> mlua::Result<()> {
+    lua.globals().set(
+        "astra_internal__new_markdown_ast",
+        lua.create_function(|lua, input: String| {
+            match markdown::to_mdast(&input, &markdown::ParseOptions::gfm()) {
+                Ok(result) => match serde_value::to_value(result) {
+                    Ok(result) => lua.to_value(&result),
+                    Err(e) => Err(e.into_lua_err()),
+                },
+                Err(e) => Err(e.to_string().into_lua_err()),
+            }
+        })?,
+    )?;
+
+    lua.globals().set(
+        "astra_internal__new_markdown_html",
+        lua.create_function(|_, input: String| {
+            match markdown::to_html_with_options(&input, &markdown::Options::gfm()) {
+                Ok(result) => Ok(result),
+                Err(e) => Err(e.to_string().into_lua_err()),
+            }
+        })?,
+    )?;
+
+    Ok(())
+}

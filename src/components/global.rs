@@ -1,3 +1,4 @@
+use crate::components::database::DATABASE_POOLS;
 use mlua::{LuaSerdeExt, UserData};
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
@@ -5,6 +6,8 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     invalidate_cache(lua)?;
     pprint(lua)?;
     AstraRegex::register_to_lua(lua)?;
+    uuid_v4(lua)?;
+    close_dbs(lua)?;
     // env
     getenv(lua)?;
     setenv(lua)?;
@@ -14,6 +17,23 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     spawn_timeout(lua)?;
 
     Ok(())
+}
+
+// At the end of the script, the database files should be closed automatically
+pub fn close_dbs(lua: &mlua::Lua) -> mlua::Result<()> {
+    lua.globals().set(
+        "astra_internal__close_all_databases",
+        lua.create_async_function(|_, _: ()| async {
+            let database_pools = DATABASE_POOLS.lock().await.clone();
+            for i in database_pools {
+                match i {
+                    crate::components::database::DatabaseType::Postgres(pool) => pool.close().await,
+                    crate::components::database::DatabaseType::Sqlite(pool) => pool.close().await,
+                }
+            }
+            Ok(())
+        })?,
+    )
 }
 
 pub fn dotenv_function(lua: &mlua::Lua) -> mlua::Result<()> {
@@ -29,15 +49,19 @@ pub fn dotenv_function(lua: &mlua::Lua) -> mlua::Result<()> {
 pub fn pprint(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__pretty_print",
-        lua.create_function(|_, input: mlua::Value| {
-            if let Some(input) = input.as_string() {
-                println!("{}", input.to_string_lossy());
-            } else if input.is_userdata() {
-                println!("{input:?}");
-            } else {
-                println!("{input:#?}");
+        lua.create_function(|_, args: mlua::MultiValue| {
+            for input in args.iter() {
+                if input.is_string()
+                    && let Ok(s) = input.to_string()
+                {
+                    print!("{} ", s);
+                } else if input.is_userdata() {
+                    print!("{input:?} ")
+                } else {
+                    print!("{input:#?} ")
+                }
             }
-
+            println!();
             Ok(())
         })?,
     )
@@ -64,6 +88,13 @@ pub fn setenv(lua: &mlua::Lua) -> mlua::Result<()> {
 
             Ok(())
         })?,
+    )
+}
+
+pub fn uuid_v4(lua: &mlua::Lua) -> mlua::Result<()> {
+    lua.globals().set(
+        "astra_internal__uuid",
+        lua.create_function(|lua, _: ()| lua.to_value(&uuid::Uuid::new_v4()))?,
     )
 }
 

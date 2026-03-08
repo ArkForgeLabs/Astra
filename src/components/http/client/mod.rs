@@ -1,10 +1,10 @@
 mod websocket;
 
-use crate::components::AstraBuffer;
+use crate::components::{AstraBuffer, astra_serde::sanetize_lua_input};
 use futures::StreamExt;
 use mlua::{ExternalError, LuaSerdeExt, UserData};
 use reqwest::{Client, RequestBuilder};
-use reqwest_websocket::RequestBuilderExt;
+use reqwest_websocket::Upgrade;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -36,7 +36,8 @@ impl HTTPClientRequest {
                 form: HashMap::new(),
             }),
             mlua::Value::Table(details) => {
-                let mut headers: HashMap<String, String> = details.get("headers")?;
+                let mut headers: HashMap<String, String> =
+                    details.get("headers").unwrap_or(HashMap::new());
                 let body = details.get::<mlua::Value>("body")?;
                 let body = match body.clone() {
                     mlua::Value::String(value) => {
@@ -46,7 +47,11 @@ impl HTTPClientRequest {
                         Some(HTTPClientRequestBodyTypes::String(value.to_string_lossy()))
                     }
                     mlua::Value::Table(value) => {
-                        if crate::components::is_table_json(&value)? {
+                        if crate::components::is_table_byte_array(&value)? {
+                            Some(HTTPClientRequestBodyTypes::Bytes(
+                                lua.from_value::<Vec<u8>>(body.clone())?,
+                            ))
+                        } else if crate::components::is_table_json(&value)? {
                             if !headers.contains_key("Content-Type") {
                                 headers.insert(
                                     "Content-Type".to_string(),
@@ -54,11 +59,10 @@ impl HTTPClientRequest {
                                 );
                             }
                             Some(HTTPClientRequestBodyTypes::Json(
-                                lua.from_value::<serde_json::Value>(body.clone())?,
-                            ))
-                        } else if crate::components::is_table_byte_array(&value)? {
-                            Some(HTTPClientRequestBodyTypes::Bytes(
-                                lua.from_value::<Vec<u8>>(body.clone())?,
+                                lua.from_value::<serde_json::Value>(sanetize_lua_input(
+                                    lua,
+                                    body.clone(),
+                                )?)?,
                             ))
                         } else {
                             None
@@ -219,7 +223,7 @@ impl UserData for HTTPClientRequest {
         methods.add_method_mut("set_json", |lua, this, body: mlua::Value| {
             let mut request = this.clone();
             request.body = Some(HTTPClientRequestBodyTypes::Json(
-                lua.from_value::<serde_json::Value>(body)?,
+                lua.from_value::<serde_json::Value>(sanetize_lua_input(lua, body)?)?,
             ));
             if !request.headers.contains_key("Content-Type") {
                 request

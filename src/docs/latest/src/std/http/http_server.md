@@ -248,12 +248,8 @@ Since Lua is a very flexible language, there are lots of ways to implement middl
 
 We decided to take an advantage of Lua functions being a [first-class values](https://www.lua.org/pil/6.html).
 
-> [!NOTE]
+> **Note:**
 > If you are familiar with this concept, feel free to go to the **Full example** at the bottom of the page.
-
-Astra has several built-in middlewares. You can modify or extend middlewares directly in `.astra/middleware.lua` (after running `astra export`) or in your own files. We are opened to PRs.
-
-For more details, see the [middleware.lua](https://github.com/ArkForgeLabs/Astra/blob/main/src/components/http/middleware.lua) and the [middleware_example.lua](https://github.com/ArkForgeLabs/Astra/tree/main/examples/middleware.lua).
 
 ### Basic middleware
 
@@ -342,7 +338,7 @@ server:run()
 
 To make it less tedious to compose middleware, we introduced the `chain` function, which combines all provided middleware into a single middleware.
 
-> [!NOTE]
+> **Note:**
 > Read more about why we can drop parenthesis while calling `chain` function here: [Writing a DSL in Lua](https://leafo.net/guides/dsl-in-lua.html)
 
 ```lua
@@ -489,6 +485,7 @@ server:get("/normal-day", chain { logger, html } (normal_day))
 server:get("/favourite-day", chain { ctx, logger, insert_datetime, html } (favourite_day))
 
 server:run()
+
 ```
 
 ## Deployment

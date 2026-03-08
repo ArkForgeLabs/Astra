@@ -2,7 +2,7 @@
 
 ## Versions
 
-This documentation is on the [latest](https://astra.arkforge.net/docs/latest) version of Astra and will store a version for every x.0.0 release. The other versions will be listed below here when available.
+This documentation is on the [latest](https://astra.arkforge.net/docs/latest) version of Astra and will store a version for every major release. The other versions will be listed below here when available.
 
 ## About
 

@@ -1,5 +1,5 @@
 -- Create a templating engine, read more about template syntax at: https://keats.github.io/tera/docs
-local template_engine = require("jinja2").new("examples/templates/**/*.html")
+local template_engine = require("templates").jinja2.new("examples/templates/**/*.html")
 -- Exclude base files from rendering
 template_engine:exclude_templates({ "base.html" })
 -- You can also add functions to be used within the templates

@@ -1,20 +1,21 @@
 [package]
 name = "lua-astra"
-version = "0.37.1"
+version = "0.45.3"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
-description = "🔥 Blazingly Fast 🔥 web server runtime for Lua"
+description = "🔥 Blazingly Fast 🔥 runtime environment for Lua"
 documentation = "https://astra.arkforge.net/docs/latest"
 repository = "https://github.com/ArkForgeLabs/Astra"
-keywords = ["lua", "luau", "server", "webserver", "runtime"]
+keywords = ["lua", "scripting", "server", "webserver", "runtime"]
 categories = [
   "web-programming",
-  "web-programming::http-server",
-  "web-programming::http-client",
+  "command-line-utilities",
+  "command-line-interface",
   "network-programming",
 ]
 edition = "2024"
 license-file = "LICENSE"
 exclude = [".github", "examples", "docs", "tests"]
+rust-version = "1.92"
 
 [[bin]]
 name = "astra"
@@ -29,9 +30,10 @@ lua51 = ["mlua/lua51"]
 lua52 = ["mlua/lua52"]
 lua53 = ["mlua/lua53"]
 lua54 = ["mlua/lua54"]
+lua55 = ["mlua/lua55"]
 
 [dependencies]
-mlua = { version = "0.11.4", features = [
+mlua = { version = "0.11.6", features = [
   "serialize",
   "vendored",
   "async",
@@ -42,27 +44,28 @@ mlua = { version = "0.11.4", features = [
 ] }
 
 # http
-axum = { version = "0.8.7", features = ["macros", "multipart", "http2", "ws"] }
-axum-extra = { version = "0.12.2", features = ["cookie"] }
-reqwest = { version = "0.12.24", features = [
+axum = { version = "0.8.8", features = ["macros", "multipart", "http2", "ws"] }
+axum-extra = { version = "0.12.5", features = ["cookie"] }
+reqwest = { version = "0.13.2", features = [
   "json",
-  "rustls-tls",
+  "rustls",
   "charset",
   "multipart",
   "http2",
   "stream",
-  "macos-system-configuration",
+  "form",
 ], default-features = false }
-reqwest-websocket = "0.5.1"
-tower = { version = "0.5.2" }
-tower-http = { version = "0.6.6", features = [
+reqwest-websocket = "0.6.0"
+tower = { version = "0.5.3" }
+tower-http = { version = "0.6.8", features = [
   "fs",
   "trace",
   "compression-full",
   "decompression-full",
+  "set-header",
 ] }
-time = "0.3.44"
-minijinja = { version = "2.12.0", features = [
+time = "0.3.47"
+minijinja = { version = "2.16.0", features = [
   "loader",
   "urlencode",
   "loop_controls",
@@ -73,39 +76,40 @@ glob = "0.3.3"
 # data formats
 serde = { version = "1.0.228", features = ["derive"] }
 serde-value = { version = "0.7.0" }
-serde_json = { version = "1.0.145" }
+serde_json = { version = "1.0.149" }
 serde_json5 = { version = "0.2.1" }
 serde_yaml = { version = "0.9.34" }
 serde_ini = { version = "0.2.0" }
 csv = { version = "1.4.0" }
-quick-xml = { version = "0.38.4", features = [
+quick-xml = { version = "0.39.2", features = [
   "async-tokio",
   "encoding",
   "escape-html",
   "overlapped-lists",
   "serialize",
 ] }
-toml = { version = "0.9.8" }
-uuid = { version = "1.18.1", features = ["serde", "v4"] }
+toml = { version = "1.0.3" }
+uuid = { version = "1.21.0", features = ["serde", "v4"] }
 sha2 = "0.10.9"
 sha3 = "0.10.8"
 base64 = "0.22.1"
-bytes = { version = "1.11.0", features = ["serde"] }
-chrono = { version = "0.4.42", features = ["serde"] }
+bytes = { version = "1.11.1", features = ["serde"] }
+chrono = { version = "0.4.44", features = ["serde"] }
+markdown = { version = "1.0.0", features = ["serde"] }
 
 # runtime
-tokio = { version = "1.48.0", features = [
+tokio = { version = "1.49.0", features = [
   "macros",
   "signal",
   "rt-multi-thread",
 ] }
-futures = "0.3.31"
-clap = { version = "4.5.51", features = ["cargo", "derive"] }
+futures = "0.3.32"
+clap = { version = "4.5.60", features = ["cargo", "derive"] }
 dotenvy = "0.15.7"
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.20", features = ["env-filter"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
 version-compare = "0.2.1"
-regex = "1.12.2"
+regex = "1.12.3"
 paste = "1.0.15"
 
 # database
@@ -121,7 +125,7 @@ sqlx = { version = "0.8.6", features = [
 include_dir = "0.7.4"
 
 [profile.release]
-opt-level = "z"
+opt-level = 3
 lto = true
 codegen-units = 1
 overflow-checks = false
