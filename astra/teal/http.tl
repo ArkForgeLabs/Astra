@@ -76,7 +76,7 @@ global interface HTTPMultipart is userdata
     fields: function(self: HTTPMultipart): {HTTPMultipartField}
     get_field: function(self: HTTPMultipart, name: string): HTTPMultipartField
     file_name: function(self: HTTPMultipart): string | nil
-    save_file: function(self: HTTPMultipart, file_path?: string)
+    save_file: function(self: HTTPMultipart, file_path?: string | {string: string})
 end
 
 global interface HTTPServerRequest is userdata
