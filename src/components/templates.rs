@@ -1,6 +1,7 @@
 use crate::LUA;
 use minijinja::ErrorKind::UndefinedError;
 use mlua::{ExternalError, FromLua, LuaSerdeExt, UserData};
+use regex;
 use std::sync::Arc;
 
 /// Will include the name, path, and source
@@ -145,14 +146,43 @@ impl UserData for TemplatingEngine<'_> {
                 .collect::<Vec<_>>())
         });
         methods.add_method_mut("exclude_templates", |_, this, names: Vec<String>| {
-            for i in names {
-                this.templates = this
-                    .templates
-                    .iter()
-                    .filter(|template| template.name != i)
-                    .cloned()
-                    .collect::<Vec<_>>();
-                this.exclusions.push(i.into());
+            for pattern in names {
+                if pattern.contains('*') || pattern.contains('?') || pattern.contains('[') {
+                    let re_pattern = pattern
+                        .replace(".", "\\.")
+                        .replace("**", "###DOUBLESTAR###")
+                        .replace("*", "[^/]*")
+                        .replace("###DOUBLESTAR###", ".*")
+                        .replace("?", ".");
+                    let re = regex::Regex::new(&re_pattern)
+                        .unwrap_or_else(|_| regex::Regex::new(".*").unwrap());
+                    this.templates = this
+                        .templates
+                        .iter()
+                        .filter(|template| {
+                            let name_match = re.is_match(&template.name);
+                            let path_match = template
+                                .path
+                                .as_ref()
+                                .map(|p| {
+                                    let path_str = p.replace("\\", "/");
+                                    re.is_match(&path_str)
+                                })
+                                .unwrap_or(false);
+                            !name_match && !path_match
+                        })
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    this.exclusions.push(pattern.into());
+                } else {
+                    this.templates = this
+                        .templates
+                        .iter()
+                        .filter(|template| template.name != pattern)
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    this.exclusions.push(pattern.into());
+                }
             }
 
             Ok(())
