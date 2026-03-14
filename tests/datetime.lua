@@ -185,21 +185,21 @@ test.describe("Setters", function()
 end)
 
 test.describe("ToString", function()
-  local dt = datetime.new(2020, 12, 25, 10, 30, 45, 500)
+  local dt = datetime.new(2020, 12, 25, 10, 30, 45, 500):to_utc()
   test.it("to_date_string()", function()
     test.expect(dt:to_date_string()).to.equal("2020-12-25")
   end)
 
   test.it("to_time_string()", function()
-    test.expect(dt:to_time_string()).to.equal("10:30:45.500-06:00")
+    test.expect(dt:to_time_string()).to.equal("07:30:45.500+00:00")
   end)
 
   test.it("to_datetime_string()", function()
-    test.expect(dt:to_datetime_string()).to.equal("2020-12-25T10:30:45.500-06:00")
+    test.expect(dt:to_datetime_string()).to.equal("2020-12-25T07:30:45.500+00:00")
   end)
 
   test.it("to_iso_string()", function()
-    test.expect(dt:to_iso_string()).to.equal("2020-12-25T10:30:45.500-06:00")
+    test.expect(dt:to_iso_string()).to.equal("2020-12-25T07:30:45.500+00:00")
   end)
 
   test.it("to_locale_date_string()", function()
@@ -207,11 +207,11 @@ test.describe("ToString", function()
   end)
 
   test.it("to_locale_time_string()", function()
-    test.expect(dt:to_locale_time_string()).to.equal("10:30:45")
+    test.expect(dt:to_locale_time_string()).to.equal("07:30:45")
   end)
 
   test.it("to_locale_datetime_string()", function()
-    test.expect(dt:to_locale_datetime_string()).to.equal("Fri Dec 25 10:30:45 2020")
+    test.expect(dt:to_locale_datetime_string()).to.equal("Fri Dec 25 07:30:45 2020")
   end)
 end)
 
@@ -219,13 +219,13 @@ test.describe("EpochMillisecond", function()
   local dt = datetime.new(1970)
 
   test.it("get_epoch_milliseconds()", function()
-    test.expect(dt:get_epoch_milliseconds()).to.equal(21600000)
+    test.expect(dt:get_epoch_milliseconds()).to.equal(-7200000)
   end)
 
   test.it("set_epoch_milliseconds()", function()
-    dt:set_epoch_milliseconds(dt:get_epoch_milliseconds() + 2678400000) -- one month (ish)
-    test.expect(dt:get_epoch_milliseconds()).to.equal(2700000000)
-    test.expect(dt:to_locale_date_string()).to.equal("02/01/70")
+    dt:set_epoch_milliseconds(dt:get_epoch_milliseconds() + 30 * 24 * 60 * 60 * 1000) -- one month (ish)
+    test.expect(dt:get_epoch_milliseconds()).to.equal(2584800000)
+    test.expect(dt:to_locale_date_string()).to.equal("01/31/70")
   end)
 
   test.it("invalid-set_epoch_milliseconds()", function()

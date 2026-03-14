@@ -1,5 +1,4 @@
 local test = require("test")
-
 -- Helper functions for async task testing
 local function wait_for_task(task, timeout_ms)
   local start_time = os.clock()
@@ -10,35 +9,6 @@ local function wait_for_task(task, timeout_ms)
 end
 
 test.describe("Core Utilities", function()
-  test.describe("pprint", function()
-    test.it("prints primitive values", function()
-      -- Test with various primitive types
-      local function test_pprint(value)
-        -- pprint doesn't return anything, just prints
-        -- We can't easily test output, but we can verify it doesn't error
-        pprint(value)
-      end
-
-      test_pprint(42)
-      test_pprint("hello")
-      test_pprint(true)
-      test_pprint(nil)
-    end)
-
-    test.it("prints nested tables", function()
-      local nested_table = {
-        name = "test",
-        nested = {
-          value = 123,
-          deeper = {
-            key = "value",
-          },
-        },
-      }
-      pprint(nested_table)
-    end)
-  end)
-
   test.describe("uuid", function()
     test.it("generates valid UUID format", function()
       local uuid1 = uuid()

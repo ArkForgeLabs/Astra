@@ -1,6 +1,5 @@
-local test = require("test")
-
 local fs = require("fs")
+local test = require("test")
 
 -- Add test helper: to.be.falsy()
 test.paths.falsy = {
@@ -38,16 +37,15 @@ test.paths.at = {
 }
 table.insert(test.paths.be, "at")
 
+fs.create_dir("FS_TEST_DIR")
 test.describe("Filesystem Module", function()
   test.describe("Buffer Operations", function()
     test.it("creates buffer with specified capacity", function()
-      local fs = require("fs")
       local buffer = fs.new_buffer(100)
       test.expect(buffer).to.be.truthy()
     end)
 
     test.it("buffer is created successfully", function()
-      local fs = require("fs")
       local buffer = fs.new_buffer(10)
       test.expect(buffer).to.be.truthy()
     end)
@@ -55,7 +53,6 @@ test.describe("Filesystem Module", function()
 
   test.describe("File Operations", function()
     test.it("creates and writes file", function()
-      local fs = require("fs")
       local content = "Hello, World!"
       fs.write_file("FS_TEST_DIR/test.txt", content)
 
@@ -64,7 +61,6 @@ test.describe("Filesystem Module", function()
     end)
 
     test.it("reads file as bytes", function()
-      local fs = require("fs")
       local content = "Hello, World!"
       fs.write_file("FS_TEST_DIR/test.txt", content)
 
@@ -74,7 +70,6 @@ test.describe("Filesystem Module", function()
     end)
 
     test.it("handles file not found", function()
-      local fs = require("fs")
       local success, err = pcall(function()
         fs.read_file("FS_TEST_DIR/nonexistent.txt")
       end)
@@ -84,7 +79,6 @@ test.describe("Filesystem Module", function()
 
   test.describe("Directory Operations", function()
     test.it("creates directory", function()
-      local fs = require("fs")
       -- Remove if exists first
       if fs.exists("FS_TEST_DIR/subdir") then
         fs.remove_dir("FS_TEST_DIR/subdir")
@@ -94,13 +88,11 @@ test.describe("Filesystem Module", function()
     end)
 
     test.it("creates nested directories", function()
-      local fs = require("fs")
       fs.create_dir_all("FS_TEST_DIR/a/b/c")
       test.expect(fs.exists("FS_TEST_DIR/a/b/c")).to.be.truthy()
     end)
 
     test.it("lists directory contents", function()
-      local fs = require("fs")
       fs.write_file("FS_TEST_DIR/file1.txt", "content1")
       fs.write_file("FS_TEST_DIR/file2.txt", "content2")
 
@@ -110,7 +102,6 @@ test.describe("Filesystem Module", function()
     end)
 
     test.it("removes directory", function()
-      local fs = require("fs")
       fs.create_dir("FS_TEST_DIR/tmp")
       test.expect(fs.exists("FS_TEST_DIR/tmp")).to.be.truthy()
 
@@ -119,7 +110,6 @@ test.describe("Filesystem Module", function()
     end)
 
     test.it("removes directory recursively", function()
-      local fs = require("fs")
       fs.create_dir_all("FS_TEST_DIR/nested/a/b")
       fs.write_file("FS_TEST_DIR/nested/file.txt", "content")
 
@@ -130,7 +120,6 @@ test.describe("Filesystem Module", function()
 
   test.describe("File Metadata", function()
     test.it("gets file metadata", function()
-      local fs = require("fs")
       fs.write_file("FS_TEST_DIR/meta.txt", "content")
 
       local metadata = fs.get_metadata("FS_TEST_DIR/meta.txt")
@@ -139,7 +128,6 @@ test.describe("Filesystem Module", function()
     end)
 
     test.it("checks file existence", function()
-      local fs = require("fs")
       fs.write_file("FS_TEST_DIR/exists.txt", "content")
 
       test.expect(fs.exists("FS_TEST_DIR/exists.txt")).to.be.truthy()
@@ -149,27 +137,23 @@ test.describe("Filesystem Module", function()
 
   test.describe("Path Operations", function()
     test.it("gets current directory", function()
-      local fs = require("fs")
       local current_dir = fs.get_current_dir()
       test.expect(current_dir).to.be.a("string")
       test.expect(current_dir).to.match(".*")
     end)
 
     test.it("gets path separator", function()
-      local fs = require("fs")
       local separator = fs.get_separator()
       test.expect(separator).to.be.a("string")
       test.expect(#separator).to.equal(1)
     end)
 
     test.it("gets script path", function()
-      local fs = require("fs")
       local script_path = fs.get_script_path()
       test.expect(script_path).to.be.a("string")
     end)
 
     test.it("changes directory", function()
-      local fs = require("fs")
       local original_dir = fs.get_current_dir()
 
       -- Remove directory if it exists from previous test
@@ -190,7 +174,6 @@ test.describe("Filesystem Module", function()
 
   test.describe("File Permissions", function()
     test.it("gets file permissions", function()
-      local fs = require("fs")
       fs.write_file("FS_TEST_DIR/permissions.txt", "content")
 
       local metadata = fs.get_metadata("FS_TEST_DIR/permissions.txt")

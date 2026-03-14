@@ -34,7 +34,7 @@ describe("CryptoHash", function()
     ---@diagnostic disable-next-line: param-type-mismatch
     local result = crypto.hash("invalid_type", test_string)
     expect(result).to.be.a("string")
-    expect(result).to.equal(nil)
+    expect(#result).to.equal(0)
   end)
 
   it("empty_string", function()
