@@ -1,5 +1,5 @@
-local test = require("test")
 local serde = require("serde")
+local test = require("test")
 
 -- Helper functions
 local function roundtrip_test(format_name, data, encode_fn, decode_fn)
@@ -14,15 +14,15 @@ local test_data = {
     string = "hello",
     number = 42,
     boolean = true,
-    nil_value = nil
+    nil_value = nil,
   },
   nested = {
     user = {
       name = "John",
       age = 30,
       active = true,
-      tags = {"admin", "user"}
-    }
+      tags = { "admin", "user" },
+    },
   },
   complex = {
     metadata = {
@@ -30,21 +30,22 @@ local test_data = {
       timestamp = 1234567890,
       config = {
         debug = false,
-        timeout = 30
-      }
+        timeout = 30,
+      },
     },
     items = {
-      {id = 1, name = "Item 1"},
-      {id = 2, name = "Item 2"}
-    }
-  }
+      { id = 1, name = "Item 1" },
+      { id = 2, name = "Item 2" },
+    },
+  },
 }
 
 -- Add test helper: to.be.at.least()
 test.paths.least = {
   test = function(value, min)
-    return value >= min, "expected " .. tostring(value) .. " to be at least " .. tostring(min), 
-          "expected " .. tostring(value) .. " to not be at least " .. tostring(min)
+    return value >= min,
+      "expected " .. tostring(value) .. " to be at least " .. tostring(min),
+      "expected " .. tostring(value) .. " to not be at least " .. tostring(min)
   end,
 }
 table.insert(test.paths.be, "least")
@@ -99,7 +100,7 @@ test.describe("JSON", function()
       float = 3.14159,
       negative = -10,
       zero = 0,
-      scientific = 1e10
+      scientific = 1e10,
     }
     roundtrip_test("JSON", number_data, serde.json.encode, serde.json.decode)
   end)
@@ -108,13 +109,13 @@ test.describe("JSON", function()
     local bool_data = {
       true_val = true,
       false_val = false,
-      null_val = nil
+      null_val = nil,
     }
     roundtrip_test("JSON", bool_data, serde.json.encode, serde.json.decode)
   end)
 
   test.it("encodes to valid JSON string", function()
-    local data = {name = "test", value = 123}
+    local data = { name = "test", value = 123 }
     local encoded = serde.json.encode(data)
     test.expect(encoded).to.match('.*"name".*')
     test.expect(encoded).to.match('.*"value".*')
@@ -347,21 +348,21 @@ test.describe("JSON5", function()
   end)
 
   test.it("handles trailing commas", function()
-    local data = {a = 1, b = 2,}
+    local data = { a = 1, b = 2 }
     local encoded = serde.json5.encode(data)
     local decoded = serde.json5.decode(encoded)
     test.expect(decoded).to.equal(data)
   end)
 
   test.it("handles single-quoted strings", function()
-    local data = {text = 'single quoted'}
+    local data = { text = "single quoted" }
     local encoded = serde.json5.encode(data)
     local decoded = serde.json5.decode(encoded)
     test.expect(decoded).to.equal(data)
   end)
 
   test.it("handles unquoted keys", function()
-    local data = {unquoted_key = "value"}
+    local data = { unquoted_key = "value" }
     local encoded = serde.json5.encode(data)
     local decoded = serde.json5.decode(encoded)
     test.expect(decoded).to.equal(data)
@@ -369,16 +370,16 @@ test.describe("JSON5", function()
 
   test.it("handles comments in JSON5", function()
     -- JSON5 allows comments, test that encoding produces valid JSON5
-    local data = {value = 42}
+    local data = { value = 42 }
     local encoded = serde.json5.encode(data)
     test.expect(encoded).to.be.a("string")
     test.expect(#encoded).to.equal(#encoded) -- Just verify it's not empty
   end)
 
   test.it("handles multiline strings", function()
-    local data = {text = [[Line 1
+    local data = { text = [[Line 1
 Line 2
-Line 3]]}
+Line 3]] }
     local encoded = serde.json5.encode(data)
     local decoded = serde.json5.decode(encoded)
     test.expect(decoded).to.equal(data)
@@ -387,8 +388,8 @@ Line 3]]}
   test.it("handles relaxed syntax", function()
     local data = {
       relaxed = true,
-      numbers = {1, 2, 3,},
-      nested = {inner = "value"}
+      numbers = { 1, 2, 3 },
+      nested = { inner = "value" },
     }
     roundtrip_test("JSON5", data, serde.json5.encode, serde.json5.decode)
   end)
@@ -411,7 +412,7 @@ test.describe("YAML", function()
   end)
 
   test.it("handles comments", function()
-    local data = {value = 42}
+    local data = { value = 42 }
     local encoded = serde.yaml.encode(data)
     test.expect(encoded).to.be.a("string")
   end)
@@ -422,7 +423,7 @@ test.describe("YAML", function()
         This is a multiline string
         that spans multiple lines
         and preserves newlines
-      
+
       compact: >
         This is a compact string
         that removes newlines
@@ -434,23 +435,23 @@ test.describe("YAML", function()
   end)
 
   test.it("handles lists", function()
-    local data = {items = {1, 2, 3, 4, 5}}
+    local data = { items = { 1, 2, 3, 4, 5 } }
     roundtrip_test("YAML", data, serde.yaml.encode, serde.yaml.decode)
   end)
 
   test.it("handles nested lists", function()
-    local data = {matrix = {{1, 2}, {3, 4}, {5, 6}}}
+    local data = { matrix = { { 1, 2 }, { 3, 4 }, { 5, 6 } } }
     roundtrip_test("YAML", data, serde.yaml.encode, serde.yaml.decode)
   end)
 
   test.it("handles empty structures", function()
     local empty_obj = {}
     local empty_arr = {}
-    
+
     local encoded_obj = serde.yaml.encode(empty_obj)
     local decoded_obj = serde.yaml.decode(encoded_obj)
     test.expect(decoded_obj).to.equal(empty_obj)
-    
+
     local encoded_arr = serde.yaml.encode(empty_arr)
     local decoded_arr = serde.yaml.decode(encoded_arr)
     test.expect(decoded_arr).to.equal(empty_arr)
@@ -461,7 +462,7 @@ test.describe("YAML", function()
       boolean = true,
       null = nil,
       number = 42,
-      string = "value"
+      string = "value",
     }
     roundtrip_test("YAML", data, serde.yaml.encode, serde.yaml.decode)
   end)
@@ -490,7 +491,7 @@ test.describe("YAML - Real World Examples", function()
   test.it("decodes Docker Compose-like YAML", function()
     local docker_compose = [[
       version: '3.8'
-      
+
       services:
         web:
           image: nginx:latest
@@ -503,7 +504,7 @@ test.describe("YAML - Real World Examples", function()
           environment:
             - NGINX_ENV=production
           restart: unless-stopped
-          
+
         app:
           build: .
           ports:
@@ -514,7 +515,7 @@ test.describe("YAML - Real World Examples", function()
           depends_on:
             - db
             - redis
-          
+
         db:
           image: postgres:13
           environment:
@@ -523,17 +524,17 @@ test.describe("YAML - Real World Examples", function()
             POSTGRES_DB: app
           volumes:
             - postgres_data:/var/lib/postgresql/data
-          
+
         redis:
           image: redis:6
           ports:
             - "6379:6379"
-          
+
       volumes:
         postgres_data:
     ]]
     local decoded = serde.yaml.decode(docker_compose)
-    test.expect(decoded.version).to.equal('3.8')
+    test.expect(decoded.version).to.equal("3.8")
     test.expect(decoded.services.web.image).to.equal("nginx:latest")
     test.expect(decoded.services.app.build).to.equal(".")
     test.expect(decoded.services.db.image).to.equal("postgres:13")
@@ -546,7 +547,7 @@ test.describe("YAML - Real World Examples", function()
       explicit_float: !!float 42.0
       explicit_bool: !!bool true
       explicit_str: !!str 42
-      
+
       date: 2023-03-08
       datetime: 2023-03-08T15:45:00Z
       timestamp: 2023-03-08 15:45:00 +00:00
@@ -565,7 +566,7 @@ end)
 -- ============================================================================
 test.describe("TOML", function()
   test.it("encodes and decodes simple key-value pairs", function()
-    local data = {key1 = "value1", key2 = "value2"}
+    local data = { key1 = "value1", key2 = "value2" }
     roundtrip_test("TOML", data, serde.toml.encode, serde.toml.decode)
   end)
 
@@ -574,15 +575,15 @@ test.describe("TOML", function()
       ["table1"] = {
         key = "value",
         nested = {
-          inner = "nested_value"
-        }
-      }
+          inner = "nested_value",
+        },
+      },
     }
     roundtrip_test("TOML", data, serde.toml.encode, serde.toml.decode)
   end)
 
   test.it("handles arrays", function()
-    local data = {fruits = {"apple", "banana", "cherry"}}
+    local data = { fruits = { "apple", "banana", "cherry" } }
     roundtrip_test("TOML", data, serde.toml.encode, serde.toml.decode)
   end)
 
@@ -592,21 +593,21 @@ test.describe("TOML", function()
       float = 3.14,
       boolean = true,
       string = "text",
-      datetime = "1979-05-27T07:32:00Z"
+      datetime = "1979-05-27T07:32:00Z",
     }
     roundtrip_test("TOML", data, serde.toml.encode, serde.toml.decode)
   end)
 
   test.it("handles comments", function()
-    local data = {value = 42}
+    local data = { value = 42 }
     local encoded = serde.toml.encode(data)
     test.expect(encoded).to.be.a("string")
   end)
 
   test.it("handles multiline strings", function()
-    local data = {text = [[Line 1
+    local data = { text = [[Line 1
 Line 2
-Line 3]]}
+Line 3]] }
     local encoded = serde.toml.encode(data)
     local decoded = serde.toml.decode(encoded)
     test.expect(decoded).to.equal(data)
@@ -625,10 +626,10 @@ test.describe("TOML - Real World Examples", function()
     local toml_datetime = [[
       [build]
       timestamp = "1979-05-27T07:32:00Z"
-      
+
       [deploy]
       date = "1979-05-27 07:32:00.000000"
-      
+
       [config]
       last_updated = "1979-05-27T07:32:00+00:00"
     ]]
@@ -638,7 +639,8 @@ test.describe("TOML - Real World Examples", function()
   end)
 
   test.it("decodes TOML with arrays of tables", function()
-    local toml_arrays = "[[products]]\n      name = \"Hammer\"\n      sku = 738594937\n      \n      [[products]]\n      name = \"Nail\"\n      sku = 284758393\n      \n      [[products]]\n      name = \"Screwdriver\"\n      sku = 506981302\n    "
+    local toml_arrays =
+      '[[products]]\n      name = "Hammer"\n      sku = 738594937\n      \n      [[products]]\n      name = "Nail"\n      sku = 284758393\n      \n      [[products]]\n      name = "Screwdriver"\n      sku = 506981302\n    '
     local decoded = serde.toml.decode(toml_arrays)
     test.expect(#decoded.products).to.equal(3)
     test.expect(decoded.products[1].name).to.equal("Hammer")
@@ -654,17 +656,17 @@ test.describe("TOML - Real World Examples", function()
       authors = ["John Doe <john@example.com>"]
       description = "A short description of my package"
       license = "MIT"
-      
+
       [dependencies]
       serde = { version = "1.0", features = ["derive"] }
       tokio = { version = "1.0", features = ["full"] }
-      
+
       [dev-dependencies]
       test-dep = "0.1"
-      
+
       [build-dependencies]
       build-dep = "0.1"
-      
+
       [features]
       default = ["feature-a", "feature-b"]
       feature-a = []
@@ -681,19 +683,19 @@ test.describe("TOML - Real World Examples", function()
     local toml_nested = [[
       [owner]
       name = "John Doe"
-      
+
       [owner.address]
       street = "123 Main St"
       city = "New York"
       zip = "10001"
-      
+
       [database]
       enabled = true
-      
+
       [database.connection]
       host = "localhost"
       port = 5432
-      
+
       [database.connection.pool]
       min = 2
       max = 10
@@ -711,10 +713,10 @@ end)
 -- ============================================================================
 test.describe("XML", function()
   test.it("encodes and decodes simple elements", function()
-    local data = {name = "John", age = 30}
+    local data = { name = "John", age = 30 }
     local encoded = serde.xml.encode("person", data)
     test.expect(encoded).to.be.a("string")
-    test.expect(encoded).to.match('.*<person>.*')
+    test.expect(encoded).to.match(".*<person>.*")
   end)
 
   test.it("handles nested elements", function()
@@ -723,62 +725,62 @@ test.describe("XML", function()
         name = "John",
         address = {
           street = "123 Main St",
-          city = "New York"
-        }
-      }
+          city = "New York",
+        },
+      },
     }
     local encoded = serde.xml.encode("root", data)
     test.expect(encoded).to.be.a("string")
-    test.expect(encoded).to.match('.*<user>.*')
+    test.expect(encoded).to.match(".*<user>.*")
   end)
 
   test.it("handles arrays", function()
     local data = {
       items = {
-        {id = 1, name = "Item 1"},
-        {id = 2, name = "Item 2"}
-      }
+        { id = 1, name = "Item 1" },
+        { id = 2, name = "Item 2" },
+      },
     }
     local encoded = serde.xml.encode("root", data)
     test.expect(encoded).to.be.a("string")
   end)
 
   test.it("handles attributes", function()
-    local data = {element = {
+    local data = { element = {
       ["@id"] = "123",
-      ["@class"] = "test"
-    }}
+      ["@class"] = "test",
+    } }
     local encoded = serde.xml.encode("root", data)
     test.expect(encoded).to.match('id="123"')
     test.expect(encoded).to.match('class="test"')
   end)
 
   test.it("handles text content", function()
-    local data = {element = "text content"}
+    local data = { element = "text content" }
     local encoded = serde.xml.encode("root", data)
-    test.expect(encoded).to.match('text content')
+    test.expect(encoded).to.match("text content")
   end)
 
   test.it("handles special characters", function()
-    local data = {text = "<>&\"'"}
+    local data = { text = "<>&\"'" }
     local encoded = serde.xml.encode("root", data)
     test.expect(encoded).to.be.a("string")
   end)
 
   test.it("handles self-closing tags", function()
-    local data = {empty = {}}
+    local data = { empty = {} }
     local encoded = serde.xml.encode("root", data)
-    test.expect(encoded).to.match('/>')
+    test.expect(encoded).to.match("/>")
   end)
 
   test.it("handles nested structures with arrays", function()
     local data = {
       catalog = {
         book = {
-          {title = "Book 1", author = "Author 1"},
-          {title = "Book 2", author = "Author 2"}
-        }
-      }
+          { title = "Book 1", author = "Author 1" },
+          { title = "Book 2", author = "Author 2" },
+        },
+      },
     }
     local encoded = serde.xml.encode("library", data)
     test.expect(encoded).to.be.a("string")
@@ -865,7 +867,8 @@ test.describe("XML - Real World Examples", function()
   end)
 
   test.it("decodes XML with CDATA", function()
-    local xml_cdata = "<root>\n        <script><![CDATA[function test() { console.log(\"Hello, World!\"); }]]></script>\n        <data><![CDATA[This is some data with special chars]]></data>\n      </root>\n    "
+    local xml_cdata =
+      '<root>\n        <script><![CDATA[function test() { console.log("Hello, World!"); }]]></script>\n        <data><![CDATA[This is some data with special chars]]></data>\n      </root>\n    '
     local decoded = serde.xml.decode(xml_cdata)
     test.expect(decoded).to.be.truthy()
   end)
@@ -933,7 +936,7 @@ test.describe("CSV", function()
 
   test.it("handles different delimiters", function()
     local csv_data = "name;age;city\nJohn;30;New York"
-    local options = {delimiter = ";"}
+    local options = { delimiter = ";" }
     local result = serde.csv.decode(csv_data, options)
     test.expect(result).to.be.a("table")
   end)
@@ -954,7 +957,7 @@ line3"]]
   end)
 
   test.it("handles special characters", function()
-    local csv_data = "name,value\nTest,\"quoted\""
+    local csv_data = 'name,value\nTest,"quoted"'
     local result = serde.csv.decode(csv_data)
     test.expect(result).to.be.a("table")
   end)
@@ -974,14 +977,14 @@ test.describe("CSV - Real World Examples", function()
 
   test.it("decodes CSV with tab delimiter", function()
     local tab_csv = "name\tage\tcity\nJohn\t30\tNew York\nJane\t25\tLondon"
-    local options = {delimiter = "\t"}
+    local options = { delimiter = "\t" }
     local result = serde.csv.decode(tab_csv, options)
     test.expect(result).to.be.truthy()
   end)
 
   test.it("decodes CSV with semicolon delimiter", function()
     local semi_csv = "name;age;city\nJohn;30;New York\nJane;25;London"
-    local options = {delimiter = ";"}
+    local options = { delimiter = ";" }
     local result = serde.csv.decode(semi_csv, options)
     test.expect(result).to.be.truthy()
   end)

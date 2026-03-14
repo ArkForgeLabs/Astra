@@ -1,0 +1,10 @@
+local test = require("test")
+
+test.describe("Astra Tests", function()
+  require("tests.datetime")
+  require("tests.crypto")
+  require("tests.core_utilities")
+  require("tests.fs")
+  require("tests.schema_validation")
+  require("tests.serialization")
+end)

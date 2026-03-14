@@ -62,19 +62,19 @@ describe("NestedSchema", function()
       },
     },
   }
-  
+
   it("valid-nested-type", function()
     expect_valid({ user = { profile = { id = 7, name = "Grace", is_student = true } } }, schema)
   end)
-  
+
   it("invalid-nested-type", function()
     expect_invalid({ user = { profile = { id = "7", name = "Grace", is_student = true } } }, schema) -- wrong type
   end)
-  
+
   it("missing-required-field", function()
     expect_invalid({ user = { profile = { name = "Grace", is_student = true } } }, schema)
   end)
-  
+
   it("optional-field-absence", function()
     expect_valid({ user = { profile = { id = 7, name = "Grace" } } }, schema)
   end)
