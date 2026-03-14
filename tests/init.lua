@@ -1,14 +1,14 @@
 local test = require("test")
 
-local count = 0
-test.it_internal = test.it
----@diagnostic disable-next-line: duplicate-set-field
-test.it = function(name, fn)
-  count = count + 1
-  test.it_internal(name, fn)
-end
+pprint([[
+    _    ____ _____ ____      _
+   / \  / ___|_   _|  _ \    / \
+  / _ \ \___ \ | | | |_) |  / _ \
+ / ___ \ ___) || | |  _ <  / ___ \
+/_/   \_\____/ |_| |_| \_\/_/   \_\
 
-pprint("Astra Tests\n")
+Test Suite
+]])
 
 require("tests.schema_validation")(test)
 require("tests.core_utilities")(test)
@@ -16,3 +16,10 @@ require("tests.serialization")(test)
 require("tests.datetime")(test)
 require("tests.crypto")(test)
 require("tests.fs")(test)
+
+pprint(
+  "\n\n" .. string.char(27) .. "[32m" .. test.passes,
+  string.char(27) .. "[0m" .. "passed and",
+  string.char(27) .. "[31m" .. test.errors,
+  string.char(27) .. "[0m" .. "failed."
+)
