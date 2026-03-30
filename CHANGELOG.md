@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.46.0](https://github.com/ArkForgeLabs/Astra/compare/v0.45.3..v0.45.4) - 2026-03-30
+
+### Bug Fixes
+
+- templating include render error - ([f6bc85f](https://github.com/ArkForgeLabs/Astra/commit/f6bc85f29402c32bcd873d721a4c0ba60c55d77a))
+
+### Features
+
+- added test for the global functions and utilities - ([9d646e3](https://github.com/ArkForgeLabs/Astra/commit/9d646e35d83d7b0636a79f8d28c8a19fdf044366))
+- filesystem tests added - ([f2ba68a](https://github.com/ArkForgeLabs/Astra/commit/f2ba68a321b3d8d0e1e50487403714e0287cac7f))
+
+### Refactoring
+
+- removed validation default value - ([2d8eab1](https://github.com/ArkForgeLabs/Astra/commit/2d8eab13348b0112109a70324958ccad1704003a))
+- stylua formatting consistency - ([36aa5fb](https://github.com/ArkForgeLabs/Astra/commit/36aa5fb7b952d01ed32d475d50c302681ed02c1f))
+- cleanup the test directory - ([885b87e](https://github.com/ArkForgeLabs/Astra/commit/885b87eedc1d26b0b2280cb266cd73f9c21fea09))
+
 ## [0.45.3](https://github.com/ArkForgeLabs/Astra/compare/v0.45.1..v0.45.3) - 2026-03-03
 
 ### Bug Fixes
