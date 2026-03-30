@@ -1,7 +1,7 @@
 use crate::LUA;
-use minijinja::ErrorKind::UndefinedError;
+use minijinja::{ErrorKind::UndefinedError, path_loader};
 use mlua::{ExternalError, FromLua, LuaSerdeExt, UserData};
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 /// Will include the name, path, and source
 #[derive(Debug, Clone, FromLua)]
@@ -17,54 +17,52 @@ pub struct TemplatingEngine<'a> {
     templates: Vec<Template>,
     pub exclusions: Vec<Arc<str>>,
 }
-impl TemplatingEngine<'static> {
-    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
-        lua.globals().set(
-            "astra_internal__new_templating_engine",
-            lua.create_async_function(|_, dir: Option<String>| async {
-                let mut engine = Self {
-                    env: minijinja::Environment::new(),
-                    templates: Vec::new(),
-                    exclusions: Vec::new(),
-                };
+pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
+    lua.globals().set(
+        "astra_internal__new_templating_engine",
+        lua.create_async_function(|_, dir: Option<String>| async {
+            let mut engine = TemplatingEngine {
+                env: minijinja::Environment::new(),
+                templates: Vec::new(),
+                exclusions: Vec::new(),
+            };
 
-                // ? For loading other files too
-                // ? env.set_loader(path_loader("examples/templates"));
+            if let Some(dir) = dir {
+                let matches = parse_glob_pattern(&dir).map_err(|e| e.into_lua_err())?;
 
-                if let Some(dir) = dir {
-                    match parse_glob_pattern(&dir) {
-                        Ok(matches) => {
-                            for (name, path) in matches {
-                                // get the file source
-                                match tokio::fs::read_to_string(path.clone()).await {
-                                    Ok(source) => {
-                                        engine.templates.push(Template {
-                                            name: name.clone(),
-                                            path: Some(path),
-                                            source: source.clone(),
-                                        });
+                engine.env.set_loader(path_loader(&matches.base_path));
+                engine.add_template_files(matches.results).await?;
+            }
 
-                                        if let Err(e) = engine.env.add_template_owned(name, source)
-                                        {
-                                            return Err(e.into_lua_err());
-                                        }
-                                    }
-                                    Err(e) => return Err(e.into_lua_err()),
-                                }
-                            }
-                        }
-                        Err(e) => return Err(e.into_lua_err()),
+            Ok(engine)
+        })?,
+    )?;
+
+    Ok(())
+}
+impl TemplatingEngine<'_> {
+    pub async fn add_template_files(&mut self, matches: Vec<(String, String)>) -> mlua::Result<()> {
+        for (name, path) in matches {
+            // get the file source
+            match tokio::fs::read_to_string(path.clone()).await {
+                Ok(source) => {
+                    self.templates.push(Template {
+                        name: name.clone(),
+                        path: Some(path),
+                        source: source.clone(),
+                    });
+
+                    if let Err(e) = self.env.add_template_owned(name, source) {
+                        return Err(e.into_lua_err());
                     }
                 }
-
-                Ok(engine)
-            })?,
-        )?;
+                Err(e) => return Err(e.into_lua_err()),
+            }
+        }
 
         Ok(())
     }
-}
-impl TemplatingEngine<'_> {
+
     pub fn reload_templates(&mut self) -> mlua::Result<()> {
         for i in self.templates.iter() {
             let source = if let Some(source) = i
@@ -85,6 +83,7 @@ impl TemplatingEngine<'_> {
         Ok(())
     }
 }
+
 impl UserData for TemplatingEngine<'_> {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut(
@@ -109,20 +108,18 @@ impl UserData for TemplatingEngine<'_> {
         );
         methods.add_method_mut(
             "add_template_file",
-            |_, this, (name, path): (String, String)| match std::fs::read_to_string(&path) {
-                Ok(source) => match this.env.add_template_owned(name.clone(), source.clone()) {
-                    Ok(()) => {
-                        this.templates.push(Template {
-                            name,
-                            path: Some(path),
-                            source,
-                        });
+            |_, this, (name, path): (String, String)| {
+                let source = std::fs::read_to_string(&path).map_err(|e| e.into_lua_err())?;
+                this.env
+                    .add_template_owned(name.clone(), source.clone())
+                    .map_err(|e| e.into_lua_err())?;
+                this.templates.push(Template {
+                    name,
+                    path: Some(path),
+                    source,
+                });
 
-                        Ok(())
-                    }
-                    Err(e) => Err(e.into_lua_err()),
-                },
-                Err(e) => Err(e.into_lua_err()),
+                Ok(())
             },
         );
         methods.add_method_mut("remove_template", |_, this, name: String| {
@@ -164,22 +161,14 @@ impl UserData for TemplatingEngine<'_> {
                 let function = move |args: minijinja::Value|
                                                                             -> Result<minijinja::Value, minijinja::Error> {
                     futures::executor::block_on(async {
-                        match LUA.to_value(&args) {
-                            Ok(val) =>  match func.call_async::<mlua::Value>(val).await {
-                                Ok(val) =>  match LUA.from_value::<minijinja::Value>(val) {
-                                    Ok(val) => Ok(val),
-                                    Err(e) =>
-                                        Err(minijinja::Error::new(UndefinedError,
-                                                format!("ERROR TEMPLATE FUNCTION - Could not convert the return type: {e}"))),
-                                },
-                                Err(e) =>
-                                    Err(minijinja::Error::new(UndefinedError,
-                                            format!("ERROR TEMPLATE FUNCTION - Could not run the function: {e}"))),
-                            },
-                            Err(e) =>
-                                Err(minijinja::Error::new(UndefinedError,
-                                        format!("ERROR TEMPLATE FUNCTION - Could not convert arguments into Lua table: {e}"))),
-                        }
+                      let lua_value = LUA.to_value(&args).map_err(|e| minijinja::Error::new(UndefinedError,
+                              format!("ERROR TEMPLATE FUNCTION - Could not convert arguments into Lua table: {e}")))?;
+
+                      let function_result = func.call_async::<mlua::Value>(lua_value).await.map_err(|e| minijinja::Error::new(UndefinedError,
+                              format!("ERROR TEMPLATE FUNCTION - Could not run the function: {e}")))?;
+
+                      LUA.from_value::<minijinja::Value>(function_result).map_err(|e| minijinja::Error::new(UndefinedError,
+                              format!("ERROR TEMPLATE FUNCTION - Could not convert the return type: {e}")))
                     })
                 };
 
@@ -213,7 +202,12 @@ impl UserData for TemplatingEngine<'_> {
     }
 }
 
-fn parse_glob_pattern(pattern: &str) -> Result<Vec<(String, String)>, mlua::Error> {
+struct GlobFileResults {
+    base_path: PathBuf,
+    results: Vec<(String, String)>,
+}
+
+fn parse_glob_pattern(pattern: &str) -> Result<GlobFileResults, mlua::Error> {
     // Convert glob pattern to Path
     let pattern_path = std::path::Path::new(pattern);
 
@@ -232,27 +226,21 @@ fn parse_glob_pattern(pattern: &str) -> Result<Vec<(String, String)>, mlua::Erro
     }
 
     // Perform the actual glob matching
-    let mut result = Vec::new();
-    match glob::glob(pattern) {
-        Ok(globs) => {
-            for entry in globs {
-                match entry {
-                    Ok(path) => {
-                        let full_path = path.to_string_lossy().to_string();
-                        if let Ok(relative) = path.strip_prefix(&base_path) {
-                            result.push((relative.to_string_lossy().to_string(), full_path));
-                        } else {
-                            // Fallback to full path if prefix can't be stripped
-                            result.push((full_path.clone(), full_path));
-                        }
-                    }
-                    Err(e) => return Err(e.into_lua_err()),
-                }
-            }
-            Ok(result)
+    let mut results = Vec::new();
+    let globs = glob::glob(pattern).map_err(|e| e.into_lua_err())?;
+    for entry in globs {
+        let path = entry.map_err(|e| e.into_lua_err())?;
+        let full_path = path.to_string_lossy().to_string();
+
+        if let Ok(relative) = path.strip_prefix(&base_path) {
+            results.push((relative.to_string_lossy().to_string(), full_path));
+        } else {
+            // Fallback to full path if prefix can't be stripped
+            results.push((full_path.clone(), full_path));
         }
-        Err(e) => Err(e.into_lua_err()),
     }
+
+    Ok(GlobFileResults { base_path, results })
 }
 
 // ============================================================== //

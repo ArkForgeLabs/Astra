@@ -1,28 +1,31 @@
 <!DOCTYPE html>
-<!-- The base template. Read more at: https://keats.github.io/tera/docs -->
+<!-- The base template. Read more at: https://docs.rs/minijinja/latest/minijinja/syntax/index.html -->
 <html lang="en">
-  <head>
-    {% block head %}
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}{% endblock title %} - Astra</title>
-    <style>
-      #footer > a {
-        color: white;
-      }
 
-      .container {
-        text-align: center;
-      }
-    </style>
-    {% endblock head %}
-  </head>
-  <body>
-    <div class="container">{% block content %}{% endblock content %}</div>
+<head>
+  {% block head %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{% endblock title %} - Astra</title>
+  <style>
+    #footer>a {
+      color: white;
+    }
 
-    <div id="footer">
-      {% block footer %} &copy; Brought to you with Love by
-      <a href="https://arkforge.net/">ArkForge</a>. {% endblock footer %}
-    </div>
-  </body>
+    .container {
+      text-align: center;
+    }
+  </style>
+  {% endblock head %}
+</head>
+
+<body>
+  <div class="container">{% block content %}{% endblock content %}</div>
+
+  <div id="footer">
+    {% block footer %} &copy; Brought to you with Love by
+    <a href="https://arkforge.net/">ArkForge</a>. {% endblock footer %}
+  </div>
+</body>
+
 </html>
