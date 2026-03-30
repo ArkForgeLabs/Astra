@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
-## [0.46.0](https://github.com/ArkForgeLabs/Astra/compare/v0.45.3..v0.45.4) - 2026-03-30
+## [0.46.0](https://github.com/ArkForgeLabs/Astra/compare/v0.45.3..v0.46.0) - 2026-03-30
 
 ### Bug Fixes
 
