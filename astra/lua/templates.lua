@@ -14,6 +14,7 @@
 ---@field add_to_server fun(templates: Jinja2Engine, server: HTTPServer, context?: table) Adds the templates to the server
 ---Adds the templates to the server in debugging manner, where the content refreshes on each request
 ---@field add_to_server_debug fun(templates: Jinja2Engine, server: HTTPServer, context?: table)
+---@field debug_watch fun(_: Jinja2Engine, server: HTTPServer, dir_path: string)
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias template_function fun(args: table): any
@@ -78,6 +79,46 @@ local function new_engine(dir)
         end)
       end
     end
+  end
+
+  function Jinja2EngineWrapper.debug_watch(_, server, dir_path)
+    local serde = require("serde")
+    local fs = require("fs")
+
+    local files = {}
+    ---@param path string the directory to watch
+    local function read_recursive(path)
+      for _, i in ipairs(fs.read_dir(path)) do
+        if i:file_type():is_file() then
+          pcall(function()
+            local file_details = fs.get_metadata(i:path())
+            table.insert(files, { i:path(), file_details:last_modified() })
+          end)
+        elseif i:file_type():is_dir() then
+          read_recursive(i:path())
+        end
+      end
+    end
+
+    local did_change = false
+    spawn_interval(function()
+      local old_files = serde.json.encode(files)
+      files = {}
+      read_recursive(dir_path)
+
+      if old_files ~= serde.json.encode(files) then
+        did_change = true
+      else
+        did_change = false
+      end
+    end, 500)
+    server:get("/debug.js", function(_, response)
+      response:set_header("Content-Type", "text/javascript")
+      return [[setInterval(async ()=>{const response=await fetch("/debug");if(response.ok &&(await response.text())=="true"){window.location.reload();}},100);]]
+    end)
+    server:get("/debug", function()
+      return tostring(did_change)
+    end)
   end
 
   local templating_methods = {

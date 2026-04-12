@@ -106,6 +106,45 @@ local function new_engine(dir: string): Jinja2Engine
 		end
 	end
 
+	Jinja2EngineWrapper.debug_watch = function(self: Jinja2Engine, server: HTTPServer, dir_path: string)
+    local serde = require("serde")
+    local fs = require("fs")
+
+    local files = {}
+    local function read_recursive(path: string): nil
+      for _, i in ipairs(fs.read_dir(path)) do
+        if i:file_type():is_file() then
+          pcall(function()
+            local file_details = fs.get_metadata(i:path())
+            table.insert(files, { i:path(), file_details:last_modified() })
+          end)
+        elseif i:file_type():is_dir() then
+          read_recursive(i:path())
+        end
+      end
+    end
+
+    local did_change = false
+    spawn_interval(function()
+      local old_files = serde.json.encode(files)
+      files = {}
+      read_recursive(dir_path)
+
+      if old_files ~= serde.json.encode(files) then
+        did_change = true
+      else
+        did_change = false
+      end
+    end, 500)
+    server:get("/debug.js", function(_request?: HTTPServerRequest, response?: HTTPServerResponse)
+      response:set_header("Content-Type", "text/javascript")
+      return [[setInterval(async ()=>{const response=await fetch("/debug");if(response.ok &&(await response.text())=="true"){window.location.reload();}},100);]]
+    end)
+    server:get("/debug", function()
+      return tostring(did_change)
+    end)
+  end
+
 	return Jinja2EngineWrapper
 end
 
