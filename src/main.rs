@@ -8,21 +8,17 @@ mod commands;
 mod components;
 
 /// Global Lua instance.
-pub static LUA: std::sync::LazyLock<mlua::Lua> =
-    std::sync::LazyLock::new(|| unsafe { mlua::Lua::unsafe_new() });
+pub static LUA: std::sync::OnceLock<mlua::Lua> = std::sync::OnceLock::new();
 
 #[derive(Debug, Clone)]
 pub struct RuntimeFlags {
     pub stdlib_path: std::path::PathBuf,
-    pub check_teal_code: bool,
 }
 pub static RUNTIME_FLAGS: tokio::sync::OnceCell<RuntimeFlags> = tokio::sync::OnceCell::const_new();
 
 /// Global standard libraries and type definitions from Astra
 pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
     std::sync::LazyLock::new(|| include_dir::include_dir!("astra"));
-
-pub const TEAL_IMPORT_SCRIPT: &str = include_str!("components/teal_check.lua");
 
 /// Command-line interface for Astra.
 #[derive(Parser)]
@@ -51,9 +47,9 @@ enum AstraCLI {
         /// Path to the standard library folder
         #[arg(short, long)]
         stdlib_path: Option<String>,
-        /// Enable or disable Teal's compile checks before loading the moudles
+        /// Enables safe mode by removing access to dangerous standard library and behaviors
         #[arg(short, long, action)]
-        check_teal_code: bool,
+        safe: bool,
         /// Extra arguments to pass to the script.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         extra_args: Option<Vec<String>>,
@@ -93,9 +89,30 @@ pub async fn main() -> std::io::Result<()> {
             file_path,
             code,
             stdlib_path,
-            check_teal_code,
+            safe,
             extra_args,
-        } => commands::run_command(file_path, code, stdlib_path, check_teal_code, extra_args).await,
+        } => {
+            if safe {
+                LUA.set(
+                    mlua::Lua::new_with(
+                        mlua::StdLib::ALL_SAFE,
+                        mlua::LuaOptions::new()
+                            .thread_pool_size(std::thread::available_parallelism()?.get()),
+                    )
+                    .expect("Could not start the safe runtime"),
+                );
+            } else {
+                LUA.set(unsafe {
+                    mlua::Lua::unsafe_new_with(
+                        mlua::StdLib::ALL,
+                        mlua::LuaOptions::new()
+                            .thread_pool_size(std::thread::available_parallelism()?.get()),
+                    )
+                });
+            }
+
+            commands::run_command(file_path, code, stdlib_path, extra_args).await
+        }
         AstraCLI::ExportBundle { teal_export, path } => {
             commands::export_bundle_command(teal_export, path).await?
         }
