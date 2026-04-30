@@ -90,7 +90,7 @@ pub async fn upgrade_command(user_agent: Option<String>) -> Result<(), Box<dyn s
             current_file_name.clone(),
         )?;
 
-        #[cfg(target_os = "linux")]
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
         {
             let _ = std::process::Command::new("chmod")
                 .arg("+x")
