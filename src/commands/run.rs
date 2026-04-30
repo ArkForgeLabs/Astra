@@ -7,102 +7,69 @@ pub async fn run_command(
     file_path: Option<String>,
     code: Option<String>,
     stdlib_path: Option<String>,
-    check_teal_code: bool,
     extra_args: Option<Vec<String>>,
 ) {
-    let lua = &LUA;
-    let mut actual_path: String = "init.lua".to_string();
+    if let Some(lua) = LUA.get() {
+        let mut actual_path: String = "init.lua".to_string();
 
-    let mut check_for_default_file = |file_path: String| -> String {
-        actual_path = file_path.clone();
-        let file_path = std::path::Path::new(&file_path);
-
+        // Load and execute the Lua script.
         #[allow(clippy::expect_used)]
-        if file_path.exists() && file_path.is_file() {
-            std::fs::read_to_string(file_path).expect("Couldn't read file")
-        } else if file_path.join("init.lua").exists() {
-            actual_path = file_path.join("init.lua").to_string_lossy().to_string();
-            std::fs::read_to_string(file_path.join("init.lua")).expect("Couldn't read file")
-        } else if file_path.join("init.tl").exists() {
-            actual_path = file_path.join("init.tl").to_string_lossy().to_string();
-            std::fs::read_to_string(file_path.join("init.tl")).expect("Couldn't read file")
+        let (user_file, actual_path_str) = if let Some(code) = code {
+            actual_path = "<commandline>".to_string();
+            (code, actual_path.clone())
         } else {
-            panic!("Could not find any file to run...");
-        }
-    };
-
-    // Load and execute the Lua script.
-    #[allow(clippy::expect_used)]
-    let (user_file, actual_path_str) = if let Some(code) = code {
-        actual_path = "<commandline>".to_string();
-        (code, actual_path.clone())
-    } else {
-        let file = if let Some(file_path) = file_path {
-            check_for_default_file(file_path)
-        } else {
-            check_for_default_file(".".to_string())
+            let file = if let Some(file_path) = file_path {
+                check_for_default_file(&mut actual_path, file_path)
+            } else {
+                check_for_default_file(&mut actual_path, ".".to_string())
+            };
+            (file, actual_path.clone())
         };
-        (file, actual_path.clone())
-    };
 
-    run_command_prerequisite(&actual_path_str, stdlib_path, check_teal_code, extra_args).await;
-    spawn_termination_task();
+        run_command_prerequisite(lua, &actual_path_str, stdlib_path, extra_args).await;
+        spawn_termination_task(lua.clone());
 
-    // Remove the Shebang lines
-    let user_file = user_file
-        .lines()
-        .filter(|line| !line.starts_with("#!"))
-        .collect::<Vec<_>>()
-        .join("\n");
+        // Remove the Shebang lines
+        let user_file = user_file
+            .lines()
+            .filter(|line| !line.starts_with("#!"))
+            .collect::<Vec<_>>()
+            .join("\n");
 
-    if let Some(is_teal) = PathBuf::from(&actual_path_str).extension()
-        && is_teal == "tl"
-    {
-        if let Err(e) = crate::components::load_teal(lua).await {
-            error!("{}", e);
-        }
-
-        if let Err(e) =
-            crate::components::execute_teal_code(lua, &actual_path_str, &user_file).await
+        if let Err(e) = lua
+            .load(user_file)
+            .set_name(actual_path_str)
+            .exec_async()
+            .await
         {
             error!("{}", e);
         }
-    } else if let Err(e) = lua
-        .load(user_file)
-        .set_name(actual_path_str)
-        .exec_async()
-        .await
-    {
-        error!("{}", e);
-    }
 
-    // Wait for all Tokio tasks to finish.
-    let metrics = tokio::runtime::Handle::current().metrics();
-    loop {
-        let alive_tasks = metrics.num_alive_tasks();
-        if alive_tasks == 1 {
-            break;
+        // Wait for all Tokio tasks to finish.
+        let metrics = tokio::runtime::Handle::current().metrics();
+        loop {
+            let alive_tasks = metrics.num_alive_tasks();
+            if alive_tasks == 1 {
+                break;
+            }
         }
     }
 }
 
 async fn run_command_prerequisite(
+    lua: &mlua::Lua,
     file_path: &str,
     stdlib_path: Option<String>,
-    check_teal_code: bool,
     extra_args: Option<Vec<String>>,
 ) {
     if let Err(e) = super::remove_old_runtime() {
         error!("{e:?}");
     }
 
-    let lua = &LUA;
-
     let stdlib_path = stdlib_path.unwrap_or("astra".to_string());
 
     if let Err(e) = RUNTIME_FLAGS.set(crate::RuntimeFlags {
         stdlib_path: PathBuf::from(stdlib_path.clone()),
-        check_teal_code,
     }) {
         error!("Could not set the global STDLIB_PATH: {e:?}");
     }
@@ -142,8 +109,29 @@ async fn run_command_prerequisite(
         .expect("Couldn't set the script path");
 }
 
-fn spawn_termination_task() {
-    tokio::spawn(async {
+fn check_for_default_file(actual_path: &mut String, file_path: String) -> String {
+    actual_path.clone_from(&file_path);
+    let result;
+    let file_path = std::path::Path::new(&file_path);
+
+    #[allow(clippy::expect_used)]
+    if file_path.exists() && file_path.is_file() {
+        result = std::fs::read_to_string(file_path).expect("Couldn't read file");
+    } else if file_path.join("init.lua").exists() {
+        actual_path.clone_from(&file_path.join("init.lua").to_string_lossy().to_string());
+        result = std::fs::read_to_string(file_path.join("init.lua")).expect("Couldn't read file");
+    } else if file_path.join("init.luau").exists() {
+        actual_path.clone_from(&file_path.join("init.luau").to_string_lossy().to_string());
+        result = std::fs::read_to_string(file_path.join("init.luau")).expect("Couldn't read file");
+    } else {
+        panic!("Could not find any file to run...");
+    }
+
+    result
+}
+
+fn spawn_termination_task(lua: mlua::Lua) {
+    tokio::spawn(async move {
         let sigint = tokio::signal::ctrl_c();
 
         #[cfg(unix)]
@@ -166,7 +154,7 @@ fn spawn_termination_task() {
             }
         }
 
-        if let Ok(exit_function) = LUA.globals().get::<mlua::Function>("ASTRA_SHUTDOWN_CODE")
+        if let Ok(exit_function) = lua.globals().get::<mlua::Function>("ASTRA_SHUTDOWN_CODE")
             && let Err(e) = exit_function.call_async::<()>(()).await
         {
             error!("{e}");
