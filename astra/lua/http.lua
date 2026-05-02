@@ -30,14 +30,10 @@ local http = {}
 ---@field set_method fun(self: HTTPClientRequest, method: string): HTTPClientRequest
 ---@field set_header fun(self: HTTPClientRequest, key: string, value: string): HTTPClientRequest
 ---@field set_headers fun(self: HTTPClientRequest, headers: table): HTTPClientRequest
----@field set_form fun(self: HTTPClientRequest, key: string, value: string): HTTPClientRequest
----@field set_forms fun(self: HTTPClientRequest, headers: table): HTTPClientRequest
----@field set_body fun(self: HTTPClientRequest, body: string): HTTPClientRequest
----@field set_bytes fun(self: HTTPClientRequest, body: integer[]): HTTPClientRequest
----@field set_json fun(self: HTTPClientRequest, json: table): HTTPClientRequest
+---@field set_form fun(self: HTTPClientRequest, headers: table): HTTPClientRequest
+---@field set_body fun(self: HTTPClientRequest, body: any): HTTPClientRequest
 ---@field set_file fun(self: HTTPClientRequest, file_path: string): HTTPClientRequest Sets the for-upload file path
 ---@field execute fun(self: HTTPClientRequest): HTTPClientResponse Executes the request and returns the response
----@field execute_task fun(self: HTTPClientRequest, callback: http_client_callback) Executes the request as an async task
 ---@field execute_streaming fun(self: HTTPClientRequest, callback: http_client_callback) Executes the request in a streaming manner
 ---@field execute_websocket fun(self: HTTPClientRequest, callback: wscallback) Executes the request as an async task
 

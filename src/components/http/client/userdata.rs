@@ -24,12 +24,7 @@ impl UserData for super::HTTPClientRequest {
                 Ok(request)
             },
         );
-        methods.add_method_mut("set_form", |_, this, (key, value): (String, String)| {
-            let mut request = this.clone();
-            request.form.insert(key, value);
-            Ok(request)
-        });
-        methods.add_method_mut("set_forms", |_, this, form: HashMap<String, String>| {
+        methods.add_method_mut("set_form", |_, this, form: HashMap<String, String>| {
             let mut request = this.clone();
             request.form = form;
             Ok(request)
