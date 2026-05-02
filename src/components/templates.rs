@@ -161,14 +161,19 @@ impl UserData for TemplatingEngine<'_> {
                 let function = move |args: minijinja::Value|
                                                                             -> Result<minijinja::Value, minijinja::Error> {
                     futures::executor::block_on(async {
-                      let lua_value = LUA.to_value(&args).map_err(|e| minijinja::Error::new(UndefinedError,
+                      if let Some(lua) = LUA.get() {
+                      let lua_value = lua.to_value(&args).map_err(|e| minijinja::Error::new(UndefinedError,
                               format!("ERROR TEMPLATE FUNCTION - Could not convert arguments into Lua table: {e}")))?;
 
                       let function_result = func.call_async::<mlua::Value>(lua_value).await.map_err(|e| minijinja::Error::new(UndefinedError,
                               format!("ERROR TEMPLATE FUNCTION - Could not run the function: {e}")))?;
 
-                      LUA.from_value::<minijinja::Value>(function_result).map_err(|e| minijinja::Error::new(UndefinedError,
+                      lua.from_value::<minijinja::Value>(function_result).map_err(|e| minijinja::Error::new(UndefinedError,
                               format!("ERROR TEMPLATE FUNCTION - Could not convert the return type: {e}")))
+                      } else {
+                        Err(minijinja::Error::new(UndefinedError,
+                                "ERROR TEMPLATE FUNCTION - Could not obtain Lua VM"))
+                      }
                     })
                 };
 

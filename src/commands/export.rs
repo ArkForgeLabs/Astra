@@ -1,15 +1,10 @@
-use crate::{ASTRA_STD_LIBS, LUA};
+use crate::ASTRA_STD_LIBS;
 
 /// Exports the Lua bundle.
 pub async fn export_bundle_command(
-    teal_export: bool,
+    luau_export: bool,
     folder_path: Option<String>,
 ) -> std::io::Result<()> {
-    #[allow(clippy::expect_used)]
-    crate::components::register_components(&LUA)
-        .await
-        .expect("Error setting up the standard library");
-
     let folder_path = folder_path.unwrap_or(".".to_string());
     let folder_path = std::path::Path::new(&folder_path).join("astra");
     let _ = std::fs::remove_dir_all(&folder_path);
@@ -17,9 +12,8 @@ pub async fn export_bundle_command(
 
     ASTRA_STD_LIBS.extract(&folder_path)?;
 
-    if !teal_export {
-        let _ = std::fs::remove_dir_all(folder_path.join("teal"));
-        let _ = std::fs::remove_file(folder_path.join("teal.lua"));
+    if !luau_export {
+        let _ = std::fs::remove_dir_all(folder_path.join("luau"));
     }
 
     let runtime = if cfg!(feature = "lua54") {
@@ -38,26 +32,26 @@ pub async fn export_bundle_command(
         "LuaJIT"
     };
 
-    let tlconfig_file = include_str!("../../tlconfig.lua").replace("LuaJIT", runtime);
+    // let tlconfig_file = include_str!("../../tlconfig.lua").replace("LuaJIT", runtime);
     let luarc_file = include_str!("../../.luarc.json").replace("LuaJIT", runtime);
 
-    if teal_export {
-        std::fs::exists("tlconfig.lua")
-            .map(|exists| !exists)
-            .map(|_| std::fs::write("tlconfig.lua", tlconfig_file))??;
+    // if luau_export {
+    //     std::fs::exists("tlconfig.lua")
+    //         .map(|exists| !exists)
+    //         .map(|_| std::fs::write("tlconfig.lua", tlconfig_file))??;
 
-        println!("🚀 Successfully exported the bundled library!");
-    } else {
-        std::fs::exists(".luarc.json")
-            .map(|exists| !exists)
-            .map(|_| std::fs::write(".luarc.json", luarc_file))??;
+    //     println!("🚀 Successfully exported the bundled library!");
+    // } else {
+    std::fs::exists(".luarc.json")
+        .map(|exists| !exists)
+        .map(|_| std::fs::write(".luarc.json", luarc_file))??;
 
-        println!(
-            "🚀 Successfully exported the bundled library!\
-\n\nTeal type definition and configuration have not been exported.\n
+    println!(
+        "🚀 Successfully exported the bundled library!\
+\n\nLuau type definition and configuration have not been exported.\n
 If you wish to export them as well, use the -t flag with astra export:\n\n\
 astra export -t"
-        );
-    }
+    );
+    // }
     Ok(())
 }

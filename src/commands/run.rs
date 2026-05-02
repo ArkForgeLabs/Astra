@@ -9,49 +9,50 @@ pub async fn run_command(
     stdlib_path: Option<String>,
     extra_args: Option<Vec<String>>,
 ) {
-    if let Some(lua) = LUA.get() {
-        let mut actual_path: String = "init.lua".to_string();
+    #[allow(clippy::expect_used)]
+    let lua = LUA.get().expect("Could not get access to the global VM");
 
-        // Load and execute the Lua script.
-        #[allow(clippy::expect_used)]
-        let (user_file, actual_path_str) = if let Some(code) = code {
-            actual_path = "<commandline>".to_string();
-            (code, actual_path.clone())
+    let mut actual_path: String = "init.lua".to_string();
+
+    // Load and execute the Lua script.
+    #[allow(clippy::expect_used)]
+    let (user_file, actual_path_str) = if let Some(code) = code {
+        actual_path = "<commandline>".to_string();
+        (code, actual_path.clone())
+    } else {
+        let file = if let Some(file_path) = file_path {
+            check_for_default_file(&mut actual_path, file_path)
         } else {
-            let file = if let Some(file_path) = file_path {
-                check_for_default_file(&mut actual_path, file_path)
-            } else {
-                check_for_default_file(&mut actual_path, ".".to_string())
-            };
-            (file, actual_path.clone())
+            check_for_default_file(&mut actual_path, ".".to_string())
         };
+        (file, actual_path.clone())
+    };
 
-        run_command_prerequisite(lua, &actual_path_str, stdlib_path, extra_args).await;
-        spawn_termination_task(lua.clone());
+    run_command_prerequisite(lua, &actual_path_str, stdlib_path, extra_args).await;
+    spawn_termination_task(lua.clone());
 
-        // Remove the Shebang lines
-        let user_file = user_file
-            .lines()
-            .filter(|line| !line.starts_with("#!"))
-            .collect::<Vec<_>>()
-            .join("\n");
+    // Remove the Shebang lines
+    let user_file = user_file
+        .lines()
+        .filter(|line| !line.starts_with("#!"))
+        .collect::<Vec<_>>()
+        .join("\n");
 
-        if let Err(e) = lua
-            .load(user_file)
-            .set_name(actual_path_str)
-            .exec_async()
-            .await
-        {
-            error!("{}", e);
-        }
+    if let Err(e) = lua
+        .load(user_file)
+        .set_name(actual_path_str)
+        .exec_async()
+        .await
+    {
+        error!("{}", e);
+    }
 
-        // Wait for all Tokio tasks to finish.
-        let metrics = tokio::runtime::Handle::current().metrics();
-        loop {
-            let alive_tasks = metrics.num_alive_tasks();
-            if alive_tasks == 1 {
-                break;
-            }
+    // Wait for all Tokio tasks to finish.
+    let metrics = tokio::runtime::Handle::current().metrics();
+    loop {
+        let alive_tasks = metrics.num_alive_tasks();
+        if alive_tasks == 1 {
+            break;
         }
     }
 }

@@ -63,53 +63,6 @@ macro_rules! astra_buffer_types {
 astra_buffer_types!(AstraBuffer, bytes::Bytes);
 astra_buffer_types!(AstraBufferMut, bytes::BytesMut);
 
-// to capture all types of string literals
-const ONE_HUNDRED_EQUAL_SIGNS: &str = "================================================\
-====================================================";
-pub async fn execute_teal_code(
-    lua: &mlua::Lua,
-    module_name: &str,
-    module_content: &str,
-) -> mlua::Result<mlua::Value> {
-    let runtime_flags = crate::RUNTIME_FLAGS
-        .get_or_init(|| async {
-            crate::RuntimeFlags {
-                stdlib_path: std::path::PathBuf::from("astra"),
-                check_teal_code: false,
-            }
-        })
-        .await;
-
-    if runtime_flags.check_teal_code && module_name.ends_with(".tl") {
-        lua.globals().set("CURRENT_SCRIPT", module_name)?;
-        let compile_check_chunk = crate::TEAL_IMPORT_SCRIPT
-            .replace("@SOURCE", module_content)
-            .replace("@FILE_NAME", module_name);
-
-        lua.load(compile_check_chunk)
-            .set_name(module_name)
-            .exec_async()
-            .await?;
-    }
-
-    let module_content = if module_name.ends_with(".tl") {
-        let module_name = module_name.replace("\\", "/");
-        format!(
-            "TEAL_COMPILER.load([{ONE_HUNDRED_EQUAL_SIGNS}[{module_content}]{ONE_HUNDRED_EQUAL_SIGNS}], \"{module_name}\")()"
-        )
-    } else {
-        module_content.to_string()
-    };
-
-    let result = lua
-        .load(module_content)
-        .set_name(module_name)
-        .eval_async::<mlua::Value>()
-        .await?;
-
-    Ok(result)
-}
-
 #[allow(unused)]
 pub mod macros {
     macro_rules! impl_deref {
@@ -203,36 +156,4 @@ pub async fn read_from_stdlib(
     }
 
     None
-}
-
-pub async fn load_teal(lua: &mlua::Lua) -> mlua::Result<()> {
-    if !cfg!(feature = "luau") {
-        let stdlib_path = &crate::RUNTIME_FLAGS
-            .get_or_init(|| async {
-                crate::RuntimeFlags {
-                    stdlib_path: std::path::PathBuf::from("astra"),
-                    check_teal_code: false,
-                }
-            })
-            .await
-            .stdlib_path;
-
-        if let Some(content) =
-            read_from_stdlib(stdlib_path, std::path::PathBuf::from("teal.lua")).await
-        {
-            lua.load(content).set_name("teal.lua").exec_async().await?;
-        }
-
-        // astra.d.tl
-        if let Some(content) = read_from_stdlib(
-            stdlib_path,
-            std::path::PathBuf::from("teal").join("astra.d.tl"),
-        )
-        .await
-        {
-            crate::components::execute_teal_code(lua, "astra.d.tl", &content).await?;
-        }
-    }
-
-    Ok(())
 }

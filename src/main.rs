@@ -48,7 +48,7 @@ enum AstraCLI {
         #[arg(short, long)]
         stdlib_path: Option<String>,
         /// Enables safe mode by removing access to dangerous standard library and behaviors
-        #[arg(short, long, action)]
+        #[arg(long, action)]
         safe: bool,
         /// Extra arguments to pass to the script.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
@@ -60,8 +60,8 @@ enum AstraCLI {
     )]
     ExportBundle {
         /// Export Teal configuration and type definitions
-        #[arg(short, long, action)]
-        teal_export: bool,
+        #[arg(short = 't', long, action)]
+        luau_export: bool,
         /// Path to the export file.
         path: Option<String>,
     },
@@ -93,28 +93,34 @@ pub async fn main() -> std::io::Result<()> {
             extra_args,
         } => {
             if safe {
+                #[allow(clippy::expect_used)]
                 LUA.set(
+                    #[allow(clippy::expect_used)]
                     mlua::Lua::new_with(
                         mlua::StdLib::ALL_SAFE,
                         mlua::LuaOptions::new()
                             .thread_pool_size(std::thread::available_parallelism()?.get()),
                     )
                     .expect("Could not start the safe runtime"),
-                );
+                )
+                .expect("Could not set up the global VM");
             } else {
+                #[allow(clippy::expect_used)]
                 LUA.set(unsafe {
+                    #[allow(clippy::expect_used)]
                     mlua::Lua::unsafe_new_with(
                         mlua::StdLib::ALL,
                         mlua::LuaOptions::new()
                             .thread_pool_size(std::thread::available_parallelism()?.get()),
                     )
-                });
+                })
+                .expect("Could not set up the global VM");
             }
 
             commands::run_command(file_path, code, stdlib_path, extra_args).await
         }
-        AstraCLI::ExportBundle { teal_export, path } => {
-            commands::export_bundle_command(teal_export, path).await?
+        AstraCLI::ExportBundle { luau_export, path } => {
+            commands::export_bundle_command(luau_export, path).await?
         }
         AstraCLI::Upgrade { user_agent } => {
             if let Err(e) = commands::upgrade_command(user_agent).await {
