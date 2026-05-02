@@ -21,33 +21,24 @@ pub async fn find_first_lua_match_with_content(
         );
         let pattern_path = std::path::PathBuf::from(&pattern);
         let pattern_path_without_extension =
-            std::path::PathBuf::from(&pattern.replace(".tl", "").replace(".lua", ""));
+            std::path::PathBuf::from(&pattern.replace(".luau", "").replace(".lua", ""));
 
         // Check all possible file patterns
         let candidates = vec![
             pattern_path.with_extension("lua"),
             pattern_path.with_extension("tl"),
             pattern_path_without_extension.join("init.lua"),
-            pattern_path_without_extension.join("init.tl"),
+            pattern_path_without_extension.join("init.luau"),
             pattern_path_without_extension.join("d.lua"),
-            pattern_path_without_extension.join("d.tl"),
+            pattern_path_without_extension.join("d.luau"),
             std::path::PathBuf::from("lua").join(&pattern_path),
-            std::path::PathBuf::from("teal").join(&pattern_path),
+            std::path::PathBuf::from("luau").join(&pattern_path),
             pattern_path.clone(), // For directories or files without extensions
         ];
 
         // Check the file system
         for candidate in candidates.iter() {
             if let Ok(content) = tokio::fs::read_to_string(&candidate).await {
-                if candidate.extension().is_some_and(|ext| ext == "tl")
-                    && !lua.globals().contains_key("TEAL_COMPILER").unwrap_or(false)
-                {
-                    #[allow(clippy::expect_used)]
-                    if let Err(e) = super::load_teal(lua).await {
-                        tracing::error!("{e}")
-                    }
-                }
-
                 return Some((candidate.clone(), content));
             }
         }
@@ -73,15 +64,6 @@ pub async fn find_first_lua_match_with_content(
             if let Some(file) = ASTRA_STD_LIBS.get_file(file_path)
                 && let Some(content) = file.contents_utf8()
             {
-                if file_path.extension().is_some_and(|ext| ext == "tl")
-                    && !lua.globals().contains_key("TEAL_COMPILER").unwrap_or(false)
-                {
-                    #[allow(clippy::expect_used)]
-                    if let Err(e) = super::load_teal(lua).await {
-                        tracing::error!("{e}")
-                    }
-                }
-
                 return Some((candidate.to_path_buf(), content.to_string()));
             }
         }
@@ -108,9 +90,6 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                 #[allow(clippy::collapsible_else_if)]
                 if let Some((file_path, content)) =
                     find_first_lua_match_with_content(&lua, &path).await
-                    && let Some(is_teal) = file_path
-                        .extension()
-                        .map(|extension| extension.to_string_lossy().contains("tl"))
                 {
                     let file_path = file_path
                         .to_string_lossy()
@@ -118,14 +97,11 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                         .replace(".\\", "");
 
                     lua.globals().set("CURRENT_SCRIPT", file_path.clone())?;
-                    let result = if is_teal {
-                        super::execute_teal_code(&lua, &file_path, &content).await?
-                    } else {
-                        lua.load(content)
-                            .set_name(file_path)
-                            .eval_async::<mlua::Value>()
-                            .await?
-                    };
+                    let result = lua
+                        .load(content)
+                        .set_name(file_path)
+                        .eval_async::<mlua::Value>()
+                        .await?;
 
                     let key = lua.create_registry_value(&result)?;
                     lua.globals().set(key_id, Some(key))?;

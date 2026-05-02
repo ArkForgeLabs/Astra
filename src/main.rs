@@ -8,21 +8,17 @@ mod commands;
 mod components;
 
 /// Global Lua instance.
-pub static LUA: std::sync::LazyLock<mlua::Lua> =
-    std::sync::LazyLock::new(|| unsafe { mlua::Lua::unsafe_new() });
+pub static LUA: std::sync::OnceLock<mlua::Lua> = std::sync::OnceLock::new();
 
 #[derive(Debug, Clone)]
 pub struct RuntimeFlags {
     pub stdlib_path: std::path::PathBuf,
-    pub check_teal_code: bool,
 }
 pub static RUNTIME_FLAGS: tokio::sync::OnceCell<RuntimeFlags> = tokio::sync::OnceCell::const_new();
 
 /// Global standard libraries and type definitions from Astra
 pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
     std::sync::LazyLock::new(|| include_dir::include_dir!("astra"));
-
-pub const TEAL_IMPORT_SCRIPT: &str = include_str!("components/teal_check.lua");
 
 /// Command-line interface for Astra.
 #[derive(Parser)]
@@ -51,9 +47,9 @@ enum AstraCLI {
         /// Path to the standard library folder
         #[arg(short, long)]
         stdlib_path: Option<String>,
-        /// Enable or disable Teal's compile checks before loading the moudles
-        #[arg(short, long, action)]
-        check_teal_code: bool,
+        /// Enables safe mode by removing access to dangerous standard library and behaviors
+        #[arg(long, action)]
+        safe: bool,
         /// Extra arguments to pass to the script.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         extra_args: Option<Vec<String>>,
@@ -64,8 +60,8 @@ enum AstraCLI {
     )]
     ExportBundle {
         /// Export Teal configuration and type definitions
-        #[arg(short, long, action)]
-        teal_export: bool,
+        #[arg(short = 't', long, action)]
+        luau_export: bool,
         /// Path to the export file.
         path: Option<String>,
     },
@@ -93,11 +89,38 @@ pub async fn main() -> std::io::Result<()> {
             file_path,
             code,
             stdlib_path,
-            check_teal_code,
+            safe,
             extra_args,
-        } => commands::run_command(file_path, code, stdlib_path, check_teal_code, extra_args).await,
-        AstraCLI::ExportBundle { teal_export, path } => {
-            commands::export_bundle_command(teal_export, path).await?
+        } => {
+            if safe {
+                #[allow(clippy::expect_used)]
+                LUA.set(
+                    #[allow(clippy::expect_used)]
+                    mlua::Lua::new_with(
+                        mlua::StdLib::ALL_SAFE,
+                        mlua::LuaOptions::new()
+                            .thread_pool_size(std::thread::available_parallelism()?.get()),
+                    )
+                    .expect("Could not start the safe runtime"),
+                )
+                .expect("Could not set up the global VM");
+            } else {
+                #[allow(clippy::expect_used)]
+                LUA.set(unsafe {
+                    #[allow(clippy::expect_used)]
+                    mlua::Lua::unsafe_new_with(
+                        mlua::StdLib::ALL,
+                        mlua::LuaOptions::new()
+                            .thread_pool_size(std::thread::available_parallelism()?.get()),
+                    )
+                })
+                .expect("Could not set up the global VM");
+            }
+
+            commands::run_command(file_path, code, stdlib_path, extra_args).await
+        }
+        AstraCLI::ExportBundle { luau_export, path } => {
+            commands::export_bundle_command(luau_export, path).await?
         }
         AstraCLI::Upgrade { user_agent } => {
             if let Err(e) = commands::upgrade_command(user_agent).await {
