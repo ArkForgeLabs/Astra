@@ -32,14 +32,6 @@ impl UserData for AstraWebSocket {
                                 recv.set("type", "bytes")?;
                                 recv.set("value", bytes.to_vec())?;
                             }
-                            Message::Ping(bytes) => {
-                                recv.set("type", "ping")?;
-                                recv.set("value", bytes.to_vec())?;
-                            }
-                            Message::Pong(bytes) => {
-                                recv.set("type", "pong")?;
-                                recv.set("value", bytes.to_vec())?;
-                            }
                             Message::Close(close_frame) => match close_frame {
                                 Some(frame) => {
                                     recv.set("type", "close")?;
@@ -53,6 +45,7 @@ impl UserData for AstraWebSocket {
                                     recv.set("value", mlua::Value::Nil)?;
                                 }
                             },
+                            _ => {}
                         };
 
                         Ok(recv)
@@ -80,8 +73,6 @@ impl UserData for AstraWebSocket {
                         },
                     ))),
                     "bytes" => Ok(Message::Binary(Self::value_to_bytes(&message)?)),
-                    "ping" => Ok(Message::Pong(Self::value_to_bytes(&message)?)),
-                    "pong" => Ok(Message::Ping(Self::value_to_bytes(&message)?)),
                     "close" => match message {
                         mlua::Value::Integer(close_code) => Ok(Message::Close(Some(CloseFrame {
                             code: u16::try_from(close_code).unwrap_or(1006),
