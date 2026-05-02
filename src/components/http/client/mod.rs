@@ -2,7 +2,7 @@ mod websocket;
 
 use crate::components::{AstraBuffer, astra_serde::sanetize_lua_input};
 use futures::StreamExt;
-use mlua::{ExternalError, LuaSerdeExt, UserData};
+use mlua::{ExternalError, ExternalResult, LuaSerdeExt, UserData};
 use reqwest::{Client, RequestBuilder};
 use reqwest_websocket::Upgrade;
 use std::collections::HashMap;
@@ -39,37 +39,8 @@ impl HTTPClientRequest {
                 let mut headers: HashMap<String, String> =
                     details.get("headers").unwrap_or(HashMap::new());
                 let body = details.get::<mlua::Value>("body")?;
-                let body = match body.clone() {
-                    mlua::Value::String(value) => {
-                        if !headers.contains_key("Content-Type") {
-                            headers.insert("Content-Type".to_string(), "text/plain".to_string());
-                        }
-                        Some(HTTPClientRequestBodyTypes::String(value.to_string_lossy()))
-                    }
-                    mlua::Value::Table(value) => {
-                        if crate::components::is_table_byte_array(&value)? {
-                            Some(HTTPClientRequestBodyTypes::Bytes(
-                                lua.from_value::<Vec<u8>>(body.clone())?,
-                            ))
-                        } else if crate::components::is_table_json(&value)? {
-                            if !headers.contains_key("Content-Type") {
-                                headers.insert(
-                                    "Content-Type".to_string(),
-                                    "application/json".to_string(),
-                                );
-                            }
-                            Some(HTTPClientRequestBodyTypes::Json(
-                                lua.from_value::<serde_json::Value>(sanetize_lua_input(
-                                    lua,
-                                    body.clone(),
-                                )?)?,
-                            ))
-                        } else {
-                            None
-                        }
-                    }
-                    _ => None,
-                };
+                let body = Self::body_parser(lua, &mut headers, body)?;
+
                 Ok(Self {
                     url: details.get("url")?,
                     method: details
@@ -91,14 +62,22 @@ impl HTTPClientRequest {
         lua.globals().set("astra_internal__http_request", function)
     }
 
-    pub async fn request_builder(&self) -> RequestBuilder {
+    pub async fn request_builder(&self) -> mlua::Result<RequestBuilder> {
         let mut client = match self.method.to_uppercase().as_str() {
-            "POST" => Client::new().post(&self.url),
-            "PATCH" => Client::new().patch(&self.url),
-            "PUT" => Client::new().put(&self.url),
-            "DELETE" => Client::new().delete(&self.url),
-            "HEAD" => Client::new().head(&self.url),
-            _ => Client::new().get(&self.url),
+            "CONNECT" => Client::new().request(reqwest::Method::CONNECT, &self.url),
+            "OPTIONS" => Client::new().request(reqwest::Method::OPTIONS, &self.url),
+            "DELETE" => Client::new().request(reqwest::Method::DELETE, &self.url),
+            "TRACE" => Client::new().request(reqwest::Method::TRACE, &self.url),
+            "PATCH" => Client::new().request(reqwest::Method::PATCH, &self.url),
+            "HEAD" => Client::new().request(reqwest::Method::HEAD, &self.url),
+            "POST" => Client::new().request(reqwest::Method::POST, &self.url),
+            "PUT" => Client::new().request(reqwest::Method::PUT, &self.url),
+            "GET" => Client::new().request(reqwest::Method::GET, &self.url),
+            _ => Client::new().request(
+                reqwest::Method::from_bytes(self.method.to_uppercase().as_bytes())
+                    .into_lua_err()?,
+                &self.url,
+            ),
         };
         client = if let Some(HTTPClientRequestBodyTypes::String(body)) = &self.body {
             client.body(body.clone())
@@ -139,7 +118,45 @@ impl HTTPClientRequest {
         if !self.form.is_empty() {
             client = client.form(&self.form);
         }
-        client
+
+        Ok(client)
+    }
+
+    fn body_parser(
+        lua: &mlua::Lua,
+        headers: &mut HashMap<String, String>,
+        body: mlua::Value,
+    ) -> mlua::Result<Option<HTTPClientRequestBodyTypes>> {
+        match body.clone() {
+            mlua::Value::String(value) => {
+                if !headers.contains_key("Content-Type") {
+                    headers.insert("Content-Type".to_string(), "text/plain".to_string());
+                }
+                Ok(Some(HTTPClientRequestBodyTypes::String(
+                    value.to_string_lossy(),
+                )))
+            }
+            mlua::Value::Table(value) => {
+                if crate::components::is_table_byte_array(&value)? {
+                    Ok(Some(HTTPClientRequestBodyTypes::Bytes(
+                        lua.from_value::<Vec<u8>>(body.clone())?,
+                    )))
+                } else if crate::components::is_table_json(&value)? {
+                    if !headers.contains_key("Content-Type") {
+                        headers.insert("Content-Type".to_string(), "application/json".to_string());
+                    }
+                    Ok(Some(HTTPClientRequestBodyTypes::Json(
+                        lua.from_value::<serde_json::Value>(sanetize_lua_input(
+                            lua,
+                            body.clone(),
+                        )?)?,
+                    )))
+                } else {
+                    Ok(None)
+                }
+            }
+            _ => Ok(None),
+        }
     }
 
     pub async fn response_to_http_client_response(
@@ -238,7 +255,7 @@ impl UserData for HTTPClientRequest {
             Ok(request)
         });
         methods.add_async_method("execute", |_, this, ()| async move {
-            let request = this.request_builder().await;
+            let request = this.request_builder().await?;
             match request.send().await {
                 Ok(response) => Ok(Self::response_to_http_client_response(response).await),
                 Err(e) => Err(e.into_lua_err()),
@@ -248,7 +265,7 @@ impl UserData for HTTPClientRequest {
             "execute_task",
             |_, this, callback: mlua::Function| async move {
                 tokio::spawn(async move {
-                    let request = this.request_builder().await;
+                    let request = this.request_builder().await?;
                     match request.send().await {
                         Ok(response) => {
                             if let Err(e) = callback
@@ -259,6 +276,8 @@ impl UserData for HTTPClientRequest {
                         }
                         Err(e) => tracing::error!("HTTP Request did not execute successfully: {e}"),
                     };
+
+                    mlua::Result::Ok(())
                 });
                 Ok(())
             },
@@ -268,12 +287,13 @@ impl UserData for HTTPClientRequest {
             "execute_streaming",
             |_, this, callback: mlua::Function| async move {
                 tokio::spawn(async move {
+                    let request = this.request_builder().await?;
                     // Build and send request
-                    let response = match this.request_builder().await.send().await {
+                    let response = match request.send().await {
                         Ok(r) => r,
                         Err(e) => {
                             tracing::error!("HTTP Request did not execute successfully: {e}");
-                            return;
+                            return mlua::Result::Ok(());
                         }
                     };
 
@@ -295,7 +315,7 @@ impl UserData for HTTPClientRequest {
                     // Initial callback
                     if let Err(e) = callback.call::<()>(initial_response.clone()) {
                         tracing::error!("Error running initial callback: {e}");
-                        return;
+                        return Ok(());
                     }
 
                     // Process chunks
@@ -316,6 +336,8 @@ impl UserData for HTTPClientRequest {
                             }
                         }
                     }
+
+                    Ok(())
                 });
                 Ok(())
             },
@@ -324,7 +346,8 @@ impl UserData for HTTPClientRequest {
             "execute_websocket",
             |lua, this, callback: mlua::Function| async move {
                 tokio::spawn(async move {
-                    let request = this.request_builder().await.upgrade();
+                    let request = this.request_builder().await?;
+                    let request = request.upgrade();
                     if let Ok(response) = request.send().await
                         && let Ok(response) = response.into_websocket().await
                     {
@@ -339,6 +362,8 @@ impl UserData for HTTPClientRequest {
                     } else {
                         tracing::error!("Websocket request did not execute successfully");
                     };
+
+                    mlua::Result::Ok(())
                 });
                 Ok(())
             },
