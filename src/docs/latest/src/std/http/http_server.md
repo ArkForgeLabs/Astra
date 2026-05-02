@@ -136,7 +136,7 @@ Cookies allow you to store data on each HTTP request, if supported. Astra does n
 server:get("/", function(request)
     local cookie = request:new_cookie("key", "value")
 
-    return "HEY"
+    return "Hello from Astra"
 end)
 ```
 

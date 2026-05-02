@@ -123,7 +123,7 @@ local http = {}
 ---@field code integer
 ---@field reason string
 
----@alias WebSocketMessageType "text" | "bytes" | "ping" | "pong" | "close"
+---@alias WebSocketMessageType "text" | "bytes" | "close"
 
 ---@class WebSocketMessage
 ---@field type WebSocketMessageType

@@ -19,22 +19,23 @@ The `http.request` function returns a `HTTPClientRequest` object which can be fu
 ```lua
 local request_client = http.request("https://example.com")
 -- - Method. You can pick between one of these:
---   - GET,
---   - POST,
---   - PUT,
---   - PATCH,
---   - DELETE,
---   - HEAD,
+--   - CONNECT
+--   - OPTIONS
+--   - DELETE
+--   - TRACE
+--   - PATCH
+--   - HEAD
+--   - POST
+--   - PUT
+--   - GET
+-- Or any custom method, as long as its valid.
   :set_method("POST")
   :set_header("key", "value")
   :set_headers({ key = "value" })
   :set_form("key", "value")
-  :set_forms({ key = "value" })  -- Set multiple form values at once
   :set_body("THE CONTENT OF THE BODY")
-  :set_json({ key = "value" })
   :set_file("/path/to/file")
-  -- You can also execute as an async task
-  :execute_task(function (result) end)
+  :execute()
 ```
 
 You can also instead of chaining functions, just pass a table containing these values as such:
@@ -56,7 +57,7 @@ For more complex requests, such as API calls with authentication and JSON payloa
 local http = require("http")
 
 http.request({
-    url = "https://example-ai-company.com",
+    url = "https://api.example-ai-company.com/v1",
     method = "POST",
     headers = {
         ["Authorization"] = "Bearer " .. os.getenv("TOKEN")
