@@ -210,14 +210,12 @@ end
 
 ```
 
-You can send 5 types of messages from a WebSocket: text, bytes, ping, pong, and a close frame. The first 4 all take a string as their message, with bytes, ping, and pong also being able to take a table of 8-bit unsigned bytes, a close frame takes a [close code](https://websocket.org/reference/websocket-api/#websocket-close-codes) and a reason, which is an optional string, both of which should be places inside a lua table.
+You can send 5 types of messages from a WebSocket: text, bytes, and a close frame. The first 4 all take a string as their message, with bytes also being able to take a table of 8-bit unsigned bytes, a close frame takes a [close code](https://websocket.org/reference/websocket-api/#websocket-close-codes) and a reason, which is an optional string, both of which should be places inside a lua table.
 
 ```lua
 -- The first parameter is a type:
   -- text
   -- bytes
-  -- ping
-  -- pong
   -- close
 
 socket:send("text", "hey there, this is a very informative message.")
@@ -228,8 +226,7 @@ socket:send_text("yet another informative message")
 -- I can send a string of bytes:
 socket:send_bytes("this will be illegible soon")
 -- Or a table of them:
-socket:send_ping({0, 88, 14, 67, 45})
-socket:send_pong({17, 38, 80, 0, 85})
+socket:send_bytes({0, 88, 14, 67, 45})
 
 -- I can also send a close frame, first with the close code, and then the reason:
 socket:send_close({code = 1000, reason = "finally, done with everything"})

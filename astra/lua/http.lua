@@ -138,13 +138,6 @@ local http = {}
 ---@field send_text fun(socket: WebSocket, message: string)
 ---A binary WebSocket message
 ---@field send_bytes fun(socket: WebSocket, bytes: table)
----A ping message with the specified payload. The payload here must have a length less than 125 bytes.
----Ping messages will be automatically responded to by the server so you do not have to worry about dealing with them yourself.
----@field send_ping fun(socket: WebSocket, bytes: string)
----A pong message with the specified payload. The payload here must have a length less than 125 bytes.
----Pong messages will be automatically sent to the client if a ping message is received,
----so you do not have to worry about constructing them yourself unless you want to implement a unidirectional heartbeat.
----@field send_pong fun(socket: WebSocket, bytes: string)
 ---@field send_close fun(socket: WebSocket, close_frame: CloseFrame?)
 
 ---@alias wscallback fun(socket: WebSocket): any

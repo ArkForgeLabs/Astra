@@ -24,6 +24,11 @@ impl UserData for super::HTTPClientRequest {
                 Ok(request)
             },
         );
+        methods.add_method_mut("set_forms", |_, _, _body: mlua::Value| {
+            panic!("set_forms is deprecated, moved to set_form.");
+            #[allow(unreachable_code)]
+            Ok(())
+        });
         methods.add_method_mut("set_form", |_, this, form: HashMap<String, String>| {
             let mut request = this.clone();
             request.form = form;
@@ -39,6 +44,16 @@ impl UserData for super::HTTPClientRequest {
             }
             Ok(request)
         });
+        methods.add_method_mut("set_bytes", |_, _, _body: mlua::Value| {
+            panic!("set_bytes is deprecated, use the set_body instead.");
+            #[allow(unreachable_code)]
+            Ok(())
+        });
+        methods.add_method_mut("set_json", |_, _, _body: mlua::Value| {
+            panic!("set_json is deprecated, use the set_body instead.");
+            #[allow(unreachable_code)]
+            Ok(())
+        });
         methods.add_method_mut("set_file", |_, this, file_path: String| {
             let mut request = this.clone();
             request.file = Some(file_path);
@@ -50,6 +65,11 @@ impl UserData for super::HTTPClientRequest {
                 Ok(response) => Ok(Self::response_to_http_client_response(response).await),
                 Err(e) => Err(e.into_lua_err()),
             }
+        });
+        methods.add_method("execute_task", |_, _, _: ()| {
+            panic!("execute_task is deprecated, use execute within async task instead.");
+            #[allow(unreachable_code)]
+            Ok(())
         });
         methods.add_async_method(
             "execute_streaming",

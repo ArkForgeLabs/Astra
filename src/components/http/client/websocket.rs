@@ -33,14 +33,6 @@ impl UserData for AstraWebSocket {
                                 recv.set("type", "bytes")?;
                                 recv.set("value", bytes.to_vec())?;
                             }
-                            Message::Ping(bytes) => {
-                                recv.set("type", "ping")?;
-                                recv.set("value", bytes.to_vec())?;
-                            }
-                            Message::Pong(bytes) => {
-                                recv.set("type", "pong")?;
-                                recv.set("value", bytes.to_vec())?;
-                            }
                             Message::Close { code, reason } => {
                                 recv.set("type", "close")?;
                                 let close_frame = lua.create_table()?;
@@ -48,6 +40,7 @@ impl UserData for AstraWebSocket {
                                 close_frame.set("reason", reason)?;
                                 recv.set("value", close_frame)?;
                             }
+                            _ => {}
                         };
 
                         Ok(recv)
@@ -73,8 +66,6 @@ impl UserData for AstraWebSocket {
                         },
                     )),
                     "bytes" => Ok(Message::Binary(Self::value_to_bytes(&message)?)),
-                    "ping" => Ok(Message::Pong(Self::value_to_bytes(&message)?)),
-                    "pong" => Ok(Message::Ping(Self::value_to_bytes(&message)?)),
                     "close" => match message {
                         mlua::Value::Integer(close_code) => Ok(Message::Close {
                             code: CloseCode::from(u16::try_from(close_code).unwrap_or(1006)),
@@ -119,29 +110,6 @@ impl UserData for AstraWebSocket {
                 Err(e) => Err(e.into_lua_err()),
             }
         });
-
-        methods.add_async_method_mut("send_ping", |_, mut this, bytes: mlua::Value| async move {
-            match this
-                .0
-                .send(Message::Ping(Self::value_to_bytes(&bytes)?))
-                .await
-            {
-                Ok(_) => Ok(()),
-                Err(e) => Err(e.into_lua_err()),
-            }
-        });
-
-        methods.add_async_method_mut("send_pong", |_, mut this, bytes: mlua::Value| async move {
-            match this
-                .0
-                .send(Message::Pong(Self::value_to_bytes(&bytes)?))
-                .await
-            {
-                Ok(_) => Ok(()),
-                Err(e) => Err(e.into_lua_err()),
-            }
-        });
-
         methods.add_async_method_mut(
             "send_close",
             |_, mut this, close_frame: Option<mlua::Value>| async move {
