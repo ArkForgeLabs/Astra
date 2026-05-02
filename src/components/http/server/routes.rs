@@ -119,10 +119,11 @@ pub async fn route(
 }
 
 pub fn load_routes(server: mlua::Table) -> Router {
-    let lua = &LUA;
     let mut router = Router::new();
-    let mut routes = Vec::new();
+    #[allow(clippy::expect_used)]
+    let lua = LUA.get().expect("Could not get access to the global VM");
 
+    let mut routes = Vec::new();
     let mut parse_route = |entry: &mlua::Table| -> mlua::Result<()> {
         routes.push(routes::Route {
             path: lua.from_value(entry.get("path")?)?,
