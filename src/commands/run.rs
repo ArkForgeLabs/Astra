@@ -100,13 +100,19 @@ async fn run_command_prerequisite(
     }
 
     #[allow(clippy::expect_used)]
-    lua.globals()
-        .set("CURRENT_SCRIPT", file_path)
+    let astra_table = lua
+        .globals()
+        .get::<mlua::Table>("Astra")
+        .expect("Could not get the global Astra table");
+
+    #[allow(clippy::expect_used)]
+    astra_table
+        .set("current_script", file_path)
         .expect("Couldn't set the script path");
 
     #[allow(clippy::expect_used)]
-    lua.globals()
-        .set("MAIN_SCRIPT", file_path)
+    astra_table
+        .set("main_script", file_path)
         .expect("Couldn't set the script path");
 }
 
