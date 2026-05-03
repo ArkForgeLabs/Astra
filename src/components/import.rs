@@ -26,13 +26,11 @@ pub async fn find_first_lua_match_with_content(
         // Check all possible file patterns
         let candidates = vec![
             pattern_path.with_extension("lua"),
-            pattern_path.with_extension("tl"),
+            pattern_path.with_extension("luau"),
             pattern_path_without_extension.join("init.lua"),
             pattern_path_without_extension.join("init.luau"),
             pattern_path_without_extension.join("d.lua"),
             pattern_path_without_extension.join("d.luau"),
-            std::path::PathBuf::from("lua").join(&pattern_path),
-            std::path::PathBuf::from("luau").join(&pattern_path),
             pattern_path.clone(), // For directories or files without extensions
         ];
 

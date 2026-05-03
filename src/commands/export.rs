@@ -1,20 +1,13 @@
 use crate::ASTRA_STD_LIBS;
 
 /// Exports the Lua bundle.
-pub async fn export_bundle_command(
-    luau_export: bool,
-    folder_path: Option<String>,
-) -> std::io::Result<()> {
+pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Result<()> {
     let folder_path = folder_path.unwrap_or(".".to_string());
     let folder_path = std::path::Path::new(&folder_path).join("astra");
     let _ = std::fs::remove_dir_all(&folder_path);
     let _ = std::fs::create_dir_all(&folder_path);
 
     ASTRA_STD_LIBS.extract(&folder_path)?;
-
-    if !luau_export {
-        let _ = std::fs::remove_dir_all(folder_path.join("luau"));
-    }
 
     let runtime = if cfg!(feature = "lua54") {
         "Lua 5.4"
@@ -35,13 +28,6 @@ pub async fn export_bundle_command(
     // let tlconfig_file = include_str!("../../tlconfig.lua").replace("LuaJIT", runtime);
     let luarc_file = include_str!("../../.luarc.json").replace("LuaJIT", runtime);
 
-    // if luau_export {
-    //     std::fs::exists("tlconfig.lua")
-    //         .map(|exists| !exists)
-    //         .map(|_| std::fs::write("tlconfig.lua", tlconfig_file))??;
-
-    //     println!("🚀 Successfully exported the bundled library!");
-    // } else {
     std::fs::exists(".luarc.json")
         .map(|exists| !exists)
         .map(|_| std::fs::write(".luarc.json", luarc_file))??;

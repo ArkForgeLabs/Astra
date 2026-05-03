@@ -59,9 +59,6 @@ enum AstraCLI {
         alias = "export"
     )]
     ExportBundle {
-        /// Export Teal configuration and type definitions
-        #[arg(short = 't', long, action)]
-        luau_export: bool,
         /// Path to the export file.
         path: Option<String>,
     },
@@ -119,9 +116,7 @@ pub async fn main() -> std::io::Result<()> {
 
             commands::run_command(file_path, code, stdlib_path, extra_args).await
         }
-        AstraCLI::ExportBundle { luau_export, path } => {
-            commands::export_bundle_command(luau_export, path).await?
-        }
+        AstraCLI::ExportBundle { path } => commands::export_bundle_command(path).await?,
         AstraCLI::Upgrade { user_agent } => {
             if let Err(e) = commands::upgrade_command(user_agent).await {
                 eprintln!("Could not update to the latest version: {e}");

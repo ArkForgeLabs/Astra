@@ -5,10 +5,7 @@
     "target"
   ],
   "workspace.library": [
-    "astra/lua"
+    "astra"
   ],
-  "runtime.version": "LuaJIT",
-  "diagnostics.disable": [
-    "undefined-global"
-  ]
+  "runtime.version": "LuaJIT"
 }
