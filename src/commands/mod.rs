@@ -22,6 +22,10 @@ async fn stdlib_to_lua_table(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
                         .replace("\\", std::path::MAIN_SEPARATOR_STR)
                         .replace("/", std::path::MAIN_SEPARATOR_STR);
                     let content = file.contents_utf8().unwrap_or("");
+                    println!(
+                        ">> {:?}",
+                        std::path::Path::new("astra").join(file_path.clone())
+                    );
                     lua_astra_stdlib.set(std::path::Path::new("astra").join(file_path), content)?;
                     #[allow(clippy::expect_used)]
                     lua_astra_stdlib.set(
@@ -50,11 +54,8 @@ async fn registration(lua: &mlua::Lua, stdlib_path: String) -> mlua::Result<()> 
     )?;
 
     // astra.d.lua
-    if let Some(content) = read_from_stdlib(
-        &stdlib_path,
-        std::path::PathBuf::from("lua").join("astra.d.lua"),
-    )
-    .await
+    if let Some(content) =
+        read_from_stdlib(&stdlib_path, std::path::PathBuf::from("astra.d.lua")).await
     {
         lua.load(content)
             .set_name("astra.d.lua")

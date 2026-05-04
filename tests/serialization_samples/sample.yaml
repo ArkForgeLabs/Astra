@@ -1,0 +1,14 @@
+name: John Doe
+age: 30
+is_student: false
+courses:
+  - Math
+  - Science
+  - History
+address:
+  street: 123 Main St
+  city: Anytown
+  zipcode: "12345"
+metadata:
+  created: "2023-01-15"
+  updated: "2023-12-01"

@@ -38,7 +38,8 @@ fn hash(hash_type: String, input: String) -> String {
         ($hash_function:ty) => {
             let mut sha = <$hash_function>::new();
             sha.update(input);
-            return format!("{:x}", sha.finalize())
+            let result = sha.finalize();
+            return result.iter().map(|b| format!("{:02x}", b)).collect()
         };
     }
     if hash_type.starts_with("sha") {

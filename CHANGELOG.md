@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.47.0](https://github.com/ArkForgeLabs/Astra/compare/v0.46.0..v0.47.0) - 2026-05-03
+
+### Bug Fixes
+
+- macos updates executable permission upon update - ([fa3069a](https://github.com/ArkForgeLabs/Astra/commit/fa3069ad55e81ddd24d807df9d57a5f69c52c3cf))
+
+### Features
+
+- added server debug auto refresh system - ([ab1924f](https://github.com/ArkForgeLabs/Astra/commit/ab1924fc6bfcb81052b54e1be16071e4a149f7f6))
+
+### Miscellaneous Chores
+
+- removed teal and added luau support for imports and more. Astra is now Lua first - ([de0f290](https://github.com/ArkForgeLabs/Astra/commit/de0f29067246a842ee25dcbce74fcf907987eb2a))
+
+### Refactoring
+
+- remove teal type definitions - ([80ead10](https://github.com/ArkForgeLabs/Astra/commit/80ead10e00ac15a257102f55f906d04048e696a8))
+- [**breaking**] removed Teal and added safety runtime option - ([82f77f7](https://github.com/ArkForgeLabs/Astra/commit/82f77f7fba86104491e5893fcb802d42b9f1b986))
+- [**breaking**] removed teal from the codebase - ([2cd0807](https://github.com/ArkForgeLabs/Astra/commit/2cd080750714fe9c9b50af764f1424edda257acd))
+- moved CURRENT_SCRIPT and MAIN_SCRIPT to be inside Astra global - ([1655e2c](https://github.com/ArkForgeLabs/Astra/commit/1655e2c0dfbb39703b5466d05f660d936624e0af))
+- removed HTTPRequest's :forms, :set_json, :set_bytes, and Websocket's ping and pong
+
 ## [0.46.0](https://github.com/ArkForgeLabs/Astra/compare/v0.45.3..v0.46.0) - 2026-03-30
 
 ### Bug Fixes

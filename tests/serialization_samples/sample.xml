@@ -1,0 +1,17 @@
+<root>
+  <name>John Doe</name>
+  <age>30</age>
+  <is_student>false</is_student>
+  <courses>Math</courses>
+  <courses>Science</courses>
+  <courses>History</courses>
+  <address>
+    <street>123 Main St</street>
+    <city>Anytown</city>
+    <zipcode>12345</zipcode>
+  </address>
+  <metadata>
+    <created>2023-01-15</created>
+    <updated>2023-12-01</updated>
+  </metadata>
+</root>

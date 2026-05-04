@@ -3,11 +3,17 @@
 ---@class Astra
 Astra = {
   version = "@ASTRA_VERSION",
+  --- The current running script
+  current_script = "",
+  --- The first script that was ran in the commandline
+  main_script = "",
 }
 
---- The current running script
+--- The current running script, use `Astra.current_script` instead
+---@deprecated
 CURRENT_SCRIPT = ""
---- The first script that was ran in the commandline
+--- The first script that was ran in the commandline, use `Astra.main_script` instead
+---@deprecated
 MAIN_SCRIPT = ""
 
 --[[
@@ -27,12 +33,23 @@ function uuid()
   return astra_internal__uuid()
 end
 
+---This function is deprecated, use `clean_require` instead
+---
 ---Invalidates imported module cache
 ---
 ---Modules are cached upon importing at Astra, you can use this
 ---function to remove those caches
 ---@param path string
+---@deprecated
 function invalidate_cache(path)
+  ---@diagnostic disable-next-line: undefined-global
+  astra_internal__invalidate_cache(path)
+end
+
+---Modules are cached upon importing at Astra, you can use this
+---function to remove those caches
+---@param path string
+function clean_require(path)
   ---@diagnostic disable-next-line: undefined-global
   astra_internal__invalidate_cache(path)
 end

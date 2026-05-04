@@ -1,6 +1,6 @@
 [package]
 name = "lua-astra"
-version = "0.46.0"
+version = "0.47.0"
 authors = ["Elham Aryanpur <elhamaryanpur5@gmail.com>"]
 description = "🔥 Blazingly Fast 🔥 runtime environment for Lua"
 documentation = "https://astra.arkforge.net/docs/latest"
@@ -44,9 +44,9 @@ mlua = { version = "0.11.6", features = [
 ] }
 
 # http
-axum = { version = "0.8.8", features = ["macros", "multipart", "http2", "ws"] }
-axum-extra = { version = "0.12.5", features = ["cookie"] }
-reqwest = { version = "0.13.2", features = [
+axum = { version = "0.8.9", features = ["macros", "multipart", "http2", "ws"] }
+axum-extra = { version = "0.12.6", features = ["cookie"] }
+reqwest = { version = "0.13.3", features = [
   "json",
   "rustls",
   "charset",
@@ -65,7 +65,7 @@ tower-http = { version = "0.6.8", features = [
   "set-header",
 ] }
 time = "0.3.47"
-minijinja = { version = "2.16.0", features = [
+minijinja = { version = "2.19.0", features = [
   "loader",
   "urlencode",
   "loop_controls",
@@ -88,26 +88,26 @@ quick-xml = { version = "0.39.2", features = [
   "overlapped-lists",
   "serialize",
 ] }
-toml = { version = "1.0.3" }
-uuid = { version = "1.21.0", features = ["serde", "v4"] }
-sha2 = "0.10.9"
-sha3 = "0.10.8"
+toml = { version = "1.1.2" }
+uuid = { version = "1.23.1", features = ["serde", "v4"] }
+sha2 = "0.11.0"
+sha3 = "0.11.0"
 base64 = "0.22.1"
 bytes = { version = "1.11.1", features = ["serde"] }
 chrono = { version = "0.4.44", features = ["serde"] }
 markdown = { version = "1.0.0", features = ["serde"] }
 
 # runtime
-tokio = { version = "1.49.0", features = [
+tokio = { version = "1.52.1", features = [
   "macros",
   "signal",
   "rt-multi-thread",
 ] }
 futures = "0.3.32"
-clap = { version = "4.5.60", features = ["cargo", "derive"] }
+clap = { version = "4.6.1", features = ["cargo", "derive"] }
 dotenvy = "0.15.7"
 tracing = "0.1.44"
-tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 version-compare = "0.2.1"
 regex = "1.12.3"
 paste = "1.0.15"
