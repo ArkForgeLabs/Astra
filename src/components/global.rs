@@ -25,8 +25,8 @@ pub fn close_dbs(lua: &mlua::Lua) -> mlua::Result<()> {
         "astra_internal__close_all_databases",
         lua.create_async_function(|_, _: ()| async {
             let database_pools = DATABASE_POOLS.lock().await.clone();
-            for i in database_pools {
-                match i {
+            for (_id, db_type) in database_pools {
+                match db_type {
                     crate::components::database::DatabaseType::Postgres(pool) => pool.close().await,
                     crate::components::database::DatabaseType::Sqlite(pool) => pool.close().await,
                 }

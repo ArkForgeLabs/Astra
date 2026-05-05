@@ -114,10 +114,9 @@ return function(test)
       expect(row.value).to.equal(10)
     end)
 
-    it("fails for nonexistent id", function()
-      expect(function()
-        db:query_one("SELECT * FROM t WHERE id = ?", { 999 })
-      end).to.fail()
+    it("returns nil for nonexistent id", function()
+      local row = db:query_one("SELECT * FROM t WHERE id = ?", { 999 })
+      expect(row).to.equal(nil)
     end)
 
     it("returns row with typed columns", function()
