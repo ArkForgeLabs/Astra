@@ -4,7 +4,8 @@ require("test")
 ---@param test Test
 ---@param roundtrip_test function
 ---@param test_data table
-return function(test, roundtrip_test, test_data)
+---@param read_sample function
+return function(test, roundtrip_test, test_data, read_sample)
   test.describe("JSON5", function()
     test.it("encodes and decodes simple types", function()
       roundtrip_test("JSON5", test_data.simple, serde.json5.encode, serde.json5.decode)
@@ -40,11 +41,10 @@ return function(test, roundtrip_test, test_data)
     end)
 
     test.it("handles comments in JSON5", function()
-      -- JSON5 allows comments, test that encoding produces valid JSON5
       local data = { value = 42 }
       local encoded = serde.json5.encode(data)
       test.expect(encoded).to.be.a("string")
-      test.expect(#encoded).to.equal(#encoded) -- Just verify it's not empty
+      test.expect(#encoded).to.equal(#encoded)
     end)
 
     test.it("handles multiline strings", function()
@@ -63,6 +63,21 @@ Line 3]] }
         nested = { inner = "value" },
       }
       roundtrip_test("JSON5", data, serde.json5.encode, serde.json5.decode)
+    end)
+
+    test.it("decodes sample.json5 from file", function()
+      local sample = read_sample("sample.json5")
+      local data = serde.json5.decode(sample)
+      test.expect(data.name).to.equal("John Doe")
+      test.expect(data.metadata.created).to.equal("2023-01-15")
+    end)
+
+    test.it("handles invalid JSON5", function()
+      test
+        .expect(function()
+          serde.json5.decode("{invalid::}")
+        end).to
+        .fail()
     end)
   end)
 end

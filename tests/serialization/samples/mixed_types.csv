@@ -1,0 +1,4 @@
+id,name,price,in_stock,rating
+1,"Product A",19.99,true,4.5
+2,"Product B",29.99,false,3.8
+3,"Product C",9.99,true,4.2

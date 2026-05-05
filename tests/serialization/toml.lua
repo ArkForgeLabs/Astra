@@ -4,7 +4,8 @@ require("test")
 ---@param test Test
 ---@param roundtrip_test function
 ---@param _test_data table
-return function(test, roundtrip_test, _test_data)
+---@param read_sample function
+return function(test, roundtrip_test, _test_data, read_sample)
   test.describe("TOML", function()
     test.it("encodes and decodes simple key-value pairs", function()
       local data = { key1 = "value1", key2 = "value2" }
@@ -60,28 +61,40 @@ Line 3]] }
       local decoded = serde.toml.decode(encoded)
       test.expect(decoded).to.equal(empty)
     end)
+
+    test.it("decodes sample.toml from file", function()
+      local sample = read_sample("sample.toml")
+      local data = serde.toml.decode(sample)
+      test.expect(data.name).to.equal("John Doe")
+      test.expect(data.address.street).to.equal("123 Main St")
+    end)
+
+    test.it("handles sections", function()
+      local toml_str = '[server]\nhost = "localhost"\nport = 8080\n'
+      local data = serde.toml.decode(toml_str)
+      test.expect(data.server).to.be.a("table")
+      test.expect(data.server.host).to.equal("localhost")
+    end)
+
+    test.it("handles invalid TOML", function()
+      test
+        .expect(function()
+          serde.toml.decode("= invalid")
+        end).to
+        .fail()
+    end)
   end)
 
   test.describe("TOML - Real World Examples", function()
     test.it("decodes TOML with datetime", function()
-      local toml_datetime = [[
-      [build]
-      timestamp = "1979-05-27T07:32:00Z"
-
-      [deploy]
-      date = "1979-05-27 07:32:00.000000"
-
-      [config]
-      last_updated = "1979-05-27T07:32:00+00:00"
-    ]]
+      local toml_datetime = read_sample("datetime.toml")
       local decoded = serde.toml.decode(toml_datetime)
       test.expect(decoded.build.timestamp).to.equal("1979-05-27T07:32:00Z")
       test.expect(decoded.deploy.date).to.equal("1979-05-27 07:32:00.000000")
     end)
 
     test.it("decodes TOML with arrays of tables", function()
-      local toml_arrays =
-        '[[products]]\n      name = "Hammer"\n      sku = 738594937\n      \n      [[products]]\n      name = "Nail"\n      sku = 284758393\n      \n      [[products]]\n      name = "Screwdriver"\n      sku = 506981302\n    '
+      local toml_arrays = read_sample("products.toml")
       local decoded = serde.toml.decode(toml_arrays)
       test.expect(#decoded.products).to.equal(3)
       test.expect(decoded.products[1].name).to.equal("Hammer")
@@ -89,30 +102,7 @@ Line 3]] }
     end)
 
     test.it("decodes Cargo.toml-like file", function()
-      local cargo_toml = [[
-      [package]
-      name = "my-package"
-      version = "0.1.0"
-      edition = "2021"
-      authors = ["John Doe <john@example.com>"]
-      description = "A short description of my package"
-      license = "MIT"
-
-      [dependencies]
-      serde = { version = "1.0", features = ["derive"] }
-      tokio = { version = "1.0", features = ["full"] }
-
-      [dev-dependencies]
-      test-dep = "0.1"
-
-      [build-dependencies]
-      build-dep = "0.1"
-
-      [features]
-      default = ["feature-a", "feature-b"]
-      feature-a = []
-      feature-b = []
-    ]]
+      local cargo_toml = read_sample("cargo.toml")
       local decoded = serde.toml.decode(cargo_toml)
       test.expect(decoded.package.name).to.equal("my-package")
       test.expect(decoded.package.version).to.equal("0.1.0")
@@ -121,26 +111,7 @@ Line 3]] }
     end)
 
     test.it("decodes TOML with nested tables using dots", function()
-      local toml_nested = [[
-      [owner]
-      name = "John Doe"
-
-      [owner.address]
-      street = "123 Main St"
-      city = "New York"
-      zip = "10001"
-
-      [database]
-      enabled = true
-
-      [database.connection]
-      host = "localhost"
-      port = 5432
-
-      [database.connection.pool]
-      min = 2
-      max = 10
-    ]]
+      local toml_nested = read_sample("nested_dotted.toml")
       local decoded = serde.toml.decode(toml_nested)
       test.expect(decoded.owner.name).to.equal("John Doe")
       test.expect(decoded.owner.address.city).to.equal("New York")

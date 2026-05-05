@@ -1,0 +1,21 @@
+<rss version="2.0">
+  <channel>
+    <title>Example RSS Feed</title>
+    <link>https://example.com</link>
+    <description>An example RSS feed</description>
+    <item>
+      <title>First Article</title>
+      <link>https://example.com/article1</link>
+      <description>This is the first article</description>
+      <pubDate>Mon, 08 Mar 2023 15:45:00 GMT</pubDate>
+      <guid>https://example.com/article1</guid>
+    </item>
+    <item>
+      <title>Second Article</title>
+      <link>https://example.com/article2</link>
+      <description>This is the second article</description>
+      <pubDate>Tue, 09 Mar 2023 10:30:00 GMT</pubDate>
+      <guid>https://example.com/article2</guid>
+    </item>
+  </channel>
+</rss>

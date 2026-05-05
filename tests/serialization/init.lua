@@ -1,13 +1,17 @@
+local fs = require("fs")
+
 ---@param test Test
 return function(test)
-  -- Helper functions
+  local function read_sample(name)
+    return fs.read_file("tests/serialization/samples/" .. name)
+  end
+
   local function roundtrip_test(_format_name, data, encode_fn, decode_fn)
     local encoded = encode_fn(data)
     local decoded = decode_fn(encoded)
     test.expect(decoded).to.equal(data)
   end
 
-  -- Test data for roundtrip testing
   local test_data = {
     simple = {
       string = "hello",
@@ -39,7 +43,6 @@ return function(test)
     },
   }
 
-  -- Add test helper: to.be.at.least()
   test.paths.least = {
     test = function(value, min)
       return value >= min,
@@ -49,9 +52,11 @@ return function(test)
   }
   table.insert(test.paths.be, "least")
 
-  require("tests.serialization.json")(test, roundtrip_test, test_data)
-  require("tests.serialization.json5")(test, roundtrip_test, test_data)
-  require("tests.serialization.yaml")(test, roundtrip_test, test_data)
-  require("tests.serialization.toml")(test, roundtrip_test, test_data)
-  require("tests.serialization.xml")(test, roundtrip_test, test_data)
+  require("tests.serialization.json")(test, roundtrip_test, test_data, read_sample)
+  require("tests.serialization.json5")(test, roundtrip_test, test_data, read_sample)
+  require("tests.serialization.yaml")(test, roundtrip_test, test_data, read_sample)
+  require("tests.serialization.toml")(test, roundtrip_test, test_data, read_sample)
+  require("tests.serialization.xml")(test, roundtrip_test, test_data, read_sample)
+  require("tests.serialization.csv")(test, roundtrip_test, test_data, read_sample)
+  require("tests.serialization.ini")(test, roundtrip_test, test_data, read_sample)
 end

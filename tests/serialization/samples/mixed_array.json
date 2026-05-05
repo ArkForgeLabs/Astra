@@ -1,0 +1,8 @@
+[
+  42,
+  "string",
+  true,
+  null,
+  {"nested": "object"},
+  [1, 2, 3]
+]

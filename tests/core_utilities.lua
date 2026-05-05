@@ -2,15 +2,6 @@ require("test")
 
 ---@param test Test
 return function(test)
-  -- Helper functions for async task testing
-  local function wait_for_task(task, timeout_ms)
-    local start_time = os.clock()
-    while task and not task.awaited and (os.clock() - start_time) * 1000 < timeout_ms do
-      -- Busy wait with small delay
-      datetime.sleep(10)
-    end
-  end
-
   test.describe("Core Utilities", function()
     test.describe("uuid", function()
       test.it("generates valid UUID format", function()
@@ -106,10 +97,10 @@ return function(test)
       test.it("invalidates module cache", function()
         -- This is harder to test directly, but we can verify the function exists
         -- and doesn't throw errors
-        test.expect(invalidate_cache).to.be.a("function")
+        test.expect(clean_require).to.be.a("function")
 
         -- Test with a valid path
-        invalidate_cache("test_module")
+        clean_require("test_module")
         -- Should not throw an error
       end)
     end)

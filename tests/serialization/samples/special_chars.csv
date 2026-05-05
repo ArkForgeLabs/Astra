@@ -1,0 +1,4 @@
+name,description
+"Test 1","Line 1\nLine 2\nLine 3"
+"Test 2","Special: @#$%^&*()"
+"Test 3","Unicode: \u4e16\u754c \U0001f30d"

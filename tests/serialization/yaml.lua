@@ -4,7 +4,8 @@ require("test")
 ---@param test Test
 ---@param roundtrip_test function
 ---@param test_data table
-return function(test, roundtrip_test, test_data)
+---@param read_sample function
+return function(test, roundtrip_test, test_data, read_sample)
   test.describe("YAML", function()
     test.it("encodes and decodes simple types", function()
       roundtrip_test("YAML", test_data.simple, serde.yaml.encode, serde.yaml.decode)
@@ -73,73 +74,34 @@ return function(test, roundtrip_test, test_data)
       }
       roundtrip_test("YAML", data, serde.yaml.encode, serde.yaml.decode)
     end)
+
+    test.it("decodes sample.yaml from file", function()
+      local sample = read_sample("sample.yaml")
+      local data = serde.yaml.decode(sample)
+      test.expect(data.name).to.equal("John Doe")
+      test.expect(data.age).to.equal(30)
+      test.expect(data.address.street).to.equal("123 Main St")
+    end)
+
+    test.it("handles invalid YAML", function()
+      test
+        .expect(function()
+          serde.yaml.decode(": invalid")
+        end).to
+        .fail()
+    end)
   end)
 
   test.describe("YAML - Real World Examples", function()
     test.it("decodes YAML with anchors and aliases", function()
-      local yaml_with_anchors = [[
-      defaults: &defaults
-        adapter:  postgres
-        host:     localhost
-        user:     postgres
-        password: postgres
-        database: myapp_development
-
-      test: *defaults
-      production:
-        <<: *defaults
-        database: myapp_production
-    ]]
+      local yaml_with_anchors = read_sample("anchors_aliases.yaml")
       local decoded = serde.yaml.decode(yaml_with_anchors)
       test.expect(decoded.defaults.adapter).to.equal("postgres")
       test.expect(decoded.production.database).to.equal("myapp_production")
     end)
 
     test.it("decodes Docker Compose-like YAML", function()
-      local docker_compose = [[
-      version: '3.8'
-
-      services:
-        web:
-          image: nginx:latest
-          ports:
-            - "80:80"
-            - "443:443"
-          volumes:
-            - ./html:/usr/share/nginx/html
-            - ./nginx.conf:/etc/nginx/nginx.conf
-          environment:
-            - NGINX_ENV=production
-          restart: unless-stopped
-
-        app:
-          build: .
-          ports:
-            - "3000:3000"
-          environment:
-            - NODE_ENV=production
-            - DATABASE_URL=postgres://user:pass@db:5432/app
-          depends_on:
-            - db
-            - redis
-
-        db:
-          image: postgres:13
-          environment:
-            POSTGRES_USER: user
-            POSTGRES_PASSWORD: pass
-            POSTGRES_DB: app
-          volumes:
-            - postgres_data:/var/lib/postgresql/data
-
-        redis:
-          image: redis:6
-          ports:
-            - "6379:6379"
-
-      volumes:
-        postgres_data:
-    ]]
+      local docker_compose = read_sample("docker_compose.yaml")
       local decoded = serde.yaml.decode(docker_compose)
       test.expect(decoded.version).to.equal("3.8")
       test.expect(decoded.services.web.image).to.equal("nginx:latest")
@@ -148,17 +110,7 @@ return function(test, roundtrip_test, test_data)
     end)
 
     test.it("decodes YAML with tags and implicit typing", function()
-      local yaml_typed = [[
-      plain: 42
-      explicit_int: !!int 42
-      explicit_float: !!float 42.0
-      explicit_bool: !!bool true
-      explicit_str: !!str 42
-
-      date: 2023-03-08
-      datetime: 2023-03-08T15:45:00Z
-      timestamp: 2023-03-08 15:45:00 +00:00
-    ]]
+      local yaml_typed = read_sample("typed_values.yaml")
       local decoded = serde.yaml.decode(yaml_typed)
       test.expect(decoded.plain).to.equal(42)
       test.expect(decoded.explicit_int).to.equal(42)
