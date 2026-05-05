@@ -16,6 +16,7 @@ require("tests.serialization")(test)
 require("tests.datetime")(test)
 require("tests.crypto")(test)
 require("tests.fs")(test)
+require("tests.http")(test)
 
 pprint(
   "\n\n" .. string.char(27) .. "[32m" .. test.passes,
