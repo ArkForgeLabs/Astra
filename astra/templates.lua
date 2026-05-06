@@ -145,7 +145,7 @@ local function new_engine(dir)
 end
 
 ---@param input string
----@return string
+---@return table
 local function markdown_ast(input)
   ---@diagnostic disable-next-line: undefined-global
   return astra_internal__new_markdown_ast(input)
