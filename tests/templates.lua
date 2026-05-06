@@ -135,26 +135,37 @@ return function(test)
         expect(result).to.equal("HELLO")
       end)
 
-      it("renders to JSON-like output", function()
-        local eng = templates.jinja2.new()
-        eng:add_template("data.json", '{"name":"{{ name }}","count":{{ count }}}')
-        local result = eng:render("data.json", { name = "alice", count = 3 })
-        expect(result).to.equal('{"name":"alice","count":3}')
-      end)
-
-      it("renders to plain text output", function()
-        local eng = templates.jinja2.new()
-        eng:add_template("text.txt", "left {{ mid }} right")
-        local result = eng:render("text.txt", { mid = "center" })
-        expect(result).to.equal("left center right")
-      end)
-
-      it("renders to XML-like output", function()
-        local eng = templates.jinja2.new()
-        eng:add_template("data.xml", "<root><item>{{ value }}</item></root>")
-        local result = eng:render("data.xml", { value = "test" })
-        expect(result).to.equal("<root><item>test</item></root>")
-      end)
+      local format_cases = {
+        {
+          name = "JSON-like",
+          tmpl = "data.json",
+          source = '{"name":"{{ name }}","count":{{ count }}}',
+          ctx = { name = "alice", count = 3 },
+          expected = '{"name":"alice","count":3}',
+        },
+        {
+          name = "plain text",
+          tmpl = "text.txt",
+          source = "left {{ mid }} right",
+          ctx = { mid = "center" },
+          expected = "left center right",
+        },
+        {
+          name = "XML-like",
+          tmpl = "data.xml",
+          source = "<root><item>{{ value }}</item></root>",
+          ctx = { value = "test" },
+          expected = "<root><item>test</item></root>",
+        },
+      }
+      for _, fc in ipairs(format_cases) do
+        it("renders to " .. fc.name .. " output", function()
+          local eng = templates.jinja2.new()
+          eng:add_template(fc.tmpl, fc.source)
+          local result = eng:render(fc.tmpl, fc.ctx)
+          expect(result).to.equal(fc.expected)
+        end)
+      end
 
       it("renders with nested context", function()
         local eng = templates.jinja2.new()
@@ -314,42 +325,30 @@ return function(test)
   -------------------------------------------------------------------------------
   describe("Markdown", function()
     describe("to_html", function()
-      it("converts heading to HTML", function()
-        local result = templates.markdown.to_html("# Hello")
-        expect(result).to.equal("<h1>Hello</h1>")
-      end)
-
-      it("converts bold text", function()
-        local result = templates.markdown.to_html("**bold**")
-        expect(result).to.equal("<p><strong>bold</strong></p>")
-      end)
-
-      it("converts paragraph", function()
-        local result = templates.markdown.to_html("hello world")
-        expect(result).to.equal("<p>hello world</p>")
-      end)
-
-      it("converts inline code", function()
-        local result = templates.markdown.to_html("use `code` here")
-        expect(result).to.equal("<p>use <code>code</code> here</p>")
-      end)
-
-      it("converts fenced code block", function()
-        local result = templates.markdown.to_html("```lua\nlocal x = 1\n```")
-        expect(result).to.equal('<pre><code class="language-lua">local x = 1\n</code></pre>')
-      end)
-
-      it("converts link", function()
-        local result = templates.markdown.to_html("[text](http://example.com)")
-        expect(result).to.equal('<p><a href="http://example.com">text</a></p>')
-      end)
-
-      it("handles empty string", function()
-        local result = templates.markdown.to_html("")
-        expect(result).to.equal("")
-      end)
+      local md_cases = {
+        { name = "heading", input = "# Hello", expected = "<h1>Hello</h1>" },
+        { name = "bold text", input = "**bold**", expected = "<p><strong>bold</strong></p>" },
+        { name = "paragraph", input = "hello world", expected = "<p>hello world</p>" },
+        { name = "inline code", input = "use `code` here", expected = "<p>use <code>code</code> here</p>" },
+        {
+          name = "fenced code block",
+          input = "```lua\nlocal x = 1\n```",
+          expected = '<pre><code class="language-lua">local x = 1\n</code></pre>',
+        },
+        {
+          name = "link",
+          input = "[text](http://example.com)",
+          expected = '<p><a href="http://example.com">text</a></p>',
+        },
+        { name = "empty string", input = "", expected = "" },
+      }
+      for _, mc in ipairs(md_cases) do
+        it("converts " .. mc.name .. " to HTML", function()
+          local result = templates.markdown.to_html(mc.input)
+          expect(result).to.equal(mc.expected)
+        end)
+      end
     end)
-
     describe("to_ast", function()
       it("has root type for heading", function()
         local result = templates.markdown.to_ast("# Hello")

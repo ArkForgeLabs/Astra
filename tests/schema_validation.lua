@@ -32,13 +32,7 @@ return function(test)
       name = { type = "string", required = false },
     }
 
-    it("valid-type", function()
-      expect_valid({ id = 123, name = "Ada" }, schema)
-      expect_invalid({ id = "123", name = "Ada" }, schema)
-      expect_invalid({ id = 1, name = 456 }, schema)
-    end)
-
-    it("invalid-type", function()
+    it("validates types correctly", function()
       expect_valid({ id = 123, name = "Ada" }, schema)
       expect_invalid({ id = "123", name = "Ada" }, schema)
       expect_invalid({ id = 1, name = 456 }, schema)

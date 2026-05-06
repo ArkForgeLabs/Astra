@@ -80,17 +80,11 @@ return function(test)
     end)
 
     test.describe("Async Tasks", function()
-      test.it("spawn_task function exists", function()
-        test.expect(spawn_task).to.be.a("function")
-      end)
-
-      test.it("spawn_timeout function exists", function()
-        test.expect(spawn_timeout).to.be.a("function")
-      end)
-
-      test.it("spawn_interval function exists", function()
-        test.expect(spawn_interval).to.be.a("function")
-      end)
+      for _, name in ipairs({ "spawn_task", "spawn_timeout", "spawn_interval" }) do
+        test.it(name .. " function exists", function()
+          test.expect(_G[name]).to.be.a("function")
+        end)
+      end
     end)
 
     test.describe("Module Cache", function()

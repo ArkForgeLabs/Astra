@@ -6,6 +6,15 @@ require("test")
 return function(test)
   local describe, it, expect = test.describe, test.it, test.expect
 
+  local function expect_closed_fails(method, ...)
+    local closed = database.new("sqlite", ":memory:")
+    closed:close()
+    local args = { ... }
+    expect(function()
+      closed[method](closed, unpack(args))
+    end).to.fail()
+  end
+
   -------------------------------------------------------------------------------
   -- Constructor
   -------------------------------------------------------------------------------
@@ -52,43 +61,39 @@ return function(test)
     local db
     test.before(function()
       db = database.new("sqlite", ":memory:")
+      db:execute("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT)")
     end)
     test.after(function()
       db:close()
     end)
 
     it("creates a table", function()
-      db:execute("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT)")
+      local row = db:query_one("SELECT name FROM sqlite_master WHERE type='table' AND name='t'")
+      expect(row).to.be.a("table")
+      expect(row.name).to.equal("t")
     end)
 
     it("inserts a row", function()
-      db:execute("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT)")
       db:execute("INSERT INTO t (name) VALUES ('hello')")
     end)
 
     it("inserts with typed parameters", function()
-      db:execute("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT, value INTEGER, score REAL)")
-      db:execute("INSERT INTO t (name, value, score) VALUES (?, ?, ?)", { "test", 42, 3.14 })
+      db:execute("CREATE TABLE t2 (id INTEGER PRIMARY KEY, name TEXT, value INTEGER, score REAL)")
+      db:execute("INSERT INTO t2 (name, value, score) VALUES (?, ?, ?)", { "test", 42, 3.14 })
     end)
 
     it("updates rows", function()
-      db:execute("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT)")
       db:execute("INSERT INTO t (name) VALUES ('hello')")
       db:execute("UPDATE t SET name = 'updated' WHERE id = ?", { 1 })
     end)
 
     it("deletes rows", function()
-      db:execute("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT)")
       db:execute("INSERT INTO t (name) VALUES ('hello')")
       db:execute("DELETE FROM t WHERE id = ?", { 1 })
     end)
 
     it("fails on closed connection", function()
-      local closed = database.new("sqlite", ":memory:")
-      closed:close()
-      expect(function()
-        closed:execute("SELECT 1")
-      end).to.fail()
+      expect_closed_fails("execute", "SELECT 1")
     end)
   end)
 
@@ -128,11 +133,7 @@ return function(test)
     end)
 
     it("fails on closed connection", function()
-      local closed = database.new("sqlite", ":memory:")
-      closed:close()
-      expect(function()
-        closed:query_one("SELECT 1")
-      end).to.fail()
+      expect_closed_fails("query_one", "SELECT 1")
     end)
   end)
 
@@ -173,11 +174,7 @@ return function(test)
     end)
 
     it("fails on closed connection", function()
-      local closed = database.new("sqlite", ":memory:")
-      closed:close()
-      expect(function()
-        closed:query_all("SELECT 1")
-      end).to.fail()
+      expect_closed_fails("query_all", "SELECT 1")
     end)
   end)
 
@@ -206,14 +203,8 @@ return function(test)
     end)
 
     it("fails on closed connection", function()
-      local closed = database.new("sqlite", ":memory:")
-      closed:close()
-      expect(function()
-        closed:query_pragma_int("PRAGMA user_version")
-      end).to.fail()
-      expect(function()
-        closed:query_pragma_text("SELECT 'hello'")
-      end).to.fail()
+      expect_closed_fails("query_pragma_int", "PRAGMA user_version")
+      expect_closed_fails("query_pragma_text", "SELECT 'hello'")
     end)
   end)
 

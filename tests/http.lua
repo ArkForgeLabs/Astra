@@ -54,12 +54,6 @@ return function(test)
       expect(http.status_codes.SERVICE_UNAVAILABLE).to.equal(503)
       expect(http.status_codes.GATEWAY_TIMEOUT).to.equal(504)
     end)
-
-    it("has correct values for commonly used codes", function()
-      expect(http.status_codes.OK).to.equal(200)
-      expect(http.status_codes.NOT_FOUND).to.equal(404)
-      expect(http.status_codes.INTERNAL_SERVER_ERROR).to.equal(500)
-    end)
   end)
 
   -------------------------------------------------------------------------------
@@ -190,32 +184,21 @@ return function(test)
     end)
 
     describe("Route Registration", function()
-      it("registers GET route", function()
-        local server = http.server.new()
-        server:get("/test", function() end)
-        expect(#server.routes).to.equal(1)
-        expect(server.routes[1].path).to.equal("/test")
-        expect(server.routes[1].method).to.equal("get")
-        expect(server.routes[1].func).to.be.a("function")
-      end)
-
-      it("registers POST route", function()
-        local server = http.server.new()
-        server:post("/data", function() end)
-        expect(server.routes[1].method).to.equal("post")
-      end)
-
-      it("registers PUT route", function()
-        local server = http.server.new()
-        server:put("/data", function() end)
-        expect(server.routes[1].method).to.equal("put")
-      end)
-
-      it("registers DELETE route", function()
-        local server = http.server.new()
-        server:delete("/data", function() end)
-        expect(server.routes[1].method).to.equal("delete")
-      end)
+      local basic_routes = {
+        { name = "GET", method = "get", path = "/test" },
+        { name = "POST", method = "post", path = "/data" },
+        { name = "PUT", method = "put", path = "/data" },
+        { name = "DELETE", method = "delete", path = "/data" },
+      }
+      for _, r in ipairs(basic_routes) do
+        it("registers " .. r.name .. " route", function()
+          local server = http.server.new()
+          server[r.method](server, r.path, function() end)
+          expect(#server.routes).to.equal(1)
+          expect(server.routes[1].method).to.equal(r.method)
+          expect(server.routes[1].func).to.be.a("function")
+        end)
+      end
 
       it("registers OPTIONS, PATCH, TRACE routes", function()
         local server = http.server.new()
@@ -235,33 +218,46 @@ return function(test)
         expect(server.routes[2].path).to.equal("/users")
       end)
 
-      it("registers static directory route", function()
-        local server = http.server.new()
-        server:static_dir("/files", "./public")
-        expect(server.routes[1].method).to.equal("static_dir")
-        expect(server.routes[1].static_dir).to.equal("./public")
-      end)
-
-      it("registers static file route", function()
-        local server = http.server.new()
-        server:static_file("/robots.txt", "./robots.txt")
-        expect(server.routes[1].method).to.equal("static_file")
-        expect(server.routes[1].static_file).to.equal("./robots.txt")
-      end)
-
-      it("registers websocket route", function()
-        local server = http.server.new()
-        server:websocket("/ws", function() end)
-        expect(server.routes[1].method).to.equal("web_socket")
-      end)
-
-      it("registers fallback route", function()
-        local server = http.server.new()
-        server:fallback(function()
-          return "404"
+      local static_routes = {
+        {
+          name = "static directory",
+          method = "static_dir",
+          path = "/files",
+          field = "static_dir",
+          value = "./public",
+        },
+        {
+          name = "static file",
+          method = "static_file",
+          path = "/robots.txt",
+          field = "static_file",
+          value = "./robots.txt",
+        },
+      }
+      for _, r in ipairs(static_routes) do
+        it("registers " .. r.name .. " route", function()
+          local server = http.server.new()
+          server[r.method](server, r.path, r.value)
+          expect(server.routes[1].method).to.equal(r.method)
+          expect(server.routes[1][r.field]).to.equal(r.value)
         end)
-        expect(server.routes[1].method).to.equal("fallback")
-      end)
+      end
+
+      local special_routes = {
+        { name = "websocket", method = "websocket", path = "/ws", expected_method = "web_socket" },
+        { name = "fallback", method = "fallback", path = nil, expected_method = "fallback" },
+      }
+      for _, r in ipairs(special_routes) do
+        it("registers " .. r.name .. " route", function()
+          local server = http.server.new()
+          if r.path then
+            server[r.method](server, r.path, function() end)
+          else
+            server[r.method](server, function() end)
+          end
+          expect(server.routes[1].method).to.equal(r.expected_method)
+        end)
+      end
 
       it("stores route configuration", function()
         local server = http.server.new()

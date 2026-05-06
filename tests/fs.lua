@@ -12,16 +12,6 @@ return function(test)
   }
   table.insert(test.paths.be, "falsy")
 
-  -- Add test helper: to.be.at.least()
-  test.paths.least = {
-    test = function(value, min)
-      return value >= min,
-        "expected " .. tostring(value) .. " to be at least " .. tostring(min),
-        "expected " .. tostring(value) .. " to not be at least " .. tostring(min)
-    end,
-  }
-  table.insert(test.paths.be, "least")
-
   -- Add test helper: to.be.at.most()
   test.paths.most = {
     test = function(value, max)
@@ -42,15 +32,12 @@ return function(test)
   fs.create_dir("FS_TEST_DIR")
   test.describe("Filesystem Module", function()
     test.describe("Buffer Operations", function()
-      test.it("creates buffer with specified capacity", function()
-        local buffer = fs.new_buffer(100)
-        test.expect(buffer).to.be.truthy()
-      end)
-
-      test.it("buffer is created successfully", function()
-        local buffer = fs.new_buffer(10)
-        test.expect(buffer).to.be.truthy()
-      end)
+      for _, capacity in ipairs({ 100, 10 }) do
+        test.it("creates buffer with capacity " .. capacity, function()
+          local buffer = fs.new_buffer(capacity)
+          test.expect(buffer).to.be.truthy()
+        end)
+      end
     end)
 
     test.describe("File Operations", function()

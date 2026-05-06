@@ -25,37 +25,21 @@ return function(test)
   -- test cases
   test.describe("NewDatetimeFullArgs", function()
     local dt = datetime.new(2025, 7, 8, 0, 24, 48, 241)
-    test.it("get_year()", function()
-      test.expect(dt:get_year()).to.equal(2025)
-    end)
-
-    test.it("get_month()", function()
-      test.expect(dt:get_month()).to.equal(7)
-    end)
-
-    test.it("get_day()", function()
-      test.expect(dt:get_day()).to.equal(8)
-    end)
-
-    test.it("get_weekday()", function()
-      test.expect(dt:get_weekday()).to.equal(2)
-    end)
-
-    test.it("get_hour()", function()
-      test.expect(dt:get_hour()).to.equal(0)
-    end)
-
-    test.it("get_minute()", function()
-      test.expect(dt:get_minute()).to.equal(24)
-    end)
-
-    test.it("get_second()", function()
-      test.expect(dt:get_second()).to.equal(48)
-    end)
-
-    test.it("get_millisecond()", function()
-      test.expect(dt:get_millisecond()).to.equal(241)
-    end)
+    local getter_expected = {
+      year = 2025,
+      month = 7,
+      day = 8,
+      weekday = 2,
+      hour = 0,
+      minute = 24,
+      second = 48,
+      millisecond = 241,
+    }
+    for field, expected in pairs(getter_expected) do
+      test.it("get_" .. field .. "()", function()
+        test.expect(dt["get_" .. field](dt)).to.equal(expected)
+      end)
+    end
 
     test.it("invalid-type", function()
       test
@@ -65,66 +49,49 @@ return function(test)
         .fail()
     end)
 
-    test.it("invalid-month", function()
-      for _, m in ipairs({ 13, -1, "str" }) do
-        expect_invalid_datetime({ 2025, m, 8, 0, 24, 48, 241 })
-      end
-    end)
+    local base = { 2025, 7, 8, 0, 24, 48, 241 }
+    local validation_cases = {
+      { name = "month", pos = 2, values = { 13, -1, "str" } },
+      { name = "hour", pos = 4, values = { 25, -1, "str" } },
+      { name = "minute", pos = 5, values = { 61, -1, "str" } },
+      { name = "second", pos = 6, values = { 61, -1, "str" } },
+    }
+    for _, c in ipairs(validation_cases) do
+      test.it("invalid-" .. c.name, function()
+        for _, v in ipairs(c.values) do
+          local args = { unpack(base) }
+          args[c.pos] = v
+          expect_invalid_datetime(args)
+        end
+      end)
+    end
 
     test.it("invalid-day", function()
       for _, d in ipairs({ 31, 32, -1, "str" }) do
         expect_invalid_datetime({ 2025, 6, d, 0, 24, 48, 241 })
       end
     end)
-
-    test.it("invalid-hour", function()
-      for _, h in ipairs({ 25, -1, "str" }) do
-        expect_invalid_datetime({ 2025, 7, 8, h, 24, 48, 241 })
-      end
-    end)
-
-    test.it("invalid-minute", function()
-      for _, m in ipairs({ 61, -1, "str" }) do
-        expect_invalid_datetime({ 2025, 7, 8, 0, m, 48, 241 })
-      end
-    end)
-
-    test.it("invalid-second", function()
-      for _, s in ipairs({ 61, -1, "str" }) do
-        expect_invalid_datetime({ 2025, 7, 8, 0, 24, s, 241 })
-      end
-    end)
-
-    -- test.it('invalid-millsec', function()
-    -- end) -- defintest.ition (range unknown)
   end)
 
   test.describe("NewDatetimeDefault", function()
     local dt = datetime.new(2025)
-    test.it("getter-methods", function()
-      test.expect(dt:get_year()).to.equal(2025)
-      test.expect(dt:get_month()).to.equal(1)
-      test.expect(dt:get_day()).to.equal(1)
-      test.expect(dt:get_weekday()).to.equal(3)
-      test.expect(dt:get_hour()).to.equal(0)
-      test.expect(dt:get_minute()).to.equal(0)
-      test.expect(dt:get_second()).to.equal(0)
-      test.expect(dt:get_millisecond()).to.equal(0)
-    end)
+    local expected = { year = 2025, month = 1, day = 1, weekday = 3, hour = 0, minute = 0, second = 0, millisecond = 0 }
+    for field, val in pairs(expected) do
+      test.it("get_" .. field .. "()", function()
+        test.expect(dt["get_" .. field](dt)).to.equal(val)
+      end)
+    end
   end)
 
   test.describe("NewDatetimeByStr", function()
     local dt = datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
-    test.it("getter-methods", function()
-      test.expect(dt:get_year()).to.equal(2003)
-      test.expect(dt:get_month()).to.equal(7)
-      test.expect(dt:get_day()).to.equal(1)
-      test.expect(dt:get_weekday()).to.equal(2)
-      test.expect(dt:get_hour()).to.equal(10)
-      test.expect(dt:get_minute()).to.equal(52)
-      test.expect(dt:get_second()).to.equal(37)
-      test.expect(dt:get_millisecond()).to.equal(0)
-    end)
+    local expected =
+      { year = 2003, month = 7, day = 1, weekday = 2, hour = 10, minute = 52, second = 37, millisecond = 0 }
+    for field, val in pairs(expected) do
+      test.it("get_" .. field .. "()", function()
+        test.expect(dt["get_" .. field](dt)).to.equal(val)
+      end)
+    end
 
     test.it("invalid-format", function()
       for _, str in ipairs({ "Tue, 1 Jul 2003", "2003", "2003, 7, 8" }) do
@@ -139,40 +106,21 @@ return function(test)
 
   test.describe("Setters", function()
     local dt = datetime.new(2024)
-    test.it("set_year()", function()
-      dt:set_year(2025)
-      test.expect(dt:get_year()).to.equal(2025)
-    end)
-
-    test.it("set_month()", function()
-      dt:set_month(12)
-      test.expect(dt:get_month()).to.equal(12)
-    end)
-
-    test.it("set_day()", function()
-      dt:set_day(31)
-      test.expect(dt:get_day()).to.equal(31)
-    end)
-
-    test.it("set_hour()", function()
-      dt:set_hour(23)
-      test.expect(dt:get_hour()).to.equal(23)
-    end)
-
-    test.it("set_minute()", function()
-      dt:set_minute(59)
-      test.expect(dt:get_minute()).to.equal(59)
-    end)
-
-    test.it("set_second()", function()
-      dt:set_second(58)
-      test.expect(dt:get_second()).to.equal(58)
-    end)
-
-    test.it("set_millisecond()", function()
-      dt:set_millisecond(123)
-      test.expect(dt:get_millisecond()).to.equal(123)
-    end)
+    local setter_cases = {
+      year = 2025,
+      month = 12,
+      day = 31,
+      hour = 23,
+      minute = 59,
+      second = 58,
+      millisecond = 123,
+    }
+    for field, value in pairs(setter_cases) do
+      test.it("set_" .. field .. "()", function()
+        dt["set_" .. field](dt, value)
+        test.expect(dt["get_" .. field](dt)).to.equal(value)
+      end)
+    end
 
     test.it("invalid-args", function()
       expect_invalid_setter(dt, "set_year", { "str", nil })
@@ -188,33 +136,20 @@ return function(test)
 
   test.describe("ToString", function()
     local dt = datetime.new(2020, 12, 25, 10, 30, 45, 500):to_utc()
-    test.it("to_date_string()", function()
-      test.expect(dt:to_date_string()).to.equal("2020-12-25")
-    end)
-
-    test.it("to_time_string()", function()
-      test.expect(dt:to_time_string()).to.equal("07:30:45.500+00:00")
-    end)
-
-    test.it("to_datetime_string()", function()
-      test.expect(dt:to_datetime_string()).to.equal("2020-12-25T07:30:45.500+00:00")
-    end)
-
-    test.it("to_iso_string()", function()
-      test.expect(dt:to_iso_string()).to.equal("2020-12-25T07:30:45.500+00:00")
-    end)
-
-    test.it("to_locale_date_string()", function()
-      test.expect(dt:to_locale_date_string()).to.equal("12/25/20")
-    end)
-
-    test.it("to_locale_time_string()", function()
-      test.expect(dt:to_locale_time_string()).to.equal("07:30:45")
-    end)
-
-    test.it("to_locale_datetime_string()", function()
-      test.expect(dt:to_locale_datetime_string()).to.equal("Fri Dec 25 07:30:45 2020")
-    end)
+    local tostring_cases = {
+      date = "2020-12-25",
+      time = "07:30:45.500+00:00",
+      datetime = "2020-12-25T07:30:45.500+00:00",
+      iso = "2020-12-25T07:30:45.500+00:00",
+      locale_date = "12/25/20",
+      locale_time = "07:30:45",
+      locale_datetime = "Fri Dec 25 07:30:45 2020",
+    }
+    for format, expected in pairs(tostring_cases) do
+      test.it("to_" .. format .. "_string()", function()
+        test.expect(dt["to_" .. format .. "_string"](dt)).to.equal(expected)
+      end)
+    end
   end)
 
   test.describe("EpochMillisecond", function()

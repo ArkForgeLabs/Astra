@@ -8,32 +8,21 @@ return function(test)
   describe("CryptoHash", function()
     local test_string = "Hello, World!"
 
-    it("sha2_256", function()
-      local result = crypto.hash("sha2_256", test_string)
-      expect(result).to.be.a("string")
-      expect(#result).to.equal(64) -- SHA256 produces 64 hex characters
-    end)
-
-    it("sha3_256", function()
-      local result = crypto.hash("sha3_256", test_string)
-      expect(result).to.be.a("string")
-      expect(#result).to.equal(64) -- SHA3-256 produces 64 hex characters
-    end)
-
-    it("sha2_512", function()
-      local result = crypto.hash("sha2_512", test_string)
-      expect(result).to.be.a("string")
-      expect(#result).to.equal(128) -- SHA512 produces 128 hex characters
-    end)
-
-    it("sha3_512", function()
-      local result = crypto.hash("sha3_512", test_string)
-      expect(result).to.be.a("string")
-      expect(#result).to.equal(128) -- SHA3-512 produces 128 hex characters
-    end)
+    local hash_algos = {
+      { name = "sha2_256", length = 64 },
+      { name = "sha3_256", length = 64 },
+      { name = "sha2_512", length = 128 },
+      { name = "sha3_512", length = 128 },
+    }
+    for _, algo in ipairs(hash_algos) do
+      it(algo.name, function()
+        local result = crypto.hash(algo.name, test_string)
+        expect(result).to.be.a("string")
+        expect(#result).to.equal(algo.length)
+      end)
+    end
 
     it("invalid_hash_type", function()
-      -- For now, invalid hash types return an empty string rather than failing
       ---@diagnostic disable-next-line: param-type-mismatch
       local result = crypto.hash("invalid_type", test_string)
       expect(result).to.be.a("string")

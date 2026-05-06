@@ -10,13 +10,9 @@ return function(test, _roundtrip_test, _test_data, read_sample)
     test.it("decodes simple CSV", function()
       local csv_data = "name,age,city\nJohn,30,New York\nJane,25,London"
       local result = serde.csv.decode(csv_data)
-      test.expect(result).to.be.a("table")
-    end)
-
-    test.it("decodes CSV with headers", function()
-      local csv_data = "name,age,city\nJohn,30,New York\nJane,25,London"
-      local result = serde.csv.decode(csv_data)
-      test.expect(result).to.be.a("table")
+      test.expect(result.headers[1]).to.equal("name")
+      test.expect(result.body[1][1]).to.equal("John")
+      test.expect(result.body[2][3]).to.equal("London")
     end)
 
     test.it("decodes CSV without headers", function()
@@ -28,14 +24,16 @@ return function(test, _roundtrip_test, _test_data, read_sample)
     test.it("handles quoted values", function()
       local csv_data = 'name,value\n"John, Doe","test, value"'
       local result = serde.csv.decode(csv_data)
-      test.expect(result).to.be.a("table")
+      test.expect(result.body[1][1]).to.equal("John, Doe")
+      test.expect(result.body[1][2]).to.equal("test, value")
     end)
 
     test.it("handles different delimiters", function()
       local csv_data = "name;age;city\nJohn;30;New York"
       local options = { delimiter = ";" }
       local result = serde.csv.decode(csv_data, options)
-      test.expect(result).to.be.a("table")
+      test.expect(#result.headers).to.equal(3)
+      test.expect(#result.body).to.equal(2)
     end)
 
     test.it("handles multiline values", function()
