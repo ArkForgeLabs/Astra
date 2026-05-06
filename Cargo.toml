@@ -13,7 +13,7 @@ categories = [
   "network-programming",
 ]
 edition = "2024"
-license-file = "LICENSE"
+license = "AGPL-3.0-only"
 exclude = [".github", "examples", "docs", "tests"]
 rust-version = "1.92"
 
