@@ -1,0 +1,3 @@
+name,value
+"Product A","Value with ""escaped"" quotes"
+"Product B","Another ""example"""

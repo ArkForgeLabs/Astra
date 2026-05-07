@@ -166,7 +166,6 @@ fn csv_decode(lua: &mlua::Lua) -> mlua::Result<()> {
             let body = reader
                 .into_byte_records()
                 .filter_map(|x| {
-                    println!("{x:?}");
                     x.and_then(|i| i.deserialize::<Vec<serde_value::Value>>(None))
                         .ok()
                 })

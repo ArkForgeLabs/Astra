@@ -1,0 +1,4 @@
+<root>
+  <script><![CDATA[function test() { console.log("Hello, World!"); }]]></script>
+  <data><![CDATA[This is some data with special chars]]></data>
+</root>

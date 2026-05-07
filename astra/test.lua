@@ -1,7 +1,9 @@
+-- SPDX-License-Identifier: MIT
 -- lust v0.2.0 - Lua test framework
 -- https://github.com/bjornbytes/lust
 -- MIT LICENSE
 
+---@class Test
 local lust = {}
 lust.level = 0
 lust.passes = 0

@@ -13,7 +13,7 @@ categories = [
   "network-programming",
 ]
 edition = "2024"
-license-file = "LICENSE"
+license = "AGPL-3.0-only"
 exclude = [".github", "examples", "docs", "tests"]
 rust-version = "1.92"
 
@@ -57,7 +57,7 @@ reqwest = { version = "0.13.3", features = [
 ], default-features = false }
 reqwest-websocket = "0.6.0"
 tower = { version = "0.5.3" }
-tower-http = { version = "0.6.8", features = [
+tower-http = { version = "0.6.9", features = [
   "fs",
   "trace",
   "compression-full",
@@ -80,8 +80,8 @@ serde_json = { version = "1.0.149" }
 serde_json5 = { version = "0.2.1" }
 serde_yaml = { version = "0.9.34" }
 serde_ini = { version = "0.2.0" }
-csv = { version = "1.4.0" }
-quick-xml = { version = "0.39.2", features = [
+csv = { version = "1.3.1" }
+quick-xml = { version = "0.39.3", features = [
   "async-tokio",
   "encoding",
   "escape-html",
@@ -98,7 +98,7 @@ chrono = { version = "0.4.44", features = ["serde"] }
 markdown = { version = "1.0.0", features = ["serde"] }
 
 # runtime
-tokio = { version = "1.52.1", features = [
+tokio = { version = "1.52.2", features = [
   "macros",
   "signal",
   "rt-multi-thread",

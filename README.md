@@ -5,6 +5,7 @@
 [![Release MacOS](https://github.com/ArkForgeLabs/Astra/actions/workflows/macos_release.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/macos_release.yml)
 [![Publish the crate](https://github.com/ArkForgeLabs/Astra/actions/workflows/crates_io_publish.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/crates_io_publish.yml)
 [![Static Badge](https://img.shields.io/badge/Read_The_Docs-blue?style=flat&logo=docsdotrs&color=%23000000)](https://astra.arkforge.net/docs/latest)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 Astra is a Rust based runtime environment for Lua (5.1-5.5), Luau and LuaJIT. The goal is to get as much performance as possible while writing the logic in Lua instead for faster iteration, fault-tolerance and no-build requirements. This project is internally used here at [ArkForge](https://arkforge.net), by universities, research labs, and many large organizations.
 
@@ -91,6 +92,10 @@ If you have a project that uses or extends Astra, let us know about it by extend
 ## Where is the community?
 
 In the past, we had a discord server where you could join and talk in, however we moved it to [GitHub discussions](https://github.com/ArkForgeLabs/Astra/discussions) instead. Please open conversations here from now on.
+
+## License
+
+Astra is dual-licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only) and a commercial license available from ArkForge LLC [contact@arkforge.net](mailto:contact@arkforge.net).
 
 ## Note
 

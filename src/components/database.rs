@@ -1,5 +1,6 @@
 use mlua::{ExternalError, LuaSerdeExt, UserData};
 use sqlx::{Pool, Postgres, Row, Sqlite, migrate::MigrateDatabase};
+use std::sync::atomic::AtomicU64;
 use std::{str::FromStr, sync::LazyLock};
 use tokio::sync::Mutex;
 
@@ -12,7 +13,8 @@ struct AstraSQLConnectionOption {
     other_options: Vec<(String, String)>,
 }
 
-pub static DATABASE_POOLS: LazyLock<Mutex<Vec<DatabaseType>>> =
+static NEXT_DB_ID: AtomicU64 = AtomicU64::new(1);
+pub static DATABASE_POOLS: LazyLock<Mutex<Vec<(u64, DatabaseType)>>> =
     LazyLock::new(|| Mutex::new(Vec::new()));
 
 #[derive(Debug, Clone)]
@@ -23,6 +25,7 @@ pub enum DatabaseType {
 
 #[derive(Debug, Clone)]
 pub struct Database {
+    pub id: u64,
     pub db: Option<DatabaseType>,
 }
 impl Database {
@@ -37,18 +40,16 @@ impl Database {
                 let connection_options = lua.from_value::<AstraSQLConnectionOption>(connection_options)?;
                 let max_connections = connection_options.max_connections.unwrap_or(10);
 
-                // pre checkup
                 if database_type == *"sqlite" {
                     match Sqlite::database_exists(url.as_str()).await {
-                        Ok(exists) => {
-                            if !exists {
-                                match Sqlite::create_database(url.as_str()).await {
-                                    Ok(()) => {}
-                                    Err(e) => println!("Error creating the Sqlite DB: {e:#?}"),
-                                }
-                            }
+                        Ok(true) => {}
+                        Ok(false) => {
+                            Sqlite::create_database(url.as_str()).await
+                                .map_err(|e| mlua::Error::runtime(format!("Error creating Sqlite DB: {e:#?}")))?;
                         }
-                        Err(e) => println!("Error checking if the Sqlite DB exists: {e:#?}"),
+                        Err(e) => {
+                            return Err(mlua::Error::runtime(format!("Error checking Sqlite DB exists: {e:#?}")));
+                        }
                     }
                 }
 
@@ -76,12 +77,13 @@ impl Database {
                                     .await
                                 {
                                     Ok(pool) => {
+                                        let db_id = NEXT_DB_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                                         let pool = DatabaseType::Sqlite(pool);
 
                                         let mut database_pools = DATABASE_POOLS.lock().await;
-                                        database_pools.push(pool.clone());
+                                        database_pools.push((db_id, pool.clone()));
 
-                                        Ok(Database { db: Some(pool) })
+                                        Ok(Database { id: db_id, db: Some(pool) })
                                     }
                                     Err(e) => Err(mlua::Error::runtime(format!(
                                         "Error connecting to Sqlite: {e:#?}"
@@ -101,12 +103,13 @@ impl Database {
                                     .await
                                 {
                                     Ok(pool) => {
+                                        let db_id = NEXT_DB_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                                         let pool = DatabaseType::Postgres(pool);
 
                                         let mut database_pools = DATABASE_POOLS.lock().await;
-                                        database_pools.push(pool.clone());
+                                        database_pools.push((db_id, pool.clone()));
 
-                                        Ok(Database { db: Some(pool) })
+                                        Ok(Database { id: db_id, db: Some(pool) })
                                     }
                                     Err(e) => Err(mlua::Error::runtime(format!(
                                         "Error connecting to Postgres: {e:#?}"
@@ -128,6 +131,34 @@ impl Database {
         Ok(())
     }
 }
+fn validate_params(lua: &mlua::Lua, parameters: Option<&mlua::Table>) -> mlua::Result<()> {
+    if let Some(table) = parameters {
+        for val in table.sequence_values::<mlua::Value>() {
+            let val = val?;
+            match val {
+                mlua::Value::String(_)
+                | mlua::Value::Number(_)
+                | mlua::Value::Integer(_)
+                | mlua::Value::Boolean(_) => continue,
+                mlua::Value::Table(_) => {
+                    if lua.from_value::<serde_json::Value>(val).is_err() {
+                        return Err(mlua::Error::runtime(
+                            "Unsupported table parameter: cannot serialize to JSON",
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(mlua::Error::runtime(format!(
+                        "Unsupported parameter type: {}",
+                        val.type_name()
+                    )));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 impl UserData for Database {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         macro_rules! parse_sql_fn {
@@ -255,6 +286,9 @@ impl UserData for Database {
                 match &this.db {
                     Some(db) => match &db {
                         DatabaseType::Sqlite(pool) => {
+                            if let Some(ref p) = parameters {
+                                validate_params(&lua, Some(p))?;
+                            }
                             let query = query_builder_sqlite(lua.clone(), &sql, parameters);
 
                             match query.execute(pool).await {
@@ -265,6 +299,9 @@ impl UserData for Database {
                             }
                         }
                         DatabaseType::Postgres(pool) => {
+                            if let Some(ref p) = parameters {
+                                validate_params(&lua, Some(p))?;
+                            }
                             let query = query_builder_postgres(lua.clone(), &sql, parameters);
 
                             match query.execute(pool).await {
@@ -337,20 +374,32 @@ impl UserData for Database {
                 match &this.db {
                     Some(db) => match &db {
                         DatabaseType::Sqlite(pool) => {
+                            if let Some(ref p) = parameters {
+                                validate_params(&lua, Some(p))?;
+                            }
                             let query = query_builder_sqlite(lua.clone(), &sql, parameters);
 
-                            match query.fetch_one(pool).await {
-                                Ok(row) => Ok(parse_sql_to_lua_sqlite(&lua, &row)?),
+                            match query.fetch_optional(pool).await {
+                                Ok(Some(row)) => {
+                                    Ok(mlua::Value::Table(parse_sql_to_lua_sqlite(&lua, &row)?))
+                                }
+                                Ok(None) => Ok(mlua::Value::Nil),
                                 Err(e) => Err(mlua::Error::runtime(format!(
                                     "Error executing the query: {e:#?}"
                                 ))),
                             }
                         }
                         DatabaseType::Postgres(pool) => {
+                            if let Some(ref p) = parameters {
+                                validate_params(&lua, Some(p))?;
+                            }
                             let query = query_builder_postgres(lua.clone(), &sql, parameters);
 
-                            match query.fetch_one(pool).await {
-                                Ok(row) => Ok(parse_sql_to_lua_postgres(&lua, &row)?),
+                            match query.fetch_optional(pool).await {
+                                Ok(Some(row)) => {
+                                    Ok(mlua::Value::Table(parse_sql_to_lua_postgres(&lua, &row)?))
+                                }
+                                Ok(None) => Ok(mlua::Value::Nil),
                                 Err(e) => Err(mlua::Error::runtime(format!(
                                     "Error executing the query: {e:#?}"
                                 ))),
@@ -368,6 +417,9 @@ impl UserData for Database {
                 match &this.db {
                     Some(db) => match &db {
                         DatabaseType::Sqlite(pool) => {
+                            if let Some(ref p) = parameters {
+                                validate_params(&lua, Some(p))?;
+                            }
                             let query = query_builder_sqlite(lua.clone(), &sql, parameters);
 
                             match query.fetch_all(pool).await {
@@ -387,6 +439,9 @@ impl UserData for Database {
                             }
                         }
                         DatabaseType::Postgres(pool) => {
+                            if let Some(ref p) = parameters {
+                                validate_params(&lua, Some(p))?;
+                            }
                             let query = query_builder_postgres(lua.clone(), &sql, parameters);
 
                             match query.fetch_all(pool).await {
@@ -418,6 +473,11 @@ impl UserData for Database {
                     DatabaseType::Postgres(pool) => pool.close().await,
                 };
             }
+
+            let mut pools = DATABASE_POOLS.lock().await;
+            pools.retain(|(id, _)| *id != this.id);
+            drop(pools);
+
             this.db = None;
 
             Ok(())

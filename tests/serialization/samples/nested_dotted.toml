@@ -1,0 +1,18 @@
+[owner]
+name = "John Doe"
+
+[owner.address]
+street = "123 Main St"
+city = "New York"
+zip = "10001"
+
+[database]
+enabled = true
+
+[database.connection]
+host = "localhost"
+port = 5432
+
+[database.connection.pool]
+min = 2
+max = 10

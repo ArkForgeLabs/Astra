@@ -1,0 +1,4 @@
+name,description,price,category
+"Product A","This is a product, with a comma, and more text","$10.99","Electronics"
+"Product B","Another product, with more commas, and quotes, and special chars","$20.50","Clothing"
+"Product C","Simple product without commas","$5.99","Books"

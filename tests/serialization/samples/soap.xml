@@ -1,0 +1,8 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.example.org/webservices/">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <web:GetCountryCitizens>
+      <web:Country>Italy</web:Country>
+    </web:GetCountryCitizens>
+  </soapenv:Body>
+</soapenv:Envelope>

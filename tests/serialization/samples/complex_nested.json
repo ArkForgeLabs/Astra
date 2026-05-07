@@ -1,0 +1,21 @@
+{
+  "name": "John Doe",
+  "age": 32,
+  "address": {
+    "street": "123 Main St",
+    "city": "New York",
+    "coordinates": {
+      "lat": 40.7128,
+      "lng": -74.0060
+    }
+  },
+  "hobbies": ["reading", "hiking", "coding"],
+  "metadata": {
+    "created_at": "2023-01-15T10:30:00Z",
+    "tags": ["user", "premium"],
+    "stats": {
+      "login_count": 42,
+      "last_active": "2023-03-08"
+    }
+  }
+}
