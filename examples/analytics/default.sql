@@ -1,0 +1,47 @@
+CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type TEXT NOT NULL,
+    user_id TEXT,
+    session_id TEXT,
+    properties TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ab_tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ab_variants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_id INTEGER NOT NULL,
+    variant_name TEXT NOT NULL,
+    description TEXT,
+    weight REAL NOT NULL DEFAULT 1.0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (test_id) REFERENCES ab_tests(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS ab_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    test_id INTEGER NOT NULL,
+    variant_id INTEGER NOT NULL,
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (test_id) REFERENCES ab_tests(id) ON DELETE CASCADE,
+    FOREIGN KEY (variant_id) REFERENCES ab_variants(id) ON DELETE CASCADE,
+    UNIQUE(user_id, test_id)
+);
+
+CREATE TABLE IF NOT EXISTS ab_metrics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_id INTEGER NOT NULL,
+    variant_id INTEGER NOT NULL,
+    metric_name TEXT NOT NULL,
+    value REAL NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (test_id) REFERENCES ab_tests(id) ON DELETE CASCADE,
+    FOREIGN KEY (variant_id) REFERENCES ab_variants(id) ON DELETE CASCADE
+);

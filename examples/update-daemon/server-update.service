@@ -1,0 +1,14 @@
+# move it after modification to /etc/systemd/system/
+# and run:
+# sudo systemctl daemon-reload
+# sudo systemctl enable --now server-update.service
+
+[Unit]
+Description=Server Updates service
+
+[Service]
+Type=simple
+Restart=always
+User=linuxuser
+ExecStart=/usr/bin/astra run /path/to/update-daemon.lua
+WorkingDirectory=/home/linuxuser
