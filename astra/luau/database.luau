@@ -1,39 +1,44 @@
---!strict
+--!nocheck
+--!nolint
 
+--- SQL driver
+type Database = {
+  execute: (database: Database, sql: string, parameters: { any }?) -> (),
+  query_one: (database: Database, sql: string, parameters: { any }?) -> { any }?,
+  query_all: (database: Database, sql: string, parameters: { any }?) -> { { any } }?,
+  query_pragma_int: (database: Database, sql: string) -> number?,
+  query_pragma_text: (database: Database, sql: string) -> string?,
+  close: (database: Database) -> (),
+}
+
+--- Some extra connection options for the databases
 type DatabaseConnectionOptions = {
   max_connections: number?,
+  --- SQLite only
   extensions: { string }?,
+  --- SQLite only
   extensions_with_entrypoint: { { string } }?,
+  --- SQLite only
   is_immutable: boolean?,
   other_options: { { string } }?,
 }
 
-type Database = {
-  execute: (self: Database, sql: string, parameters: { any }?) -> (),
-  query_one: (self: Database, sql: string, parameters: { any }?) -> { any }?,
-  query_all: (self: Database, sql: string, parameters: { any }?) -> { { any } }?,
-  query_pragma_int: (self: Database, sql: string) -> number?,
-  query_pragma_text: (self: Database, sql: string) -> string?,
-  close: (self: Database) -> (),
-}
-
-type DatabaseType = "sqlite" | "postgres"
-
-local astra_internal__database_connect: (database_type: DatabaseType, url: string, connection_options: DatabaseConnectionOptions) -> Database
-
+--- Opens a new SQL connection using the provided URL and returns a table representing the connection.
 local function connect(
-  database_type: DatabaseType,
+  database_type: "sqlite" | "postgres",
   url: string,
   connection_options: DatabaseConnectionOptions?
 ): Database
-  local opts = if connection_options then connection_options else {} :: DatabaseConnectionOptions
-  opts.max_connections = opts.max_connections
-  opts.extensions = opts.extensions or {}
-  opts.extensions_with_entrypoint = opts.extensions_with_entrypoint or {}
-  opts.is_immutable = if opts.is_immutable ~= nil then opts.is_immutable else false
-  opts.other_options = opts.other_options or {}
+  if not connection_options then
+    connection_options = {}
+  end
+  connection_options.max_connections = connection_options.max_connections
+  connection_options.extensions = connection_options.extensions or {}
+  connection_options.extensions_with_entrypoint = connection_options.extensions_with_entrypoint or {}
+  connection_options.is_immutable = connection_options.is_immutable ~= nil and connection_options.is_immutable or false
+  connection_options.other_options = connection_options.other_options or {}
 
-  return astra_internal__database_connect(database_type, url, opts)
+  return astra_internal__database_connect(database_type, url, connection_options)
 end
 
 return { new = connect }

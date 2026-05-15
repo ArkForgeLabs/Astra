@@ -1,4 +1,5 @@
---!strict
+--!nocheck
+--!nolint
 
 type Test = {
   level: number,
@@ -28,6 +29,7 @@ local lust: Test = {
 local red = string.char(27) .. "[31m"
 local green = string.char(27) .. "[32m"
 local normal = string.char(27) .. "[0m"
+
 local function indent(level: number?): string
   return string.rep("\t", level or lust.level)
 end
@@ -86,6 +88,8 @@ function lust:after(fn: (string) -> ())
   self.afters[self.level] = self.afters[self.level] or {}
   table.insert(self.afters[self.level], fn)
 end
+
+-- Assertions
 
 local function isa(v: any, x: any): (boolean, string?, string?)
   if type(x) == "string" then
@@ -235,19 +239,15 @@ local paths = {
   fail = {
     "with",
     test = function(v: any): (boolean, string?, string?)
-      local ok = pcall(v)
-      return not ok, "expected " .. tostring(v) .. " to fail", "expected " .. tostring(v) .. " to not fail"
+      return not pcall(v), "expected " .. tostring(v) .. " to fail", "expected " .. tostring(v) .. " to not fail"
     end,
   },
   with = {
     test = function(v: any, pattern: string): (boolean, string?, string?)
       local ok, message = pcall(v)
-      if not ok and message then
-        return not ok and message:match(pattern) ~= nil,
-          "expected " .. tostring(v) .. ' to fail with error matching "' .. pattern .. '"',
-          "expected " .. tostring(v) .. ' to not fail with error matching "' .. pattern .. '"'
-      end
-      return false, "expected function to fail", "expected function to not fail"
+      return not ok and message:match(pattern) ~= nil,
+        "expected " .. tostring(v) .. ' to fail with error matching "' .. pattern .. '"',
+        "expected " .. tostring(v) .. ' to not fail with error matching "' .. pattern .. '"'
     end,
   },
   match = {

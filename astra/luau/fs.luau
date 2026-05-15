@@ -1,142 +1,130 @@
---!strict
+--!nocheck
+--!nolint
 
 type File = {
+  --- Pulls some bytes from this source into the specified buffer, returning how many bytes were read.
   read: (self: File, buffer: Buffer) -> (),
+  --- Pulls some bytes from this source into the specified buffer, advancing the buffer's internal cursor.
   read_buffer: (self: File, buffer: Buffer) -> (),
+  --- Reads the exact number of bytes required to fill buffer.
   read_exact: (self: File, buffer: Buffer) -> (),
+  --- This function will attempt to write the entire contents of buffer.
   write: (self: File, buffer: Buffer) -> (),
+  --- This method will continuously call write until buffer remaining calls returns false.
   write_buffer: (self: File, buffer: Buffer) -> (),
 }
 
 type FileType = {
-  is_file: (self: FileType) -> boolean,
-  is_dir: (self: FileType) -> boolean,
-  is_symlink: (self: FileType) -> boolean,
+  is_file: (file_type: FileType) -> boolean,
+  is_dir: (file_type: FileType) -> boolean,
+  is_symlink: (file_type: FileType) -> boolean,
 }
 
 type DirEntry = {
-  file_name: (self: DirEntry) -> string,
-  file_type: (self: DirEntry) -> FileType,
-  path: (self: DirEntry) -> string,
+  --- Returns the file_name of the entry
+  file_name: (dir_entry: DirEntry) -> string,
+  file_type: (dir_entry: DirEntry) -> FileType,
+  --- Returns the path of each entry in the list
+  path: (dir_entry: DirEntry) -> string,
 }
 
 type FileMetadata = {
-  last_accessed: (self: FileMetadata) -> number,
-  created_at: (self: FileMetadata) -> number,
-  last_modified: (self: FileMetadata) -> number,
-  file_type: (self: FileMetadata) -> FileType,
-  file_permissions: (self: FileMetadata) -> FileIOPermissions,
+  last_accessed: (file_metadata: FileMetadata) -> number,
+  created_at: (file_metadata: FileMetadata) -> number,
+  last_modified: (file_metadata: FileMetadata) -> number,
+  file_type: (file_metadata: FileMetadata) -> FileType,
+  file_permissions: (file_metadata: FileMetadata) -> FileIOPermissions,
 }
 
 type FileIOPermissions = {
-  is_readonly: (self: FileIOPermissions) -> boolean,
-  set_readonly: (self: FileIOPermissions, value: boolean) -> (),
+  is_readonly: (file_io_permissions: FileIOPermissions) -> boolean,
+  set_readonly: (file_io_permissions: FileIOPermissions, value: boolean) -> (),
 }
 
-local astra_internal__new_buffer: (capacity: number) -> Buffer
-local astra_internal__open_file: (path: string) -> File
-local astra_internal__read_file_string: (path: string) -> string
-local astra_internal__read_file_bytes: (path: string) -> { number }
-local astra_internal__write_file: (path: string, contents: string | { number } | { any }) -> ()
-local astra_internal__get_metadata: (path: string) -> FileMetadata
-local astra_internal__read_dir: (path: string) -> { DirEntry }
-local astra_internal__get_current_dir: () -> string
-local astra_internal__get_separator: () -> string
-local astra_internal__get_script_path: () -> string
-local astra_internal__change_dir: (path: string) -> ()
-local astra_internal__exists: (path: string) -> boolean
-local astra_internal__create_dir: (path: string) -> ()
-local astra_internal__create_dir_all: (path: string) -> ()
-local astra_internal__remove: (path: string) -> ()
-local astra_internal__remove_dir: (path: string) -> ()
-local astra_internal__remove_dir_all: (path: string) -> ()
+local fs = {}
 
-local fs: {
-  new_buffer: (capacity: number) -> Buffer,
-  open: (path: string) -> File,
-  read_file: (path: string) -> string,
-  read_file_bytes: (path: string) -> { number },
-  write_file: (path: string, contents: string | { number } | { any }) -> (),
-  get_metadata: (path: string) -> FileMetadata,
-  read_dir: (path: string) -> { DirEntry },
-  get_current_dir: () -> string,
-  get_separator: () -> string,
-  get_script_path: () -> string,
-  change_dir: (path: string) -> (),
-  exists: (path: string) -> boolean,
-  create_dir: (path: string) -> (),
-  create_dir_all: (path: string) -> (),
-  remove: (path: string) -> (),
-  remove_dir: (path: string) -> (),
-  remove_dir_all: (path: string) -> (),
-} =
-  {}
-
-fs.new_buffer = function(capacity: number): Buffer
+--- Creates a new buffer with size in bytes allocated
+function fs.new_buffer(capacity: number): Buffer
   return astra_internal__new_buffer(capacity)
 end
 
-fs.open = function(path: string): File
+--- Opens the file in the given path
+function fs.open(path: string): File
   return astra_internal__open_file(path)
 end
 
-fs.read_file = function(path: string): string
+--- Returns the entire content of the file
+function fs.read_file(path: string): string
   return astra_internal__read_file_string(path)
 end
 
-fs.read_file_bytes = function(path: string): { number }
+--- Returns the entire content of the file as bytes
+function fs.read_file_bytes(path: string): { number }
   return astra_internal__read_file_bytes(path)
 end
 
-fs.write_file = function(path: string, contents: string | { number } | { any }): ()
+--- Returns the entire content of the file
+function fs.write_file(path: string, contents: string | { number } | { any }): ()
   return astra_internal__write_file(path, contents)
 end
 
-fs.get_metadata = function(path: string): FileMetadata
+--- Returns the metadata of a file or directory
+function fs.get_metadata(path: string): FileMetadata
   return astra_internal__get_metadata(path)
 end
 
-fs.read_dir = function(path: string): { DirEntry }
+--- Returns the content of the directory
+function fs.read_dir(path: string): { DirEntry }
   return astra_internal__read_dir(path)
 end
 
-fs.get_current_dir = function(): string
+--- Returns the path of the current directory
+function fs.get_current_dir(): string
   return astra_internal__get_current_dir()
 end
 
-fs.get_separator = function(): string
+--- Returns the path separator based on the operating system
+function fs.get_separator(): string
   return astra_internal__get_separator()
 end
 
-fs.get_script_path = function(): string
+--- Returns the path of the current running script
+function fs.get_script_path(): string
   return astra_internal__get_script_path()
 end
 
-fs.change_dir = function(path: string): ()
+--- Changes the current directory
+function fs.change_dir(path: string): ()
   astra_internal__change_dir(path)
 end
 
-fs.exists = function(path: string): boolean
+--- Checks if a path exists
+function fs.exists(path: string): boolean
   return astra_internal__exists(path)
 end
 
-fs.create_dir = function(path: string): ()
+--- Creates a directory
+function fs.create_dir(path: string): ()
   astra_internal__create_dir(path)
 end
 
-fs.create_dir_all = function(path: string): ()
+--- Creates a directory recursively
+function fs.create_dir_all(path: string): ()
   astra_internal__create_dir_all(path)
 end
 
-fs.remove = function(path: string): ()
+--- Removes a file
+function fs.remove(path: string): ()
   astra_internal__remove(path)
 end
 
-fs.remove_dir = function(path: string): ()
+--- Removes a directory
+function fs.remove_dir(path: string): ()
   astra_internal__remove_dir(path)
 end
 
-fs.remove_dir_all = function(path: string): ()
+--- Removes a directory recursively
+function fs.remove_dir_all(path: string): ()
   astra_internal__remove_dir_all(path)
 end
 

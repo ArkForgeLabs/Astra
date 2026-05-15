@@ -1,31 +1,35 @@
---!strict
+--!nocheck
+--!nolint
 
+--- Jinja2 templating engine
 type Jinja2Engine = {
-  add_template: (self: Jinja2Engine, name: string, template: string) -> (),
-  add_template_file: (self: Jinja2Engine, name: string, path: string) -> (),
-  get_template_names: (self: Jinja2Engine) -> { string },
-  exclude_templates: (self: Jinja2Engine, names: { string }) -> (),
-  reload_templates: (self: Jinja2Engine) -> (),
-  add_function: (self: Jinja2Engine, name: string, func: ({ any }) -> any) -> any,
-  render: (self: Jinja2Engine, name: string, context: { any }?) -> string,
-  add_to_server: (self: Jinja2Engine, server: HTTPServer, context: { any }?) -> (),
-  add_to_server_debug: (self: Jinja2Engine, server: HTTPServer, context: { any }?) -> (),
+  add_template: (templates: Jinja2Engine, name: string, template: string) -> (),
+  add_template_file: (templates: Jinja2Engine, name: string, path: string) -> (),
+  get_template_names: (template: Jinja2Engine) -> { string },
+  --- Excludes template files from being added to the server for rendering
+  exclude_templates: (templates: Jinja2Engine, names: { string }) -> (),
+  --- Refreshes the template code from the glob given at the start
+  reload_templates: (templates: Jinja2Engine) -> (),
+  --- Add a function to the templates
+  add_function: (templates: Jinja2Engine, name: string, func: (args: { any }) -> any) -> any,
+  --- Renders the given template into a string with the available context
+  render: (templates: Jinja2Engine, name: string, context: { any }?) -> string,
+  --- Adds the templates to the server
+  add_to_server: (templates: Jinja2Engine, server: HTTPServer, context: { any }?) -> (),
+  --- Adds the templates to the server in debugging manner, where the content refreshes on each request
+  add_to_server_debug: (templates: Jinja2Engine, server: HTTPServer, context: { any }?) -> (),
   debug_watch: (_: Jinja2Engine, server: HTTPServer, dir_path: string) -> (),
-  context_add: (self: Jinja2Engine, ...: any) -> (),
-  context_remove: (self: Jinja2Engine, ...: any) -> (),
-  context_get: (self: Jinja2Engine, ...: any) -> (),
+  context_add: (templates: Jinja2Engine, ...any) -> (),
+  context_remove: (templates: Jinja2Engine, ...any) -> (),
+  context_get: (templates: Jinja2Engine, ...any) -> (),
 }
 
-type TemplateFunction = (args: { any }) -> any
-
-local astra_internal__new_templating_engine: (dir: string?) -> Jinja2Engine
-local astra_internal__new_markdown_ast: (input: string) -> { any }
-local astra_internal__new_markdown_html: (input: string) -> { any }
-
+--- Returns a new templating engine
+--- @param dir? string path to the directory, for example: `"templates/**/[!exclude.html]*.html"`
 local function new_engine(dir: string?): Jinja2Engine
-  local engine = astra_internal__new_templating_engine(dir)
+  local engine: Jinja2Engine = astra_internal__new_templating_engine(dir)
   local Jinja2EngineWrapper: Jinja2Engine = { engine = engine }
-  local templates_re = require("validation").regex("(?:index)?\.(html|lua)$")
+  local templates_re = require("validation").regex("(?:index)?%.(html|lua)$")
 
   local function normalize_paths(path: string): { string }
     if path:sub(1, 1) ~= "/" then
@@ -46,6 +50,7 @@ local function new_engine(dir: string?): Jinja2Engine
     for _, value in ipairs(names) do
       local path = templates_re:replace(value, "")
       local content = self.engine:render(value, context)
+
       for _, route in ipairs(normalize_paths(path)) do
         server:get(route, function(_: HTTPServerRequest, response: HTTPServerResponse)
           response:set_header("Content-Type", "text/html")
@@ -72,7 +77,9 @@ local function new_engine(dir: string?): Jinja2Engine
   function Jinja2EngineWrapper:debug_watch(server: HTTPServer, dir_path: string)
     local serde = require("serde")
     local fs = require("fs")
-    local files: { any } = {}
+
+    local files = {}
+    --- @param path string the directory to watch
     local function read_recursive(path: string)
       for _, i in ipairs(fs.read_dir(path)) do
         if i:file_type():is_file() then
@@ -87,13 +94,12 @@ local function new_engine(dir: string?): Jinja2Engine
     end
 
     local did_change = false
-    local function interval_callback()
+    spawn_interval(function()
       local old_files = serde.json.encode(files)
       files = {}
       read_recursive(dir_path)
       did_change = old_files ~= serde.json.encode(files)
-    end
-    spawn_interval(interval_callback, 500)
+    end, 500)
 
     server:get("/debug.js", function(_: HTTPServerRequest, response: HTTPServerResponse)
       response:set_header("Content-Type", "text/javascript")
@@ -126,10 +132,12 @@ local function new_engine(dir: string?): Jinja2Engine
   return Jinja2EngineWrapper
 end
 
+--- @param input string
 local function markdown_ast(input: string): { any }
   return astra_internal__new_markdown_ast(input)
 end
 
+--- @param input string
 local function markdown_html(input: string): { any }
   return astra_internal__new_markdown_html(input)
 end

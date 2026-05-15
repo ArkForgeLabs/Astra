@@ -76,7 +76,7 @@ async fn run_command_prerequisite(
     }
 
     // Register Lua components.
-    if let Err(e) = super::registration(lua, stdlib_path).await {
+    if let Err(e) = super::registration(lua, file_path).await {
         error!("Error setting up the standard library: {e:?}");
     }
 
@@ -98,22 +98,6 @@ async fn run_command_prerequisite(
             error!("Error setting the global variable ARGS: {e:?}");
         }
     }
-
-    #[allow(clippy::expect_used)]
-    let astra_table = lua
-        .globals()
-        .get::<mlua::Table>("Astra")
-        .expect("Could not get the global Astra table");
-
-    #[allow(clippy::expect_used)]
-    astra_table
-        .set("current_script", file_path)
-        .expect("Couldn't set the script path");
-
-    #[allow(clippy::expect_used)]
-    astra_table
-        .set("main_script", file_path)
-        .expect("Couldn't set the script path");
 }
 
 fn check_for_default_file(actual_path: &mut String, file_path: String) -> String {

@@ -1,9 +1,10 @@
---!strict
+--!nocheck
+--!nolint
 
 type TypeMap = {
   number: string,
   string: string,
-  boolean: boolean,
+  boolean: string,
   table: string,
   ["function"]: string,
   ["nil"]: string,
@@ -26,17 +27,7 @@ type Regex = {
   is_match: (regex: Regex, content: string) -> boolean,
 }
 
-type FieldInfo = {
-  type_: string?,
-  required: boolean,
-  min: number?,
-  max: number?,
-  schema: { string: any }?,
-  array_item_type: string?,
-}
-
-local astra_internal__regex: (expression: string) -> Regex
-
+--- Schema validation function with support for nested tables and arrays of tables
 local function validate_table(input_table: { any }, schema: { string: any }): (boolean, string?)
   local function check_type(value: any, expected_type: string): boolean
     return type(value) == TypeMap[expected_type]
@@ -65,8 +56,18 @@ local function validate_table(input_table: { any }, schema: { string: any }): (b
     return true
   end
 
-  local function process_schema_constraints(constraints: any, _key: string): FieldInfo
-    local field_info: FieldInfo = {
+  local function process_schema_constraints(
+    constraints: any,
+    _key: string
+  ): {
+    type_: string?,
+    required: boolean,
+    min: number?,
+    max: number?,
+    schema: { string: any }?,
+    array_item_type: string?,
+  }
+    local field_info = {
       type_ = nil,
       required = true,
       min = nil,

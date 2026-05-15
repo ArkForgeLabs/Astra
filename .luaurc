@@ -3,6 +3,12 @@
   "lint": {
     "*": true
   },
+  "globals": [
+    "ASTRA_VERSION",
+    "CURRENT_SCRIPT",
+    "MAIN_SCRIPT",
+    "SHUTDOWN_CODE"
+  ],
   "aliases": {
     "astra": "./astra/luau"
   }

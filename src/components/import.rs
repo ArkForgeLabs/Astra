@@ -80,8 +80,7 @@ pub async fn find_first_lua_match_with_content(
 }
 
 async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua::Value> {
-    let astra_table = lua.globals().get::<mlua::Table>("Astra")?;
-    let current_script_path: String = astra_table.get::<String>("current_script")?;
+    let current_script_path: String = lua.globals().get::<String>("CURRENT_SCRIPT")?;
 
     if let Some((file_path, content)) = find_first_lua_match_with_content(lua, path).await {
         let file_path = file_path
@@ -89,7 +88,7 @@ async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua:
             .replace("./", "")
             .replace(".\\", "");
 
-        astra_table.set("current_script", file_path.clone())?;
+        lua.globals().set("CURRENT_SCRIPT", file_path.clone())?;
         let result = lua
             .load(content)
             .set_name(file_path)
@@ -98,7 +97,7 @@ async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua:
 
         let key = lua.create_registry_value(&result)?;
         lua.globals().set(key_id, Some(key))?;
-        astra_table.set("current_script", current_script_path)?;
+        lua.globals().set("CURRENT_SCRIPT", current_script_path)?;
 
         Ok(result)
     } else {

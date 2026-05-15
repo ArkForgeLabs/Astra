@@ -141,6 +141,7 @@ pub(crate) fn is_table_byte_array(table: &mlua::Table) -> mlua::Result<bool> {
     Ok(true)
 }
 
+#[allow(dead_code)]
 pub async fn read_from_stdlib(
     stdlib_path: &std::path::Path,
     path: std::path::PathBuf,

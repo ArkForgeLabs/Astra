@@ -61,6 +61,6 @@ return {
   dotenv_load = dotenv_load,
   env = {
     get = env_get,
-    set = env_set
-  }
+    set = env_set,
+  },
 }
