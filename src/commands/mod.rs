@@ -53,12 +53,21 @@ async fn registration(lua: &mlua::Lua, stdlib_path: String) -> mlua::Result<()> 
         stdlib_to_lua_table(lua).await?,
     )?;
 
+    let runtime = if cfg!(feature = "luau") {
+        "luau"
+    } else {
+        "lua"
+    };
+
     // astra.d.lua
-    if let Some(content) =
-        read_from_stdlib(&stdlib_path, std::path::PathBuf::from("astra.d.lua")).await
+    if let Some(content) = read_from_stdlib(
+        &stdlib_path,
+        std::path::PathBuf::from(runtime).join(format!("astra.d.{runtime}")),
+    )
+    .await
     {
         lua.load(content)
-            .set_name("astra.d.lua")
+            .set_name(format!("astra.d.{runtime}"))
             .exec_async()
             .await?;
     }

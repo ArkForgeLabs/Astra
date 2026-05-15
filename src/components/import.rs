@@ -1,38 +1,49 @@
 use crate::ASTRA_STD_LIBS;
+use std::path::{MAIN_SEPARATOR_STR, PathBuf};
 
 pub async fn find_first_lua_match_with_content(
     lua: &mlua::Lua,
     module_name: &str,
-) -> Option<(std::path::PathBuf, String)> {
+) -> Option<(PathBuf, String)> {
     let lua_path: String;
     if let Ok(path) = lua.load("return package.path").eval::<String>() {
         lua_path = path
     } else {
         lua_path = "?".to_string();
     }
-    let module_path = module_name.replace(".", std::path::MAIN_SEPARATOR_STR);
+    let module_path = module_name.replace(".", MAIN_SEPARATOR_STR);
+
+    let runtime = if cfg!(feature = "luau") {
+        "luau"
+    } else {
+        "lua"
+    };
 
     // check the lua paths if the module exist there
     for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
         let pattern = pattern.replacen('?', &module_path, 1).replacen(
-            &(".".to_owned() + std::path::MAIN_SEPARATOR_STR),
+            &(".".to_owned() + MAIN_SEPARATOR_STR),
             "",
             1,
         );
-        let pattern_path = std::path::PathBuf::from(&pattern);
+        let pattern_path = PathBuf::from(&pattern);
         let pattern_path_without_extension =
-            std::path::PathBuf::from(&pattern.replace(".luau", "").replace(".lua", ""));
+            PathBuf::from(&pattern.replace(".luau", "").replace(".lua", ""));
 
         // Check all possible file patterns
-        let candidates = vec![
-            pattern_path.with_extension("lua"),
-            pattern_path.with_extension("luau"),
-            pattern_path_without_extension.join("init.lua"),
-            pattern_path_without_extension.join("init.luau"),
-            pattern_path_without_extension.join("d.lua"),
-            pattern_path_without_extension.join("d.luau"),
-            pattern_path.clone(), // For directories or files without extensions
-        ];
+        let path_builder = |base_path: &str| -> Vec<PathBuf> {
+            vec![
+                PathBuf::from(base_path).join(pattern_path.with_extension("lua")),
+                PathBuf::from(base_path).join(pattern_path.with_extension("luau")),
+                PathBuf::from(base_path).join(pattern_path_without_extension.join("init.lua")),
+                PathBuf::from(base_path).join(pattern_path_without_extension.join("init.luau")),
+                PathBuf::from(base_path).join(pattern_path_without_extension.join("d.lua")),
+                PathBuf::from(base_path).join(pattern_path_without_extension.join("d.luau")),
+                PathBuf::from(base_path).join(pattern_path.clone()), // For directories or files without extensions
+            ]
+        };
+        let mut candidates = path_builder(".");
+        candidates.extend(path_builder(runtime));
 
         // Check the file system
         for candidate in candidates.iter() {
@@ -44,13 +55,11 @@ pub async fn find_first_lua_match_with_content(
         // Check in packaged libs if it exists
         for candidate in &candidates {
             let file_path = if let Ok(file_path) = candidate.strip_prefix(format!(
-                ".{}astra{}",
-                std::path::MAIN_SEPARATOR_STR,
-                std::path::MAIN_SEPARATOR_STR
+                ".{}astra{}{runtime}{}",
+                MAIN_SEPARATOR_STR, MAIN_SEPARATOR_STR, MAIN_SEPARATOR_STR
             )) {
                 file_path
-            } else if let Ok(file_path) =
-                candidate.strip_prefix(format!(".{}", std::path::MAIN_SEPARATOR_STR))
+            } else if let Ok(file_path) = candidate.strip_prefix(format!(".{}", MAIN_SEPARATOR_STR))
             {
                 file_path
             } else {
@@ -70,10 +79,40 @@ pub async fn find_first_lua_match_with_content(
     None
 }
 
+async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua::Value> {
+    let astra_table = lua.globals().get::<mlua::Table>("Astra")?;
+    let current_script_path: String = astra_table.get::<String>("current_script")?;
+
+    if let Some((file_path, content)) = find_first_lua_match_with_content(lua, path).await {
+        let file_path = file_path
+            .to_string_lossy()
+            .replace("./", "")
+            .replace(".\\", "");
+
+        astra_table.set("current_script", file_path.clone())?;
+        let result = lua
+            .load(content)
+            .set_name(file_path)
+            .eval_async::<mlua::Value>()
+            .await?;
+
+        let key = lua.create_registry_value(&result)?;
+        lua.globals().set(key_id, Some(key))?;
+        astra_table.set("current_script", current_script_path)?;
+
+        Ok(result)
+    } else {
+        Err(mlua::Error::runtime(format!(
+            "Could not find the module {path}"
+        )))
+    }
+}
+
 pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "require",
         lua.create_async_function(|lua, path: String| async move {
+            let path = path.replace("@astra/", "");
             let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
 
             if let Ok(cache) = lua
@@ -83,35 +122,7 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
             {
                 lua.registry_value::<mlua::Value>(&key)
             } else {
-                let astra_table = lua.globals().get::<mlua::Table>("Astra")?;
-                let current_script_path: String = astra_table.get::<String>("current_script")?;
-
-                #[allow(clippy::collapsible_else_if)]
-                if let Some((file_path, content)) =
-                    find_first_lua_match_with_content(&lua, &path).await
-                {
-                    let file_path = file_path
-                        .to_string_lossy()
-                        .replace("./", "")
-                        .replace(".\\", "");
-
-                    astra_table.set("current_script", file_path.clone())?;
-                    let result = lua
-                        .load(content)
-                        .set_name(file_path)
-                        .eval_async::<mlua::Value>()
-                        .await?;
-
-                    let key = lua.create_registry_value(&result)?;
-                    lua.globals().set(key_id, Some(key))?;
-                    astra_table.set("current_script", current_script_path)?;
-
-                    Ok(result)
-                } else {
-                    Err(mlua::Error::runtime(format!(
-                        "Could not find the module {path}"
-                    )))
-                }
+                import(&lua, &key_id, &path).await
             }
         })?,
     )
