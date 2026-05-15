@@ -52,7 +52,15 @@ type DateTime = {
 }
 
 local astra_internal__datetime_new_parse: (input: string) -> DateTime
-local astra_internal__datetime_new_from: (year: number, month: number?, day: number?, hour: number?, min: number?, sec: number?, milli: number?) -> DateTime
+local astra_internal__datetime_new_from: (
+  year: number,
+  month: number?,
+  day: number?,
+  hour: number?,
+  min: number?,
+  sec: number?,
+  milli: number?
+) -> DateTime
 local astra_internal__datetime_new_now: () -> DateTime
 local astra_internal__datetime_sleep: (amount: number) -> ()
 
@@ -68,10 +76,7 @@ local function new_datetime(
   if type(differentiator) == "string" then
     return astra_internal__datetime_new_parse(differentiator :: string)
   elseif type(differentiator) == "number" then
-    return astra_internal__datetime_new_from(
-      differentiator :: number,
-      month, day, hour, min, sec, milli
-    )
+    return astra_internal__datetime_new_from(differentiator :: number, month, day, hour, min, sec, milli)
   else
     return astra_internal__datetime_new_now()
   end

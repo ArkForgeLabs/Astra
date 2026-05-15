@@ -183,7 +183,8 @@ local function validate_table(input_table: { any }, schema: { string: any }): (b
     end
 
     if value ~= nil and expected_type ~= nil and not check_type(value, expected_type) then
-      return false, "\n" .. "Incorrect type for key: " .. path .. ". Expected " .. expected_type .. ", got " .. type(value)
+      return false,
+        "\n" .. "Incorrect type for key: " .. path .. ". Expected " .. expected_type .. ", got " .. type(value)
     end
 
     if nested_schema and type(value) == "table" and expected_type == "table" then

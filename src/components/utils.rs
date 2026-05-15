@@ -48,7 +48,7 @@ pub fn dotenv_function(lua: &mlua::Lua) -> mlua::Result<()> {
 
 pub fn pprint(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
-        "astra_internal__pretty_print",
+        "print",
         lua.create_function(|_, args: mlua::MultiValue| {
             for input in args.iter() {
                 if input.is_string()

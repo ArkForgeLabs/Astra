@@ -43,41 +43,42 @@ local PubSub: {
   subscribe: (topic: string, callback: Subscriber) -> (),
   unsubscribe: (topic: string, callback: Subscriber?) -> (),
   publish: (topic: string, data: any) -> (),
-} = {
-  subscribe = function(topic: string, callback: Subscriber): ()
-    if not topics[topic] then
-      topics[topic] = {}
-    end
-    table.insert(topics[topic], callback)
-  end,
-  unsubscribe = function(topic: string, callback: Subscriber?): ()
-    if not topics[topic] then
-      return
-    end
-    if callback then
-      for i, cb in ipairs(topics[topic]) do
-        if cb == callback then
-          table.remove(topics[topic], i)
-          break
-        end
+} =
+  {
+    subscribe = function(topic: string, callback: Subscriber): ()
+      if not topics[topic] then
+        topics[topic] = {}
       end
-    else
-      table.remove(topics[topic])
-    end
-  end,
-  publish = function(topic: string, data: any): ()
-    if not topics[topic] then
-      return
-    end
-    local subs: { Subscriber } = {}
-    for _, cb in ipairs(topics[topic]) do
-      table.insert(subs, cb)
-    end
-    for _, callback in ipairs(subs) do
-      callback(data, topic)
-    end
-  end,
-}
+      table.insert(topics[topic], callback)
+    end,
+    unsubscribe = function(topic: string, callback: Subscriber?): ()
+      if not topics[topic] then
+        return
+      end
+      if callback then
+        for i, cb in ipairs(topics[topic]) do
+          if cb == callback then
+            table.remove(topics[topic], i)
+            break
+          end
+        end
+      else
+        table.remove(topics[topic])
+      end
+    end,
+    publish = function(topic: string, data: any): ()
+      if not topics[topic] then
+        return
+      end
+      local subs: { Subscriber } = {}
+      for _, cb in ipairs(topics[topic]) do
+        table.insert(subs, cb)
+      end
+      for _, callback in ipairs(subs) do
+        callback(data, topic)
+      end
+    end,
+  }
 
 return {
   observable = observable,

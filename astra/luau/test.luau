@@ -4,8 +4,8 @@ type Test = {
   level: number,
   passes: number,
   errors: number,
-  befores: {{ (string) -> () }},
-  afters: {{ (string) -> () }},
+  befores: { { (string) -> () } },
+  afters: { { (string) -> () } },
   nocolor: (self: Test) -> Test,
   describe: (self: Test, name: string, fn: () -> ()) -> (),
   it: (self: Test, name: string, fn: () -> ()) -> (),
@@ -201,7 +201,9 @@ local paths = {
   },
   truthy = {
     test = function(v: any): (boolean, string?, string?)
-      return if v then true else false, "expected " .. tostring(v) .. " to be truthy", "expected " .. tostring(v) .. " to not be truthy"
+      return if v then true else false,
+        "expected " .. tostring(v) .. " to be truthy",
+        "expected " .. tostring(v) .. " to not be truthy"
     end,
   },
   equal = {

@@ -69,7 +69,8 @@ local fs: {
   remove: (path: string) -> (),
   remove_dir: (path: string) -> (),
   remove_dir_all: (path: string) -> (),
-} = {}
+} =
+  {}
 
 fs.new_buffer = function(capacity: number): Buffer
   return astra_internal__new_buffer(capacity)
