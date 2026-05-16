@@ -7,5 +7,11 @@
   "workspace.library": [
     "astra"
   ],
+  "diagnostics.globals": [
+    "ASTRA_VERSION",
+    "CURRENT_SCRIPT",
+    "MAIN_SCRIPT",
+    "SHUTDOWN_CODE"
+  ],
   "runtime.version": "LuaJIT"
 }

@@ -1,55 +1,19 @@
 ---@meta
 
----@class Astra
-Astra = {
-  version = "@ASTRA_VERSION",
-  --- The current running script
-  current_script = "",
-  --- The first script that was ran in the commandline
-  main_script = "",
-}
-
---- The current running script, use `Astra.current_script` instead
----@deprecated
-CURRENT_SCRIPT = ""
---- The first script that was ran in the commandline, use `Astra.main_script` instead
----@deprecated
-MAIN_SCRIPT = ""
-
 --[[
     All of the smaller scale components that are not big enough to need their own files, are here
 ]]
 
----Pretty prints any table or value
----@param ... any
-function pprint(...)
-  ---@diagnostic disable-next-line: undefined-global
-  astra_internal__pretty_print(...)
-end
-
 ---@return string
-function uuid()
+local function uuid()
   ---@diagnostic disable-next-line: undefined-global
   return astra_internal__uuid()
 end
 
----This function is deprecated, use `clean_require` instead
----
----Invalidates imported module cache
----
 ---Modules are cached upon importing at Astra, you can use this
 ---function to remove those caches
 ---@param path string
----@deprecated
-function invalidate_cache(path)
-  ---@diagnostic disable-next-line: undefined-global
-  astra_internal__invalidate_cache(path)
-end
-
----Modules are cached upon importing at Astra, you can use this
----function to remove those caches
----@param path string
-function clean_require(path)
+local function clean_require(path)
   ---@diagnostic disable-next-line: undefined-global
   astra_internal__invalidate_cache(path)
 end
@@ -62,7 +26,7 @@ end
 ---Starts a new async task
 ---@param callback fun() The callback to run the content of the async task
 ---@return TaskHandler
-function spawn_task(callback)
+local function spawn_task(callback)
   ---@diagnostic disable-next-line: undefined-global
   return astra_internal__spawn_task(callback)
 end
@@ -71,7 +35,7 @@ end
 ---@param callback fun() The callback to run the content of the async task
 ---@param timeout number The delay in milliseconds
 ---@return TaskHandler
-function spawn_timeout(callback, timeout)
+local function spawn_timeout(callback, timeout)
   ---@diagnostic disable-next-line: undefined-global
   return astra_internal__spawn_timeout(callback, timeout)
 end
@@ -80,22 +44,9 @@ end
 ---@param callback fun() The callback to run the content of the async task
 ---@param timeout number The delay in milliseconds
 ---@return TaskHandler
-function spawn_interval(callback, timeout)
+local function spawn_interval(callback, timeout)
   ---@diagnostic disable-next-line: undefined-global
   return astra_internal__spawn_interval(callback, timeout)
-end
-
----Splits a sentence into an array given the separator
----@param input_str string The input string
----@param separator_str string The input string
----@return table array
----@nodiscard
-function string.split(input_str, separator_str)
-  local result_table = {}
-  for word in input_str:gmatch("([^" .. separator_str .. "]+)") do
-    table.insert(result_table, word)
-  end
-  return result_table
 end
 
 ---Load your own file into env
@@ -105,16 +56,8 @@ function dotenv_load(file_path)
   return astra_internal__dotenv_load(file_path)
 end
 
-dotenv_load(".env")
-dotenv_load(".env.production")
-dotenv_load(".env.prod")
-dotenv_load(".env.development")
-dotenv_load(".env.dev")
-dotenv_load(".env.test")
-dotenv_load(".env.local")
-
 ---@param key string
-function os.getenv(key)
+local function env_get(key)
   ---@diagnostic disable-next-line: undefined-global
   return astra_internal__getenv(key)
 end
@@ -124,7 +67,20 @@ end
 ---NOT SAFE WHEN USED IN MULTITHREADING ENVIRONMENT
 ---@param key string
 ---@param value string
-function os.setenv(key, value)
+local function env_set(key, value)
   ---@diagnostic disable-next-line: undefined-global
   return astra_internal__setenv(key, value)
 end
+
+return {
+  uuid = uuid,
+  clean_require = clean_require,
+  spawn_task = spawn_task,
+  spawn_timeout = spawn_timeout,
+  spawn_interval = spawn_interval,
+  dotenv_load = dotenv_load,
+  env = {
+    get = env_get,
+    set = env_set,
+  },
+}

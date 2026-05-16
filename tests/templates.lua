@@ -1,6 +1,7 @@
 local fs = require("fs")
 local http = require("http")
 local templates = require("templates")
+local utils = require("utils")
 require("test")
 
 ---@param test Test
@@ -227,10 +228,10 @@ return function(test)
         server.port = port
         eng:add_to_server(server, { name = "world" })
 
-        task = spawn_task(function()
+        task = utils.spawn_task(function()
           server:run()
         end)
-        spawn_timeout(function() end, 150):await()
+        utils.spawn_timeout(function() end, 150):await()
       end)
 
       test.after(function()

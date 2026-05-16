@@ -1,0 +1,22 @@
+--!strict
+
+local http = require("@astra/http")
+local server = http.server.new()
+
+local function handle_socket(socket)
+  print("Connection opened!")
+  while true do
+    print(socket:recv())
+    socket:send("text", "hello from the server")
+    socket:send_close({
+      code = 1000,
+      reason = "end of chat",
+    })
+  end
+end
+
+server:websocket("/", handle_socket)
+
+print("Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port))
+
+server:run()
