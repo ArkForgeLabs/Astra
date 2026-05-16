@@ -1,3 +1,4 @@
+local astra = require("astra.lua.astra")
 local fs = require("fs")
 local http = require("http")
 require("test")

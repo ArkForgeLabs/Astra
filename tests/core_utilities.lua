@@ -1,4 +1,5 @@
 require("test")
+local astra = require("astra.lua.astra")
 
 ---@param test Test
 return function(test)

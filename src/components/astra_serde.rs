@@ -1,5 +1,5 @@
 use mlua::{ExternalError, LuaSerdeExt};
-use paste::paste;
+use pastey::paste;
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     json_encode(lua)?;
