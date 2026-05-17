@@ -25,19 +25,21 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
         "LuaJIT"
     };
 
-    // let tlconfig_file = include_str!("../../tlconfig.lua").replace("LuaJIT", runtime);
+    #[cfg(not(feature = "luau"))]
     let luarc_file = include_str!("../../.luarc.json").replace("LuaJIT", runtime);
+    #[cfg(feature = "luau")]
+    let luaurc_file = include_str!("../../.luaurc");
 
+    #[cfg(not(feature = "luau"))]
     std::fs::exists(".luarc.json")
         .map(|exists| !exists)
         .map(|_| std::fs::write(".luarc.json", luarc_file))??;
 
-    println!(
-        "🚀 Successfully exported the bundled library!\
-\n\nLuau type definition and configuration have not been exported.\n
-If you wish to export them as well, use the -t flag with astra export:\n\n\
-astra export -t"
-    );
-    // }
+    #[cfg(feature = "luau")]
+    std::fs::exists(".luaurc")
+        .map(|exists| !exists)
+        .map(|_| std::fs::write(".luaurc", luaurc_file))??;
+
+    println!("🚀 Successfully exported the bundled type definitions!");
     Ok(())
 }
