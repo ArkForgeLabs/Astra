@@ -256,7 +256,7 @@ function regex(expression: string): Regex
 end
 
 return {
-  validation = {
+  types = {
     string = string,
     number = number,
     integer = integer,

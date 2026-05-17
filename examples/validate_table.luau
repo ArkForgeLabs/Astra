@@ -1,40 +1,33 @@
---!strict
+local t = require("@astra/validation").types
 
-local v = require("@astra/validation").validation
-
-local User = v.build(v.struct({
-  id = v.number(),
-  name = v.string(),
-  email = v.optional(v.string()),
-  tags = v.array(v.string()),
-  metadata = v.optional(v.struct({
-    role = v.string(),
-    score = v.number({ range = { min = 0, max = 100 } }),
+local User = t.struct({
+  id = t.number(),
+  name = t.string(),
+  email = t.optional(t.string()),
+  tags = t.array(t.string()),
+  metadata = t.optional(t.struct({
+    role = t.string(),
+    score = t.number({ range = { min = 0, max = 100 } }),
   })),
-}))
+})
 
-type User = typeof(User:type())
+type User = typeof(User)
 -- User = { id: number, name: string, email: string?, tags: { string },
 --          metadata: { role: string, score: number }? }
 
-local data = User({
+local data: User = {
   id = 1,
   name = "Alice",
   tags = { "admin" },
-  metadata = { score = 85 },
-})
+  metadata = { role = "student", score = 85 },
+}
 
-local ok, err = v.validate(User, data)
-if ok then
-  print("Valid!")
-else
-  print("Invalid: " .. tostring(err))
-end
+assert(t.validate(User, data), "Invalid!")
 
--- Use v.build() for callable constructors with defaults
-local PointBuilder = v.build(v.struct({
-  x = v.number(),
-  y = v.number(),
+-- Use t.build() for callable constructors with defaults
+local PointBuilder = t.build(t.struct({
+  x = t.number(),
+  y = t.number(),
 }))
 
 type Point = typeof(PointBuilder:type())

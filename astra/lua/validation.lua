@@ -299,7 +299,7 @@ function regex(expression)
 end
 
 return {
-  validation = {
+  types = {
     string = string_type,
     number = number,
     integer = integer,
