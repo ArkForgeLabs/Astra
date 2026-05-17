@@ -1,6 +1,8 @@
 --!nocheck
 --!nolint
 
+type Range = { min: number?, max: number?, minExclusive: boolean?, maxExclusive: boolean? }
+
 local check = {}
 local ValidatorMt = { __index = {
 	validate = function(self, v)
@@ -51,7 +53,7 @@ function check.struct(self, t)
 	if type(t) ~= "table" then return false, "expected table, got " .. type(t) end
 	for k, f in pairs(self.m) do
 		local ok, err = f:validate(t[k])
-		if not ok then return false, tostring(k) .. ": " .. (err or "validation failed") end
+		if not ok then return false, tostring(k) .. ": " .. err end
 	end
 	for k in pairs(t) do
 		if not self.m[k] then return false, "unexpected key: " .. tostring(k) end
@@ -63,7 +65,7 @@ function check.array(self, a)
 	if type(a) ~= "table" then return false, "expected array, got " .. type(a) end
 	for i, v in ipairs(a) do
 		local ok, err = self.t:validate(v)
-		if not ok then return false, "[" .. tostring(i) .. "]: " .. (err or "validation failed") end
+		if not ok then return false, "[" .. tostring(i) .. "]: " .. err end
 	end
 	return true
 end
@@ -86,57 +88,71 @@ function check.literal(self, v)
 	return true
 end
 
-local function string()
-	return setmetatable({ kind = "string" }, ValidatorMt)
+function string(): string
+	return setmetatable({ kind = "string" }, ValidatorMt) :: string
 end
 
-local function number(o)
+function number(o: { integer: boolean?, range: Range? }?): number
 	local v = { kind = "number" }
 	if o then
 		if o.integer then v.i = true end
 		if o.range then v.r = o.range end
 	end
-	return setmetatable(v, ValidatorMt)
+	return setmetatable(v, ValidatorMt) :: number
 end
 
-local function integer()
+function integer(): number
 	return number({ integer = true })
 end
 
-local function boolean()
-	return setmetatable({ kind = "boolean" }, ValidatorMt)
+function boolean(): boolean
+	return setmetatable({ kind = "boolean" }, ValidatorMt) :: boolean
 end
 
-local function none()
-	return setmetatable({ kind = "nil" }, ValidatorMt)
+function none(): nil
+	return setmetatable({ kind = "nil" }, ValidatorMt) :: nil
 end
 
-local function struct(s)
-	return setmetatable({ kind = "struct", m = compile(s) }, ValidatorMt)
+function struct<T>(s: T): T
+	return setmetatable({ kind = "struct", m = compile(s) }, ValidatorMt) :: T
 end
 
-local function array(t)
-	return setmetatable({ kind = "array", t = t }, ValidatorMt)
+function array<T>(item: T): { T }
+	return setmetatable({ kind = "array", t = item }, ValidatorMt) :: { T }
 end
 
-local function optional(t)
-	return setmetatable({ kind = "optional", t = t }, ValidatorMt)
+function optional<T>(inner: T): T?
+	return setmetatable({ kind = "optional", t = inner }, ValidatorMt) :: T?
 end
 
-local function union(a, b)
-	return setmetatable({ kind = "union", s = { a, b } }, ValidatorMt)
+function union<T, U>(a: T, b: U): T | U
+	return setmetatable({ kind = "union", s = { a, b } }, ValidatorMt) :: (T | U)
 end
 
-local function literal(v)
-	return setmetatable({ kind = "literal", v = v }, ValidatorMt)
+function literal<T>(value: T): T
+	return setmetatable({ kind = "literal", v = value }, ValidatorMt) :: T
 end
 
-local function range(o)
+function range(o: Range): number
 	return number({ range = o })
 end
 
-local function pattern(p)
-	return setmetatable({ kind = "string", p = p }, ValidatorMt)
+function pattern(p: string): string
+	return setmetatable({ kind = "string", p = p }, ValidatorMt) :: string
+end
+
+function validate(v: any, value: any): (boolean, string?)
+	return v:validate(value)
+end
+
+type Regex = {
+  captures: (regex: Regex, content: string) -> { { string } },
+  replace: (regex: Regex, content: string, replacement: string, limit: number?) -> string,
+  is_match: (regex: Regex, content: string) -> boolean,
+}
+
+function regex(expression: string): Regex
+  return astra_internal__regex(expression)
 end
 
 return {
@@ -146,6 +162,7 @@ return {
 		struct = struct, array = array, optional = optional,
 		union = union, literal = literal,
 		range = range, pattern = pattern,
+		validate = validate,
 	},
-	regex = astra_internal__regex,
+	regex = regex
 }

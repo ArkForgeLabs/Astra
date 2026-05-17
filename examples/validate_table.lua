@@ -1,4 +1,5 @@
 local v = require("validation").validation
+local validate = v.validate
 
 local User = v.struct({
   id = v.number(),
@@ -16,7 +17,7 @@ local data = {
   score = 85,
 }
 
-local ok, err = User:validate(data)
+local ok, err = validate(User, data)
 if ok then
   print("Valid!")
 else

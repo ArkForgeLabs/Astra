@@ -1,6 +1,7 @@
 --!strict
 
 local v = require("@astra/validation").validation
+local validate = v.validate
 
 local UserValidator = v.struct({
 	id = v.number(),
@@ -13,7 +14,7 @@ local UserValidator = v.struct({
 	})),
 })
 
-type User = typeof(UserValidator:type())
+type User = typeof(UserValidator)
 -- User = { id: number, name: string, email: string?, tags: { string },
 --          metadata: { role: string, score: number }? }
 
@@ -24,7 +25,7 @@ local data: User = {
 	metadata = { role = "developer", score = 85 },
 }
 
-local ok, err = UserValidator:validate(data)
+local ok, err = validate(UserValidator, data)
 if ok then
 	print("Valid!")
 else
