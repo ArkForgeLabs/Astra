@@ -12,7 +12,6 @@ local User = v.struct({
 local data = {
   id = 1,
   name = "Alice",
-  email = "alice@example.com",
   tags = { "admin", "power-user" },
   score = 85,
 }
@@ -22,4 +21,21 @@ if ok then
   print("Valid!")
 else
   print("Invalid: " .. tostring(err))
+end
+
+-- Use v.build() for callable constructors with defaults
+local Point = v.build(v.struct({
+  x = v.number({ default = 0 }),
+  y = v.number({ default = 0 }),
+}))
+
+-- User values override field-level defaults
+local ok, p = pcall(Point, { x = 1, y = 2 })
+if ok then
+  print("Point: " .. p.x .. ", " .. p.y)
+end
+
+local ok2, q = pcall(Point, {})
+if ok2 then
+  print("Default point: " .. q.x .. ", " .. q.y)
 end

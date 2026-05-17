@@ -4,7 +4,7 @@ local check = {}
 local ValidatorMt = {
   __index = {
     validate = function(self, v)
-      local ok, err = check[self.kind](self, v)
+      local ok, err = pcall(check[self.kind], self, v)
       if ok then
         return true, nil
       end
@@ -12,6 +12,14 @@ local ValidatorMt = {
     end,
   },
 }
+
+local function is_leaf_error(msg)
+  return msg:match("^expected ")
+    or msg:match("^out of ")
+    or msg:match("^value ")
+    or msg:match("^unexpected ")
+    or msg:match("^string ")
+end
 
 local function inRange(v, r)
   if r.min and ((r.minExclusive and v <= r.min) or v < r.min) then
@@ -33,103 +41,112 @@ end
 
 function check.string(self, v)
   if type(v) ~= "string" then
-    return false, "expected string, got " .. type(v)
+    error("expected string, got " .. type(v), 0)
   end
   if self.p and not string.match(v, self.p) then
-    return false, "string does not match pattern"
+    error("string does not match pattern", 0)
   end
-  return true
 end
 
 function check.number(self, v)
   if type(v) ~= "number" then
-    return false, "expected number, got " .. type(v)
+    error("expected number, got " .. type(v), 0)
   end
   if self.i and v % 1 ~= 0 then
-    return false, "expected integer, got " .. tostring(v)
+    error("expected integer, got " .. tostring(v), 0)
   end
   if self.r and not inRange(v, self.r) then
-    return false, "out of range"
+    error("out of range", 0)
   end
-  return true
 end
 
 function check.boolean(self, v)
   if type(v) ~= "boolean" then
-    return false, "expected boolean, got " .. type(v)
+    error("expected boolean, got " .. type(v), 0)
   end
-  return true
 end
 
 check["nil"] = function(self, v)
   if v ~= nil then
-    return false, "expected nil, got " .. type(v)
+    error("expected nil, got " .. type(v), 0)
   end
-  return true
 end
 
 function check.struct(self, t)
   if type(t) ~= "table" then
-    return false, "expected table, got " .. type(t)
+    error("expected table, got " .. type(t), 0)
   end
   for k, f in pairs(self.m) do
     local ok, err = f:validate(t[k])
     if not ok then
-      return false, tostring(k) .. ": " .. err
+      if is_leaf_error(err) then
+        error(tostring(k) .. ": " .. err, 0)
+      else
+        error(tostring(k) .. "." .. err, 0)
+      end
     end
   end
   for k in pairs(t) do
     if not self.m[k] then
-      return false, "unexpected key: " .. tostring(k)
+      error("unexpected key: " .. tostring(k), 0)
     end
   end
-  return true
 end
 
 function check.array(self, a)
   if type(a) ~= "table" then
-    return false, "expected array, got " .. type(a)
+    error("expected array, got " .. type(a), 0)
   end
   for i, v in ipairs(a) do
     local ok, err = self.t:validate(v)
     if not ok then
-      return false, "[" .. tostring(i) .. "]: " .. err
+      if is_leaf_error(err) then
+        error("[" .. tostring(i) .. "]: " .. err, 0)
+      else
+        error("[" .. tostring(i) .. "]." .. err, 0)
+      end
     end
   end
-  return true
 end
 
 function check.optional(self, v)
   if v == nil then
-    return true
+    return
   end
-  return self.t:validate(v)
+  local ok, err = self.t:validate(v)
+  if not ok then
+    error(err, 0)
+  end
 end
 
 function check.union(self, v)
   for _, t in ipairs(self.s) do
     local ok = t:validate(v)
     if ok then
-      return true
+      return
     end
   end
-  return false, "value did not match any union member"
+  error("value did not match any union member", 0)
 end
 
 function check.literal(self, v)
   if v ~= self.v then
-    return false, "expected " .. tostring(self.v) .. ", got " .. tostring(v)
+    error("expected " .. tostring(self.v) .. ", got " .. tostring(v), 0)
   end
-  return true
 end
 
+---@param opts? { default?: string }
 ---@return string
-function string_type()
+function string_type(opts)
+  local v = { kind = "string" }
+  if opts and opts.default ~= nil then
+    v.default = opts.default
+  end
   ---@diagnostic disable-next-line: return-type-mismatch
-  return setmetatable({ kind = "string" }, ValidatorMt)
+  return setmetatable(v, ValidatorMt)
 end
 
----@param opts? { integer?: boolean, range?: { min?: number, max?: number, minExclusive?: boolean, maxExclusive?: boolean } }
+---@param opts? { integer?: boolean, range?: { min?: number, max?: number, minExclusive?: boolean, maxExclusive?: boolean }, default?: number }
 ---@return number
 function number(opts)
   local v = { kind = "number" }
@@ -139,6 +156,9 @@ function number(opts)
     end
     if opts.range then
       v.r = opts.range
+    end
+    if opts.default ~= nil then
+      v.default = opts.default
     end
   end
   ---@diagnostic disable-next-line: return-type-mismatch
@@ -150,10 +170,15 @@ function integer()
   return number({ integer = true })
 end
 
+---@param opts? { default?: boolean }
 ---@return boolean
-function boolean_type()
+function boolean_type(opts)
+  local v = { kind = "boolean" }
+  if opts and opts.default ~= nil then
+    v.default = opts.default
+  end
   ---@diagnostic disable-next-line: return-type-mismatch
-  return setmetatable({ kind = "boolean" }, ValidatorMt)
+  return setmetatable(v, ValidatorMt)
 end
 
 ---@return nil
@@ -179,7 +204,8 @@ end
 ---@param inner T
 ---@return T|nil
 function optional(inner)
-  return setmetatable({ kind = "optional", t = inner }, ValidatorMt)
+  ---@diagnostic disable-next-line: undefined-field
+  return setmetatable({ kind = "optional", t = inner, default = inner.default }, ValidatorMt)
 end
 
 ---@generic T, U
@@ -217,6 +243,49 @@ function validate(v, value)
   return v:validate(value)
 end
 
+---@generic T
+---@param schema T
+---@return T
+function build(schema)
+  ---@diagnostic disable-next-line: undefined-field
+  local m = schema.m
+  ---@diagnostic disable-next-line: undefined-field
+  return setmetatable({ schema = schema }, {
+    __call = function(_, data)
+      if type(data) ~= "table" then
+        error("expected table, got " .. type(data), 0)
+      end
+      local merged = {}
+      for k, v in pairs(data) do
+        merged[k] = v
+      end
+      if m then
+        for k, f in pairs(m) do
+          if merged[k] == nil and f.default ~= nil then
+            merged[k] = f.default
+          end
+        end
+      end
+      ---@diagnostic disable-next-line: undefined-field
+      local ok, err = schema:validate(merged)
+      if not ok then
+        error(err, 0)
+      end
+      return merged
+    end,
+    __index = {
+      type = function(self)
+        ---@diagnostic disable-next-line: return-type-mismatch
+        return self.schema
+      end,
+      ---@diagnostic disable-next-line: undefined-field
+      validate = function(self, value)
+        return self.schema:validate(value)
+      end,
+    },
+  })
+end
+
 ---@class Regex
 ---@field captures fun(regex: Regex, content: string): string[][]
 ---@field replace fun(regex: Regex, content: string, replacement: string, limit: number?): string
@@ -244,6 +313,7 @@ return {
     range = range,
     pattern = pattern,
     validate = validate,
+    build = build,
   },
   regex = regex,
 }

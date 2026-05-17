@@ -38,6 +38,7 @@ pub async fn run_command(
         .collect::<Vec<_>>()
         .join("\n");
 
+    #[allow(unused_mut)]
     let mut content_to_run = lua.load(user_file).set_name(actual_path_str);
     #[cfg(feature = "luau")]
     {

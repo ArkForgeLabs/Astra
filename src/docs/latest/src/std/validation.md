@@ -8,7 +8,7 @@ builder API for defining and checking data structures.
 ## Builder API
 
 The module returns builders under the `validation` key. Each builder creates a
-validator object with `:validate(value)` and `:type()` methods.
+validator object with a `validate(validator, value)` standalone function.
 
 ```lua
 local v = require("validation").validation
@@ -18,7 +18,7 @@ v.string()       -- validates type == "string"
 v.number()       -- validates type == "number"
 v.integer()      -- validates number is an integer
 v.boolean()      -- validates type == "boolean"
-v.nil()          -- validates value == nil
+v.none()          -- validates value == nil
 
 -- Constrained
 v.number({ integer = true })              -- integer only
@@ -27,29 +27,28 @@ v.number({ range = { min = 0, minExclusive = true } })  -- exclusive
 v.pattern("^%a+$")                        -- string matching Lua pattern
 
 -- Compound
-v.struct({ id = v.number(), name = v.string() })  -- object shape
+v.struct({
+  id = v.number(),
+  name = v.string()
+})  -- object shape
 v.array(v.string())                        -- array of items
 v.optional(v.string())                     -- value or nil
 v.union(v.string(), v.number())            -- one of multiple types
 v.literal("exact")                         -- exact value match
 ```
 
-## Validator methods
-
-Every validator has two methods:
+## Validating values
 
 ```lua
-local validator = v.struct({ id = v.number() })
+local v = require("validation").validation
+local validate = v.validate
+
+local schema = v.struct({ id = v.number() })
 
 -- Validate a value at runtime
-local ok, err = validator:validate({ id = 1 })
+local ok, err = validate(schema, { id = 1 })
 -- ok: boolean
 -- err: string | nil  (error description if validation fails)
-
--- Get the Luau type for typeof() derivation (Luau only)
-local validator = v.struct({ id = v.number(), name = v.string() })
-type MyType = typeof(validator:type())
--- MyType = { id: number, name: string }
 ```
 
 ## Examples
@@ -58,6 +57,7 @@ type MyType = typeof(validator:type())
 
 ```lua
 local v = require("validation").validation
+local validate = v.validate
 
 local User = v.struct({
   id = v.number(),
@@ -67,7 +67,7 @@ local User = v.struct({
 })
 
 local data = { id = 1, name = "Alice", tags = { "admin" } }
-local ok, err = User:validate(data)
+local ok, err = validate(User, data)
 if ok then
   print("Valid!")
 else
@@ -105,11 +105,24 @@ local UserValidator = v.struct({
   email = v.optional(v.string()),
 })
 
-type User = typeof(UserValidator:type())
+type User = typeof(UserValidator)
 -- User = { id: number, name: string, email: string? }
 
 local data: User = { id = 1, name = "Alice" }
-UserValidator:validate(data)
+```
+
+For `build()` constructors, use `:type()` to get the struct shape:
+
+```luau
+local UserBuilder = v.build(v.struct({
+  id = v.number(),
+  name = v.string(),
+}))
+
+type User = typeof(UserBuilder:type())
+-- User = { id: number, name: string }
+
+local data: User = UserBuilder({ id = 1, name = "Alice" })
 ```
 
 ## API Reference
@@ -118,17 +131,18 @@ UserValidator:validate(data)
 
 | Builder | Returns | Description |
 |---|---|---|
-| `string()` | validator | Accepts any string |
-| `number(opts?)` | validator | Accepts any number |
-| `integer()` | validator | Accepts only integer numbers |
-| `boolean()` | validator | Accepts true or false |
-| `nil()` | validator | Accepts only nil |
+| `string(opts?)` | string | Accepts any string. Options: `{ default: string? }` |
+| `number(opts?)` | number | Accepts any number. Options: `{ integer?, range?, default: number? }` |
+| `integer()` | number | Accepts only integer numbers |
+| `boolean(opts?)` | boolean | Accepts true or false. Options: `{ default: boolean? }` |
+| `none()` | nil | Accepts only nil |
 
 ### Number options
 
 ```lua
 v.number({
   integer = true,        -- reject non-integers
+  default = 0,           -- default value when used with build()
   range = {              -- numeric range check
     min = 0,
     max = 100,
@@ -136,6 +150,7 @@ v.number({
     maxExclusive = true, -- reject value == max
   },
 })
+```
 
 ### Compound builders
 
@@ -154,11 +169,38 @@ v.number({
 | `range({min?, max?, ...})` | number | Validates number against range with exclusive bounds. |
 | `pattern(str)` | string | Validates string against Lua pattern via string.match. |
 
-### Utility
+### Callable constructors
+
+`v.build(schema)` creates a callable constructor that validates input, fills
+field-level defaults, and returns the validated table. On failure, it throws
+an error — wrap in `pcall` to handle failures.
+
+```lua
+local Point = v.build(v.struct({
+  x = v.number({ default = 0 }),
+  y = v.number({ default = 0 }),
+}))
+
+-- Success
+local ok, p = pcall(Point, { x = 1, y = 2 })
+-- ok = true, p = { x = 1, y = 2 }
+
+-- With defaults
+local ok, q = pcall(Point, {})
+-- ok = true, q = { x = 0, y = 0 }
+
+-- Failure (throws error)
+local ok, err = pcall(Point, { x = "bad" })
+-- ok = false, err = "x.expected number, got string"
+```
+
+| Builder | Return type (Luau) | Description |
+|---|---|---|
+| `build(schema)` | T (schema shape) | Callable struct constructor. Fields with `.default` are filled when missing. `:type()` returns the struct validator. |
+
+### Regex
 
 ```lua
 local validation = require("validation")
 local my_regex = validation.regex("^hello.*")
 ```
-
-The `regex` function remains at the top level of the module export.
