@@ -38,12 +38,13 @@ pub async fn run_command(
         .collect::<Vec<_>>()
         .join("\n");
 
-    if let Err(e) = lua
-        .load(user_file)
-        .set_name(actual_path_str)
-        .exec_async()
-        .await
+    let mut content_to_run = lua.load(user_file).set_name(actual_path_str);
+    #[cfg(feature = "luau")]
     {
+        content_to_run =
+            content_to_run.set_compiler(mlua::Compiler::new().set_optimization_level(2));
+    }
+    if let Err(e) = content_to_run.exec_async().await {
         error!("{}", e);
     }
 

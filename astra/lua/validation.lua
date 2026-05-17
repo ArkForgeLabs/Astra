@@ -1,205 +1,176 @@
 ---@meta
 
----@enum (key) TypeMap
-local TypeMap = {
-  number = "number",
-  string = "string",
-  boolean = "boolean",
-  table = "table",
-  ["function"] = "function",
-  ["nil"] = "nil",
-  array = "table",
+local check = {}
+local ValidatorMt = { __index = {
+	validate = function(self, v)
+		local ok, err = check[self.kind](self, v)
+		if ok then return true, nil end
+		return false, err
+	end,
+}}
+
+local function inRange(v, r)
+	if r.min and ((r.minExclusive and v <= r.min) or v < r.min) then return false end
+	if r.max and ((r.maxExclusive and v >= r.max) or v > r.max) then return false end
+	return true
+end
+
+local function compile(s)
+	local m = {}
+	for k, v in pairs(s) do
+		m[k] = type(v) == "table" and rawget(v, "kind") and v or v
+	end
+	return m
+end
+
+function check.string(self, v)
+	if type(v) ~= "string" then return false, "expected string, got " .. type(v) end
+	if self.p and not string.match(v, self.p) then return false, "string does not match pattern" end
+	return true
+end
+
+function check.number(self, v)
+	if type(v) ~= "number" then return false, "expected number, got " .. type(v) end
+	if self.i and v % 1 ~= 0 then return false, "expected integer, got " .. tostring(v) end
+	if self.r and not inRange(v, self.r) then return false, "out of range" end
+	return true
+end
+
+function check.boolean(self, v)
+	if type(v) ~= "boolean" then return false, "expected boolean, got " .. type(v) end
+	return true
+end
+
+check["nil"] = function(self, v)
+	if v ~= nil then return false, "expected nil, got " .. type(v) end
+	return true
+end
+
+function check.struct(self, t)
+	if type(t) ~= "table" then return false, "expected table, got " .. type(t) end
+	for k, f in pairs(self.m) do
+		local ok, err = f:validate(t[k])
+		if not ok then return false, tostring(k) .. ": " .. (err or "validation failed") end
+	end
+	for k in pairs(t) do
+		if not self.m[k] then return false, "unexpected key: " .. tostring(k) end
+	end
+	return true
+end
+
+function check.array(self, a)
+	if type(a) ~= "table" then return false, "expected array, got " .. type(a) end
+	for i, v in ipairs(a) do
+		local ok, err = self.t:validate(v)
+		if not ok then return false, "[" .. tostring(i) .. "]: " .. (err or "validation failed") end
+	end
+	return true
+end
+
+function check.optional(self, v)
+	if v == nil then return true end
+	return self.t:validate(v)
+end
+
+function check.union(self, v)
+	for _, t in ipairs(self.s) do
+		local ok = t:validate(v)
+		if ok then return true end
+	end
+	return false, "value did not match any union member"
+end
+
+function check.literal(self, v)
+	if v ~= self.v then return false, "expected " .. tostring(self.v) .. ", got " .. tostring(v) end
+	return true
+end
+
+---@return string
+function string_type()
+	return setmetatable({ kind = "string" }, ValidatorMt)
+end
+
+---@param opts? { integer?: boolean, range?: { min?: number, max?: number, minExclusive?: boolean, maxExclusive?: boolean } }
+---@return number
+function number(opts)
+	local v = { kind = "number" }
+	if opts then
+		if opts.integer then v.i = true end
+		if opts.range then v.r = opts.range end
+	end
+	return setmetatable(v, ValidatorMt)
+end
+
+---@return number
+function integer()
+	return number({ integer = true })
+end
+
+---@return boolean
+function boolean_type()
+	return setmetatable({ kind = "boolean" }, ValidatorMt)
+end
+
+---@return nil
+function none()
+	return setmetatable({ kind = "nil" }, ValidatorMt)
+end
+
+---@generic T
+---@param schema T
+---@return T
+function struct(schema)
+	return setmetatable({ kind = "struct", m = compile(schema) }, ValidatorMt)
+end
+
+---@generic T
+---@param item T
+---@return T[]
+function array(item)
+	return setmetatable({ kind = "array", t = item }, ValidatorMt)
+end
+
+---@generic T
+---@param inner T
+---@return T|nil
+function optional(inner)
+	return setmetatable({ kind = "optional", t = inner }, ValidatorMt)
+end
+
+---@generic T, U
+---@param a T
+---@param b U
+---@return T|U
+function union(a, b)
+	return setmetatable({ kind = "union", s = { a, b } }, ValidatorMt)
+end
+
+---@generic T
+---@param value T
+---@return T
+function literal(value)
+	return setmetatable({ kind = "literal", v = value }, ValidatorMt)
+end
+
+---@param opts { min?: number, max?: number, minExclusive?: boolean, maxExclusive?: boolean }
+---@return number
+function range(opts)
+	return number({ range = opts })
+end
+
+---@param pat string
+---@return string
+function pattern(pat)
+	return setmetatable({ kind = "string", p = pat }, ValidatorMt)
+end
+
+return {
+	validation = {
+		string = string_type, number = number, integer = integer,
+		boolean = boolean_type, none = none,
+		struct = struct, array = array, optional = optional,
+		union = union, literal = literal,
+		range = range, pattern = pattern,
+	},
+	regex = astra_internal__regex,
 }
-
----Schema validation function with support for nested tables and arrays of tables
----@param input_table table
----@param schema { [string]: TypeMap | TypeMap[] }
----@return boolean, string | nil
-local function validate_table(input_table, schema)
-  local function check_type(value, expected_type)
-    return type(value) == TypeMap[expected_type]
-  end
-
-  local function check_range(value, min, max)
-    if type(value) == "number" then
-      return not (min and value < min) and not (max and value > max)
-    end
-    if type(value) == "string" and type(min) == "number" and type(max) == "number" then
-      local length = #value
-      return not (min and length < min) and not (max and length > max)
-    end
-    return true
-  end
-
-  local function process_schema_constraints(constraints, _key)
-    local field_info = {
-      type = nil,
-      required = true,
-      min = nil,
-      max = nil,
-      schema = nil,
-      array_item_type = nil,
-    }
-
-    if type(constraints) == "string" then
-      -- Simple type constraint: "string"
-      field_info.type = constraints
-    elseif type(constraints) == "table" then
-      if #constraints > 0 then
-        local first_elem = constraints[1]
-
-        if first_elem == "array" then
-          field_info.type = "array"
-          if #constraints == 2 then
-            if type(constraints[2]) == "string" then
-              field_info.array_item_type = constraints[2]
-            elseif type(constraints[2]) == "table" then
-              field_info.schema = constraints[2]
-            end
-          end
-        else
-          field_info.type = first_elem
-          if #constraints == 2 then
-            if type(constraints[2]) == "boolean" then
-              field_info.required = constraints[2]
-            elseif type(constraints[2]) == "table" then
-              field_info.schema = constraints[2]
-            end
-          end
-          if constraints.min then
-            field_info.min = constraints.min
-          end
-          if constraints.max then
-            field_info.max = constraints.max
-          end
-          if constraints.required == false then
-            field_info.required = false
-          end
-        end
-      else
-        -- Object format: { type = "string", min = 0, max = 100, required = false }
-        if constraints.type then
-          field_info.type = constraints.type
-        else
-          field_info.type = "table"
-          field_info.schema = constraints
-          if constraints.required == false then
-            field_info.required = false
-          end
-        end
-
-        if constraints.min then
-          field_info.min = constraints.min
-        end
-        if constraints.max then
-          field_info.max = constraints.max
-        end
-        if constraints.required == false then
-          field_info.required = false
-        end
-      end
-    end
-
-    return field_info
-  end
-
-  local function validate_nested_table(value, nested_schema, path)
-    local is_valid, err = validate_table(value, nested_schema)
-    if not is_valid then
-      return false, '"' .. path .. '"' .. err
-    end
-    return true
-  end
-
-  local function validate_array_of_tables(value, array_schema, path)
-    if type(value) ~= "table" then
-      return false, path .. ": Expected an array of tables, got " .. type(value)
-    end
-    for i, item in ipairs(value) do
-      local is_valid, err = validate_nested_table(item, array_schema, path .. "[" .. i .. "]")
-      if not is_valid then
-        return false, err
-      end
-    end
-    return true
-  end
-
-  local function validate_array_of_primitives(value, array_item_type, path)
-    if type(value) ~= "table" then
-      return false, path .. ": Expected an array, got " .. type(value)
-    end
-    for i, item in ipairs(value) do
-      if not check_type(item, array_item_type) then
-        return false, path .. "[" .. i .. "]: Expected " .. array_item_type .. ", got " .. type(item)
-      end
-    end
-    return true
-  end
-
-  for key, constraints in pairs(schema) do
-    local field_info = process_schema_constraints(constraints, key)
-    local value = input_table[key]
-    local expected_type = field_info.type
-    local min = field_info.min
-    local max = field_info.max
-    local nested_schema = field_info.schema
-    local path = key
-    local required = field_info.required
-
-    if required and value == nil then
-      return false, "\n" .. "Missing required key: " .. '"' .. path .. '"'
-    end
-
-    if value ~= nil and not check_type(value, expected_type) then
-      return false,
-        "\n" .. "Incorrect type for key: " .. path .. ". Expected " .. expected_type .. ", got " .. type(value)
-    end
-
-    if nested_schema and type(value) == "table" and expected_type == "table" then
-      local is_valid, err = validate_nested_table(value, nested_schema, path)
-      if not is_valid then
-        return false, "\n" .. "Error in nested table for key: " .. err
-      end
-    end
-
-    if expected_type == "array" and type(value) == "table" then
-      if nested_schema then
-        local is_valid, err = validate_array_of_tables(value, nested_schema, path)
-        if not is_valid then
-          return false, "\n" .. "Error in array of tables for key: " .. err
-        end
-      elseif field_info.array_item_type then
-        local is_valid, err = validate_array_of_primitives(value, field_info.array_item_type, path)
-        if not is_valid then
-          return false, "\n" .. "Error in array of primitives for key: " .. err
-        end
-      end
-    end
-
-    if value ~= nil and not check_range(value, min, max) then
-      return false, "\n" .. "Value for key " .. path .. " is out of range."
-    end
-  end
-
-  for key in pairs(input_table) do
-    if not schema[key] then
-      return false, "\n" .. "Unexpected key found: " .. key
-    end
-  end
-
-  return true
-end
-
----@class Regex
----@field captures fun(regex: Regex, content: string): string[][]
----@field replace fun(regex: Regex, content: string, replacement: string, limit: number?): string
----@field is_match fun(regex: Regex, content: string): boolean
-
----@param expression string
----@return Regex
-function regex(expression)
-  ---@diagnostic disable-next-line: undefined-global
-  return astra_internal__regex(expression)
-end
-
-return { validate_table = validate_table, regex = regex }

@@ -1,37 +1,24 @@
-local schema = {
-  -- normal single type array
-  numbers = { "array", "number" },
-  strings = { "array", "string" },
-  -- table array
-  entries = {
-    "array",
-    {
-      id = "number",
-      text = "string",
-      optional = { "number", required = false },
-    },
-  },
+local v = require("validation").validation
+
+local User = v.struct({
+  id = v.number(),
+  name = v.string(),
+  email = v.optional(v.string()),
+  tags = v.array(v.string()),
+  score = v.number({ range = { min = 0, max = 100 } }),
+})
+
+local data = {
+  id = 1,
+  name = "Alice",
+  email = "alice@example.com",
+  tags = { "admin", "power-user" },
+  score = 85,
 }
 
-local table_to_validate = {
-  numbers = { 1, 2, 3 },
-  strings = { "a", "b", "c" },
-  entries = {
-    {
-      id = 123,
-      text = "hey!",
-      optional = 123,
-    },
-    {
-      id = 456,
-      text = "hello!",
-    },
-  },
-}
-
-local is_valid, err = require("validation").validate_table(table_to_validate, schema)
-if is_valid then
-  print("The table is valid!")
+local ok, err = User:validate(data)
+if ok then
+  print("Valid!")
 else
-  print("Validation failed: " .. tostring(err))
+  print("Invalid: " .. tostring(err))
 end
