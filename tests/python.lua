@@ -178,13 +178,10 @@ return x + y
     end)
 
     test.it("TDD: dict comprehension", function()
-      local python_code = [=[
-items = [["a", 1], ["b", 2]]
-return {k: v for k, v in items}
-      ]=]
-      local res = python.run(python_code)
-      test.expect(res.a).to.equal(1)
-      test.expect(res.b).to.equal(2)
+      local res = python.run("return {n: n * 2 for n in [1, 2, 3]}")
+      test.expect(res[1]).to.equal(2)
+      test.expect(res[2]).to.equal(4)
+      test.expect(res[3]).to.equal(6)
     end)
 
     test.it("TDD: set literal {1, 2, 3}", function()

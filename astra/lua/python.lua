@@ -361,7 +361,7 @@ local function parse(tokens)
   local parse_expr, parse_lambda, parse_walrus, parse_if_expr, parse_or
   local parse_and, parse_not, parse_comparison
   local parse_term, parse_factor, parse_unary, parse_power, parse_primary, parse_atom
-  local unescape_string, parse_comma_list
+  local unescape_string, parse_comma_list, parse_comprehension_clauses
 
   parse_comma_list = function(end_kind)
     local items = {}
@@ -374,7 +374,28 @@ local function parse(tokens)
     return items
   end
 
-  parse_program = function()
+  parse_comprehension_clauses = function()
+    local gens = {}
+    while true do
+      local target = ex(TK.IDENTIFIER).value
+      ex(TK.IN)
+      local iter = parse_or()
+      local ifs = {}
+      while pk() and pk().kind == TK.IF do
+        ad()
+        ifs[#ifs + 1] = parse_or()
+      end
+      gens[#gens + 1] = { target = target, iter = iter, ifs = ifs }
+      if pk() and pk().kind == TK.FOR then
+        ad()
+      else
+        break
+      end
+    end
+    return gens
+  end
+
+    parse_program = function()
     local body = {}
     while pk() and pk().kind ~= TK.EOF and pk().kind ~= TK.DEDENT do
       local stmts = parse_stmt()
@@ -820,7 +841,17 @@ local function parse(tokens)
       return e
     elseif t.kind == TK.LBRACKET then
       ad()
-      local elts = parse_comma_list(TK.RBRACKET)
+      local first = parse_expr()
+      if pk() and pk().kind == TK.FOR then
+        ad()
+        local gens = parse_comprehension_clauses()
+        ex(TK.RBRACKET)
+        return { type = "ListComp", elt = first, generators = gens }
+      end
+      local elts = { first }
+      while ma(TK.COMMA) do
+        elts[#elts + 1] = parse_expr()
+      end
       ex(TK.RBRACKET)
       return { type = "List", elts = elts }
     elseif t.kind == TK.LBRACE then
@@ -829,8 +860,16 @@ local function parse(tokens)
         local first = parse_expr()
         if pk() and pk().kind == TK.COLON then
           ad()
-          local keys = { first }
-          local vals = { parse_expr() }
+          local key = first
+          local val = parse_expr()
+          if pk() and pk().kind == TK.FOR then
+            ad()
+            local gens = parse_comprehension_clauses()
+            ex(TK.RBRACE)
+            return { type = "DictComp", key = key, value = val, generators = gens }
+          end
+          local keys = { key }
+          local vals = { val }
           while ma(TK.COMMA) do
             keys[#keys + 1] = parse_expr()
             ex(TK.COLON)
@@ -839,6 +878,12 @@ local function parse(tokens)
           ex(TK.RBRACE)
           return { type = "Dict", keys = keys, values = vals }
         else
+          if pk() and pk().kind == TK.FOR then
+            ad()
+            local gens = parse_comprehension_clauses()
+            ex(TK.RBRACE)
+            return { type = "SetComp", elt = first, generators = gens }
+          end
           local elts = { first }
           while ma(TK.COMMA) do
             elts[#elts + 1] = parse_expr()
@@ -891,6 +936,7 @@ local function generate(ast)
 
   -- pre-declare recursive functions for Lua 5.1
   local gen_body, with_indent, gen_str, gen_expr, gen_stmt
+  local gen_comp_loops, gen_comp_loops_dc
 
   gen_body = function(body)
     for _, s in ipairs(body) do
@@ -913,7 +959,40 @@ local function generate(ast)
     return '"' .. s .. '"'
   end
 
-  gen_expr = function(expr)
+  gen_comp_loops = function(elt, gens, idx)
+    if idx > #gens then
+      return "__res[#__res + 1] = " .. gen_expr(elt) .. "; "
+    end
+    local g = gens[idx]
+    local code = "for _, " .. g.target .. " in ipairs(" .. gen_expr(g.iter) .. ") do "
+    for _, if_expr in ipairs(g.ifs or {}) do
+      code = code .. "if " .. gen_expr(if_expr) .. " then "
+    end
+    code = code .. gen_comp_loops(elt, gens, idx + 1)
+    for _ in ipairs(g.ifs or {}) do
+      code = code .. "end "
+    end
+    code = code .. "end "
+    return code
+  end
+  gen_comp_loops_dc = function(key, val, gens, idx)
+    if idx > #gens then
+      return "__res[" .. key .. "] = " .. val .. "; "
+    end
+    local g = gens[idx]
+    local code = "for _, " .. g.target .. " in ipairs(" .. gen_expr(g.iter) .. ") do "
+    for _, if_expr in ipairs(g.ifs or {}) do
+      code = code .. "if " .. gen_expr(if_expr) .. " then "
+    end
+    code = code .. gen_comp_loops_dc(key, val, gens, idx + 1)
+    for _ in ipairs(g.ifs or {}) do
+      code = code .. "end "
+    end
+    code = code .. "end "
+    return code
+  end
+
+    gen_expr = function(expr)
     if expr.type == "Constant" then
       local v = expr.value
       if v == nil then
@@ -1046,6 +1125,12 @@ local function generate(ast)
       return "(function() local __w = " .. v .. "; " .. t .. " = __w; return __w end)()"
     elseif expr.type == "IfExpr" then
       return "(function(...) if " .. gen_expr(expr.test) .. " then return " .. gen_expr(expr.body) .. " else return " .. gen_expr(expr.orelse) .. " end end)()"
+    elseif expr.type == "ListComp" or expr.type == "SetComp" then
+      return "(function() local __res = {} " .. gen_comp_loops(expr.elt, expr.generators, 1) .. " return __res end)()"
+    elseif expr.type == "DictComp" then
+      local key = gen_expr(expr.key)
+      local val = gen_expr(expr.value)
+      return "(function() local __res = {} " .. gen_comp_loops_dc(key, val, expr.generators, 1) .. " return __res end)()"
     end
     error("unknown expression type: " .. expr.type)
   end
@@ -1184,6 +1269,7 @@ local function generate(ast)
   push("    end")
   push("    return result")
   push("end")
+  push("range = __py_range")
   push("end")
 
   gen_body(ast.body)
