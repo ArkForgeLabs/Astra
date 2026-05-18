@@ -66,12 +66,12 @@ local TK = {
   AS = 64,
 }
 
-local tk_name = {}
+local token_names = {}
 for name, id in pairs(TK) do
-  tk_name[id] = name
+  token_names[id] = name
 end
 
-local keyword_tokens = {
+local keyword_token_map = {
   def = TK.DEF,
   ["if"] = TK.IF,
   elif = TK.ELIF,
@@ -98,7 +98,7 @@ local keyword_tokens = {
   ["as"] = TK.AS,
 }
 
-local token_om = {
+local two_character_tokens = {
   ["=="] = TK.EQEQ,
   ["!="] = TK.NOTEQ,
   ["<="] = TK.LESSEQ,
@@ -114,7 +114,7 @@ local token_om = {
   ["..."] = TK.ELLIPSIS,
 }
 
-local token_sm = {
+local single_character_tokens = {
   ["+"] = TK.PLUS,
   ["-"] = TK.MINUS,
   ["*"] = TK.STAR,
@@ -135,7 +135,7 @@ local token_sm = {
   [";"] = TK.SEMI,
 }
 
-local token_mm = {
+local multiplicative_operators = {
   [TK.STAR] = true,
   [TK.SLASH] = true,
   [TK.DOUBLESLASH] = true,
@@ -150,25 +150,49 @@ local function tokenize(source)
   local n = #source
   local indent_stack = { 0 }
   local at_line_start = true
+  local bracket_depth = 0
+  local continuation = false
 
-  local function ac()
+  local close_brackets = {
+    [TK.RPAREN] = true,
+    [TK.RBRACKET] = true,
+    [TK.RBRACE] = true,
+  }
+  local open_brackets = {
+    [TK.LPAREN] = true,
+    [TK.LBRACKET] = true,
+    [TK.LBRACE] = true,
+  }
+
+  local function advance_char()
     i = i + 1
     col = col + 1
   end
 
-  local function emit_tk(kind, value)
+  local function emit_token(kind, value)
     tokens[#tokens + 1] = { kind = kind, value = value or kind, line = line, col = col }
+    if open_brackets[kind] then
+      bracket_depth = bracket_depth + 1
+    elseif close_brackets[kind] then
+      bracket_depth = bracket_depth - 1
+    end
   end
 
   while i <= n do
     local ch = source:sub(i, i)
 
     if ch == "\n" then
-      emit_tk(TK.NEWLINE, "\n")
-      line = line + 1
-      col = 1
-      i = i + 1
-      at_line_start = true
+      if bracket_depth > 0 then
+        i = i + 1
+        line = line + 1
+        col = 1
+      else
+        emit_token(TK.NEWLINE, "\n")
+        line = line + 1
+        col = 1
+        i = i + 1
+        at_line_start = true
+      end
     elseif at_line_start then
       if ch == " " or ch == "\t" then
         local indent_count = 0
@@ -177,7 +201,7 @@ local function tokenize(source)
           local c = source:sub(i, i)
           if c == " " or c == "\t" then
             indent_count = indent_count + (c ~= indent_char and (c == "\t" and 4 or 1) or 1)
-            ac()
+            advance_char()
           else
             break
           end
@@ -186,11 +210,11 @@ local function tokenize(source)
         local nx = i <= n and source:sub(i, i) or ""
         if nx ~= "\n" and nx ~= "" then
           if indent_count > cur then
-            emit_tk(TK.INDENT)
+            emit_token(TK.INDENT)
             indent_stack[#indent_stack + 1] = indent_count
           elseif indent_count < cur then
             while #indent_stack > 1 and indent_stack[#indent_stack] > indent_count do
-              emit_tk(TK.DEDENT)
+              emit_token(TK.DEDENT)
               indent_stack[#indent_stack] = nil
             end
           end
@@ -198,24 +222,24 @@ local function tokenize(source)
         at_line_start = false
       else
         while #indent_stack > 1 do
-          emit_tk(TK.DEDENT)
+          emit_token(TK.DEDENT)
           indent_stack[#indent_stack] = nil
         end
         at_line_start = false
       end
     elseif ch == "#" then
       while i <= n and source:sub(i, i) ~= "\n" do
-        ac()
+        advance_char()
       end
     elseif ch == '"' or ch == "'" then
-      local q = ch
-      local si = i
-      ac()
-      if source:sub(i, i + 1) == q .. q then
+      local quote_char = ch
+      local start_index = i
+      advance_char()
+      if source:sub(i, i + 1) == quote_char .. quote_char then
         i = i + 2
         col = col + 2
         while i <= n do
-          if source:sub(i, i + 2) == q .. q .. q then
+          if source:sub(i, i + 2) == quote_char .. quote_char .. quote_char then
             i = i + 3
             col = col + 3
             break
@@ -228,89 +252,86 @@ local function tokenize(source)
           end
           i = i + 1
         end
-        emit_tk(TK.STRING, source:sub(si, i - 1))
+        emit_token(TK.STRING, source:sub(start_index, i - 1))
       else
         while i <= n do
           local c = source:sub(i, i)
           if c == "\\" then
             i = i + 2
             col = col + 2
-          elseif c == q then
-            ac()
+          elseif c == quote_char then
+            advance_char()
             break
           else
-            ac()
+            advance_char()
           end
         end
-        emit_tk(TK.STRING, source:sub(si, i - 1))
+        emit_token(TK.STRING, source:sub(start_index, i - 1))
       end
     elseif ch >= "0" and ch <= "9" then
-      local si = i
-      local isf = false
-      ac()
+      local start_index = i
+      local is_float = false
+      advance_char()
       while i <= n do
         local c = source:sub(i, i)
         if c >= "0" and c <= "9" then
-          ac()
+          advance_char()
         elseif c == "." then
-          isf = true
-          ac()
+          is_float = true
+          advance_char()
         elseif c == "e" or c == "E" then
-          isf = true
-          ac()
+          is_float = true
+          advance_char()
           if source:sub(i, i) == "+" or source:sub(i, i) == "-" then
-            ac()
+            advance_char()
           end
         else
           break
         end
       end
-      emit_tk(isf and TK.FLOAT or TK.INTEGER, source:sub(si, i - 1))
+      emit_token(is_float and TK.FLOAT or TK.INTEGER, source:sub(start_index, i - 1))
     elseif (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or ch == "_" then
-      local si = i
-      ac()
+      local start_index = i
+      advance_char()
       while i <= n do
         local c = source:sub(i, i)
         if (c >= "a" and c <= "z") or (c >= "A" and c <= "Z") or (c >= "0" and c <= "9") or c == "_" then
-          ac()
+          advance_char()
         else
           break
         end
       end
-      local w = source:sub(si, i - 1)
-      emit_tk(keyword_tokens[w] or TK.IDENTIFIER, w)
+      local word = source:sub(start_index, i - 1)
+      emit_token(keyword_token_map[word] or TK.IDENTIFIER, word)
     else
-      local t2 = i + 1 <= n and source:sub(i, i + 1) or ""
-      local t3 = i + 2 <= n and source:sub(i, i + 2) or ""
+      local next_two = i + 1 <= n and source:sub(i, i + 1) or ""
+      local next_three = i + 2 <= n and source:sub(i, i + 2) or ""
 
-      if token_om[t3] then
-        emit_tk(token_om[t3], t3)
+      if two_character_tokens[next_three] then
+        emit_token(two_character_tokens[next_three], next_three)
         i = i + 3
         col = col + 3
-      elseif token_om[t2] then
-        emit_tk(token_om[t2], t2)
+      elseif two_character_tokens[next_two] then
+        emit_token(two_character_tokens[next_two], next_two)
         i = i + 2
         col = col + 2
-      elseif token_sm[ch] then
-        emit_tk(token_sm[ch], ch)
-        ac()
+      elseif single_character_tokens[ch] then
+        emit_token(single_character_tokens[ch], ch)
+        advance_char()
       elseif ch == " " or ch == "\t" or ch == "\r" then
-        ac()
+        advance_char()
       elseif ch == "\\" then
-        local nc = i + 1 <= n and source:sub(i + 1, i + 1) or ""
-        if nc == "\n" then
+        local next_char = i + 1 <= n and source:sub(i + 1, i + 1) or ""
+        if next_char == "\n" then
           i = i + 2
           line = line + 1
           col = 1
-        elseif nc == "\r" and i + 2 <= n and source:sub(i + 2, i + 2) == "\n" then
+          continuation = true
+        elseif next_char == "\r" and i + 2 <= n and source:sub(i + 2, i + 2) == "\n" then
           i = i + 3
           line = line + 1
           col = 1
-        elseif nc == "\r" and i + 2 <= n and source:sub(i + 2, i + 2) == "\n" then
-          i = i + 3
-          line = line + 1
-          col = 1
-          at_line_start = true
+          continuation = true
         else
           error("syntax error at line " .. line .. " col " .. col .. ": unexpected character " .. ch)
         end
@@ -321,10 +342,10 @@ local function tokenize(source)
   end
 
   while #indent_stack > 1 do
-    emit_tk(TK.DEDENT)
+    emit_token(TK.DEDENT)
     indent_stack[#indent_stack] = nil
   end
-  emit_tk(TK.EOF)
+  emit_token(TK.EOF)
   return tokens
 end
 
@@ -335,45 +356,45 @@ end
 local function parse(tokens)
   local pos = 1
 
-  local function pk()
+  local function peek_token()
     return tokens[pos]
   end
-  local function ad()
-    local t = tokens[pos]
+  local function advance_token()
+    local token = tokens[pos]
     pos = pos + 1
-    return t
+    return token
   end
 
-  local function ex(kind)
-    local t = pk()
-    if not t or t.kind ~= kind then
+  local function expect_token(kind)
+    local token = peek_token()
+    if not token or token.kind ~= kind then
       error(
         "expected "
-          .. (tk_name[kind] or kind)
+          .. (token_names[kind] or kind)
           .. " got "
-          .. (t and (tk_name[t.kind] or t.kind) or "EOF")
+          .. (token and (token_names[token.kind] or token.kind) or "EOF")
           .. " at line "
-          .. (t and t.line or "?")
+          .. (token and token.line or "?")
           .. " col "
-          .. (t and t.col or "?")
+          .. (token and token.col or "?")
       )
     end
-    return ad()
+    return advance_token()
   end
 
-  local function ma(kind)
-    local t = pk()
-    if t and t.kind == kind then
-      ad()
+  local function match_token(kind)
+    local token = peek_token()
+    if token and token.kind == kind then
+      advance_token()
       return true
     end
     return false
   end
 
-  local function ecs()
-    ex(TK.COLON)
-    if pk() and pk().kind == TK.NEWLINE then
-      ad()
+  local function expect_colon_newline()
+    expect_token(TK.COLON)
+    if peek_token() and peek_token().kind == TK.NEWLINE then
+      advance_token()
     end
   end
 
@@ -387,9 +408,9 @@ local function parse(tokens)
 
   parse_comma_list = function(end_kind)
     local items = {}
-    if pk() and pk().kind ~= end_kind then
+    if peek_token() and peek_token().kind ~= end_kind then
       items[#items + 1] = parse_expr()
-      while ma(TK.COMMA) do
+      while match_token(TK.COMMA) do
         items[#items + 1] = parse_expr()
       end
     end
@@ -399,17 +420,17 @@ local function parse(tokens)
   parse_comprehension_clauses = function()
     local gens = {}
     while true do
-      local target = ex(TK.IDENTIFIER).value
-      ex(TK.IN)
+      local target = expect_token(TK.IDENTIFIER).value
+      expect_token(TK.IN)
       local iter = parse_or()
       local ifs = {}
-      while pk() and pk().kind == TK.IF do
-        ad()
+      while peek_token() and peek_token().kind == TK.IF do
+        advance_token()
         ifs[#ifs + 1] = parse_or()
       end
       gens[#gens + 1] = { target = target, iter = iter, ifs = ifs }
-      if pk() and pk().kind == TK.FOR then
-        ad()
+      if peek_token() and peek_token().kind == TK.FOR then
+        advance_token()
       else
         break
       end
@@ -419,20 +440,26 @@ local function parse(tokens)
 
   parse_program = function()
     local body = {}
-    while pk() and pk().kind == TK.NEWLINE do
-      ad()
+    while peek_token() and peek_token().kind == TK.NEWLINE do
+      advance_token()
     end
-    while pk() and pk().kind ~= TK.EOF and pk().kind ~= TK.DEDENT do
+    while peek_token() and peek_token().kind ~= TK.EOF and peek_token().kind ~= TK.DEDENT do
+      while peek_token() and peek_token().kind == TK.NEWLINE do
+        advance_token()
+      end
+      if peek_token() and (peek_token().kind == TK.DEDENT or peek_token().kind == TK.EOF) then
+        break
+      end
       local stmts = parse_stmt()
       if stmts then
         for _, s in ipairs(stmts) do
           body[#body + 1] = s
         end
       end
-      while pk() and pk().kind == TK.NEWLINE do
-        ad()
+      while peek_token() and peek_token().kind == TK.NEWLINE do
+        advance_token()
       end
-      if pk() and pk().kind == TK.DEDENT then
+      if peek_token() and peek_token().kind == TK.DEDENT then
         break
       end
     end
@@ -440,30 +467,30 @@ local function parse(tokens)
   end
 
   parse_stmt = function()
-    local t = pk()
-    if not t then
+    local token = peek_token()
+    if not token then
       return nil
     end
-    if t.kind == TK.DEF then
+    if token.kind == TK.DEF then
       return { parse_func_def() }
-    elseif t.kind == TK.IF then
+    elseif token.kind == TK.IF then
       return { parse_if() }
-    elseif t.kind == TK.WHILE then
+    elseif token.kind == TK.WHILE then
       return { parse_while() }
-    elseif t.kind == TK.FOR then
+    elseif token.kind == TK.FOR then
       return { parse_for() }
-    elseif t.kind == TK.RETURN then
+    elseif token.kind == TK.RETURN then
       return { parse_return() }
-    elseif t.kind == TK.PASS then
-      ad()
+    elseif token.kind == TK.PASS then
+      advance_token()
       return { { type = "Pass" } }
-    elseif t.kind == TK.BREAK then
-      ad()
+    elseif token.kind == TK.BREAK then
+      advance_token()
       return { { type = "Break" } }
-    elseif t.kind == TK.CONTINUE then
-      ad()
+    elseif token.kind == TK.CONTINUE then
+      advance_token()
       return { { type = "Continue" } }
-    elseif t.kind == TK.TRY then
+    elseif token.kind == TK.TRY then
       return { parse_try() }
     else
       return { parse_simple_stmt() }
@@ -471,23 +498,23 @@ local function parse(tokens)
   end
 
   parse_simple_stmt = function()
-    if pk() and pk().kind == TK.GLOBAL then
-      ad()
-      local names = { ex(TK.IDENTIFIER).value }
-      while ma(TK.COMMA) do
-        names[#names + 1] = ex(TK.IDENTIFIER).value
+    if peek_token() and peek_token().kind == TK.GLOBAL then
+      advance_token()
+      local names = { expect_token(TK.IDENTIFIER).value }
+      while match_token(TK.COMMA) do
+        names[#names + 1] = expect_token(TK.IDENTIFIER).value
       end
       return { type = "Global", names = names }
     end
     local first = parse_expr()
     local targets = { first }
-    while pk() and pk().kind == TK.COMMA do
-      ad()
+    while peek_token() and peek_token().kind == TK.COMMA do
+      advance_token()
       targets[#targets + 1] = parse_expr()
     end
-    if ma(TK.EQ) then
+    if match_token(TK.EQ) then
       local values = { parse_expr() }
-      while ma(TK.COMMA) do
+      while match_token(TK.COMMA) do
         values[#values + 1] = parse_expr()
       end
       if #values == 1 then
@@ -495,15 +522,15 @@ local function parse(tokens)
       else
         return { type = "Assign", targets = targets, value = { type = "Tuple", elts = values } }
       end
-    elseif ma(TK.PLUSEQ) then
+    elseif match_token(TK.PLUSEQ) then
       return { type = "AugAssign", target = targets[1], op = "+", value = parse_expr() }
-    elseif ma(TK.MINUSEQ) then
+    elseif match_token(TK.MINUSEQ) then
       return { type = "AugAssign", target = targets[1], op = "-", value = parse_expr() }
-    elseif ma(TK.STAREQ) then
+    elseif match_token(TK.STAREQ) then
       return { type = "AugAssign", target = targets[1], op = "*", value = parse_expr() }
-    elseif ma(TK.SLASHEQ) then
+    elseif match_token(TK.SLASHEQ) then
       return { type = "AugAssign", target = targets[1], op = "/", value = parse_expr() }
-    elseif ma(TK.PERCENTEQ) then
+    elseif match_token(TK.PERCENTEQ) then
       return { type = "AugAssign", target = targets[1], op = "%", value = parse_expr() }
     else
       return { type = "ExprStmt", expr = targets[1] }
@@ -511,91 +538,91 @@ local function parse(tokens)
   end
 
   parse_func_def = function()
-    ad()
-    local name = ex(TK.IDENTIFIER)
-    ex(TK.LPAREN)
+    advance_token()
+    local name = expect_token(TK.IDENTIFIER)
+    expect_token(TK.LPAREN)
     local args = {}
-    if pk() and pk().kind ~= TK.RPAREN then
-      args[#args + 1] = ex(TK.IDENTIFIER).value
-      if pk() and pk().kind == TK.EQ then
-        ad()
+    if peek_token() and peek_token().kind ~= TK.RPAREN then
+      args[#args + 1] = expect_token(TK.IDENTIFIER).value
+      if peek_token() and peek_token().kind == TK.EQ then
+        advance_token()
         parse_expr()
       end
-      while ma(TK.COMMA) do
-        args[#args + 1] = ex(TK.IDENTIFIER).value
-        if pk() and pk().kind == TK.EQ then
-          ad()
+      while match_token(TK.COMMA) do
+        args[#args + 1] = expect_token(TK.IDENTIFIER).value
+        if peek_token() and peek_token().kind == TK.EQ then
+          advance_token()
           parse_expr()
         end
       end
     end
-    ex(TK.RPAREN)
-    ecs()
+    expect_token(TK.RPAREN)
+    expect_colon_newline()
     return { type = "FunctionDef", name = name.value, args = args, body = parse_block_body() }
   end
 
   parse_if = function()
-    ad()
+    advance_token()
     local test = parse_expr()
-    ecs()
+    expect_colon_newline()
     local body = parse_block_body()
     local elifs = {}
     local orelse = nil
-    while pk() and pk().kind == TK.ELIF do
-      ad()
+    while peek_token() and peek_token().kind == TK.ELIF do
+      advance_token()
       local et = parse_expr()
-      ecs()
+      expect_colon_newline()
       elifs[#elifs + 1] = { test = et, body = parse_block_body() }
     end
-    if pk() and pk().kind == TK.ELSE then
-      ad()
-      ecs()
+    if peek_token() and peek_token().kind == TK.ELSE then
+      advance_token()
+      expect_colon_newline()
       orelse = parse_block_body()
     end
     return { type = "If", test = test, body = body, elifs = elifs, orelse = orelse }
   end
 
   parse_while = function()
-    ad()
+    advance_token()
     local test = parse_expr()
-    ecs()
+    expect_colon_newline()
     local body = parse_block_body()
     local orelse = nil
-    if pk() and pk().kind == TK.ELSE then
-      ad()
-      ecs()
+    if peek_token() and peek_token().kind == TK.ELSE then
+      advance_token()
+      expect_colon_newline()
       orelse = parse_block_body()
     end
     return { type = "While", test = test, body = body, orelse = orelse }
   end
 
   parse_for = function()
-    ad()
-    local target = ex(TK.IDENTIFIER).value
-    ex(TK.IN)
+    advance_token()
+    local target = expect_token(TK.IDENTIFIER).value
+    expect_token(TK.IN)
     local iter = nil
     local is_range = false
     local range_args = {}
-    if pk() and pk().kind == TK.IDENTIFIER and pk().value == "range" then
-      ad()
-      if pk() and pk().kind == TK.LPAREN then
-        ad()
+    if peek_token() and peek_token().kind == TK.IDENTIFIER and peek_token().value == "range" then
+      advance_token()
+      if peek_token() and peek_token().kind == TK.LPAREN then
+        advance_token()
         is_range = true
         range_args[1] = parse_expr()
-        while ma(TK.COMMA) do
+        while match_token(TK.COMMA) do
           range_args[#range_args + 1] = parse_expr()
         end
-        ex(TK.RPAREN)
+        expect_token(TK.RPAREN)
       end
     else
       iter = parse_primary()
     end
-    ecs()
+    expect_colon_newline()
     local body = parse_block_body()
     local orelse = nil
-    if pk() and pk().kind == TK.ELSE then
-      ad()
-      ecs()
+    if peek_token() and peek_token().kind == TK.ELSE then
+      advance_token()
+      expect_colon_newline()
       orelse = parse_block_body()
     end
     return {
@@ -610,36 +637,41 @@ local function parse(tokens)
   end
 
   parse_try = function()
-    ad()
-    ecs()
+    advance_token()
+    expect_colon_newline()
     local body = parse_block_body()
     local handlers = {}
     local finalbody = nil
-    while pk() and pk().kind == TK.EXCEPT do
-      ad()
+    while peek_token() and peek_token().kind == TK.EXCEPT do
+      advance_token()
       local exc_type = nil
       local exc_var = nil
-      if pk() and pk().kind ~= TK.COLON then
+      if peek_token() and peek_token().kind ~= TK.COLON then
         exc_type = parse_expr()
-        if pk() and pk().kind == TK.AS then
-          ad()
-          exc_var = ex(TK.IDENTIFIER).value
+        if peek_token() and peek_token().kind == TK.AS then
+          advance_token()
+          exc_var = expect_token(TK.IDENTIFIER).value
         end
       end
-      ecs()
+      expect_colon_newline()
       handlers[#handlers + 1] = { type = exc_type, name = exc_var, body = parse_block_body() }
     end
-    if pk() and pk().kind == TK.FINALLY then
-      ad()
-      ecs()
+    if peek_token() and peek_token().kind == TK.FINALLY then
+      advance_token()
+      expect_colon_newline()
       finalbody = parse_block_body()
     end
     return { type = "Try", body = body, handlers = handlers, finalbody = finalbody }
   end
 
   parse_return = function()
-    ad()
-    if pk() and pk().kind ~= TK.NEWLINE and pk().kind ~= TK.DEDENT and pk().kind ~= TK.EOF then
+    advance_token()
+    if
+      peek_token()
+      and peek_token().kind ~= TK.NEWLINE
+      and peek_token().kind ~= TK.DEDENT
+      and peek_token().kind ~= TK.EOF
+    then
       return { type = "Return", value = parse_expr() }
     else
       return { type = "Return", value = nil }
@@ -647,23 +679,29 @@ local function parse(tokens)
   end
 
   parse_block_body = function()
-    while pk() and pk().kind == TK.NEWLINE do
-      ad()
+    while peek_token() and peek_token().kind == TK.NEWLINE do
+      advance_token()
     end
-    ex(TK.INDENT)
+    expect_token(TK.INDENT)
     local body = {}
-    while pk() and pk().kind ~= TK.DEDENT and pk().kind ~= TK.EOF do
+    while peek_token() and peek_token().kind ~= TK.DEDENT and peek_token().kind ~= TK.EOF do
+      while peek_token() and peek_token().kind == TK.NEWLINE do
+        advance_token()
+      end
+      if peek_token() and (peek_token().kind == TK.DEDENT or peek_token().kind == TK.EOF) then
+        break
+      end
       local stmts = parse_stmt()
       if stmts then
         for _, s in ipairs(stmts) do
           body[#body + 1] = s
         end
       end
-      while pk() and pk().kind == TK.NEWLINE do
-        ad()
+      while peek_token() and peek_token().kind == TK.NEWLINE do
+        advance_token()
       end
     end
-    ex(TK.DEDENT)
+    expect_token(TK.DEDENT)
     return body
   end
 
@@ -672,42 +710,42 @@ local function parse(tokens)
     return parse_lambda()
   end
   parse_lambda = function()
-    if pk() and pk().kind == TK.LAMBDA then
-      ad()
+    if peek_token() and peek_token().kind == TK.LAMBDA then
+      advance_token()
       local args = {}
-      if pk() and pk().kind ~= TK.COLON then
-        args[#args + 1] = ex(TK.IDENTIFIER).value
-        while ma(TK.COMMA) do
-          args[#args + 1] = ex(TK.IDENTIFIER).value
+      if peek_token() and peek_token().kind ~= TK.COLON then
+        args[#args + 1] = expect_token(TK.IDENTIFIER).value
+        while match_token(TK.COMMA) do
+          args[#args + 1] = expect_token(TK.IDENTIFIER).value
         end
       end
-      ex(TK.COLON)
+      expect_token(TK.COLON)
       return { type = "Lambda", args = args, body = parse_lambda() }
     end
     return parse_walrus()
   end
   parse_walrus = function()
     local result = parse_if_expr()
-    if pk() and pk().kind == TK.WALRUS then
-      ad()
+    if peek_token() and peek_token().kind == TK.WALRUS then
+      advance_token()
       result = { type = "Walrus", target = result, value = parse_walrus() }
     end
     return result
   end
   parse_if_expr = function()
     local body = parse_or()
-    if pk() and pk().kind == TK.IF then
-      ad()
+    if peek_token() and peek_token().kind == TK.IF then
+      advance_token()
       local test = parse_or()
-      ex(TK.ELSE)
+      expect_token(TK.ELSE)
       body = { type = "IfExpr", test = test, body = body, orelse = parse_if_expr() }
     end
     return body
   end
   parse_or = function()
     local left = parse_and()
-    while pk() and pk().kind == TK.OR do
-      ad()
+    while peek_token() and peek_token().kind == TK.OR do
+      advance_token()
       local r = parse_and()
       left = { type = "BoolOp", op = "or", values = { left, r } }
     end
@@ -715,16 +753,16 @@ local function parse(tokens)
   end
   parse_and = function()
     local left = parse_not()
-    while pk() and pk().kind == TK.AND do
-      ad()
+    while peek_token() and peek_token().kind == TK.AND do
+      advance_token()
       local r = parse_not()
       left = { type = "BoolOp", op = "and", values = { left, r } }
     end
     return left
   end
   parse_not = function()
-    if pk() and pk().kind == TK.NOT then
-      ad()
+    if peek_token() and peek_token().kind == TK.NOT then
+      advance_token()
       return { type = "UnaryOp", op = "not", operand = parse_not() }
     end
     return parse_comparison()
@@ -732,7 +770,7 @@ local function parse(tokens)
 
   parse_comparison = function()
     local left = parse_term()
-    local om = {
+    local comparison_ops = {
       [TK.EQEQ] = "==",
       [TK.NOTEQ] = "!=",
       [TK.LESS] = "<",
@@ -742,32 +780,32 @@ local function parse(tokens)
     }
     local cmp_ops = {}
     local cmp_rights = {}
-    while pk() do
-      local t = pk()
-      local op = om[t.kind]
-      if not op and t.kind == TK.IS then
-        ad()
-        if pk() and pk().kind == TK.NOT then
-          ad()
+    while peek_token() do
+      local current_token = peek_token()
+      local op = comparison_ops[current_token.kind]
+      if not op and current_token.kind == TK.IS then
+        advance_token()
+        if peek_token() and peek_token().kind == TK.NOT then
+          advance_token()
           op = "is not"
         else
           op = "is"
         end
-      elseif not op and t.kind == TK.IN then
-        ad()
+      elseif not op and current_token.kind == TK.IN then
+        advance_token()
         op = "in"
-      elseif not op and t.kind == TK.NOT then
+      elseif not op and current_token.kind == TK.NOT then
         local saved = pos
-        ad()
-        if pk() and pk().kind == TK.IN then
-          ad()
+        advance_token()
+        if peek_token() and peek_token().kind == TK.IN then
+          advance_token()
           op = "not in"
         else
           pos = saved
           break
         end
       elseif op then
-        ad()
+        advance_token()
       else
         break
       end
@@ -782,8 +820,8 @@ local function parse(tokens)
 
   parse_term = function()
     local left = parse_factor()
-    while pk() and (pk().kind == TK.PLUS or pk().kind == TK.MINUS) do
-      local op = ad()
+    while peek_token() and (peek_token().kind == TK.PLUS or peek_token().kind == TK.MINUS) do
+      local op = advance_token()
       left = { type = "BinOp", left = left, op = op.value, right = parse_factor() }
     end
     return left
@@ -791,24 +829,24 @@ local function parse(tokens)
 
   parse_factor = function()
     local left = parse_unary()
-    while pk() and token_mm[pk().kind] do
-      local op = ad()
+    while peek_token() and multiplicative_operators[peek_token().kind] do
+      local op = advance_token()
       left = { type = "BinOp", left = left, op = op.value, right = parse_unary() }
     end
     return left
   end
 
   parse_unary = function()
-    if pk() and (pk().kind == TK.PLUS or pk().kind == TK.MINUS) then
-      return { type = "UnaryOp", op = ad().value, operand = parse_unary() }
+    if peek_token() and (peek_token().kind == TK.PLUS or peek_token().kind == TK.MINUS) then
+      return { type = "UnaryOp", op = advance_token().value, operand = parse_unary() }
     end
     return parse_power()
   end
 
   parse_power = function()
     local left = parse_primary()
-    if pk() and pk().kind == TK.DOUBLESTAR then
-      ad()
+    if peek_token() and peek_token().kind == TK.DOUBLESTAR then
+      advance_token()
       left = { type = "BinOp", left = left, op = "**", right = parse_unary() }
     end
     return left
@@ -817,76 +855,86 @@ local function parse(tokens)
   parse_primary = function()
     local expr = parse_atom()
     while true do
-      if pk() and pk().kind == TK.LPAREN then
-        ad()
+      local function skip_continue_tokens()
+        while
+          peek_token()
+          and (peek_token().kind == TK.NEWLINE or peek_token().kind == TK.INDENT or peek_token().kind == TK.DEDENT)
+        do
+          advance_token()
+        end
+      end
+      if peek_token() and peek_token().kind == TK.LPAREN then
+        advance_token()
+        skip_continue_tokens()
         local args = {}
         local keywords = {}
         local function parse_call_arg()
           local saved = pos
-          local t = pk()
-          local t2 = pos + 1 <= #tokens and tokens[pos + 1] or nil
-          if t and t.kind == TK.IDENTIFIER and t2 and t2.kind == TK.EQ then
-            ad()
-            ad()
-            keywords[#keywords + 1] = { arg = t.value, value = parse_expr() }
+          local current_token = peek_token()
+          local next_token = pos + 1 <= #tokens and tokens[pos + 1] or nil
+          if current_token and current_token.kind == TK.IDENTIFIER and next_token and next_token.kind == TK.EQ then
+            advance_token()
+            advance_token()
+            keywords[#keywords + 1] = { arg = current_token.value, value = parse_expr() }
           else
             args[#args + 1] = parse_expr()
           end
         end
-        if pk() and pk().kind ~= TK.RPAREN then
+        if peek_token() and peek_token().kind ~= TK.RPAREN then
           parse_call_arg()
-          while ma(TK.COMMA) do
+          while match_token(TK.COMMA) do
             parse_call_arg()
           end
         end
-        ex(TK.RPAREN)
+        skip_continue_tokens()
+        expect_token(TK.RPAREN)
         if #keywords > 0 then
           expr = { type = "Call", func = expr, args = args, keywords = keywords }
         else
           expr = { type = "Call", func = expr, args = args }
         end
-      elseif pk() and pk().kind == TK.LBRACKET then
-        ad()
-        if pk() and pk().kind == TK.COLON then
-          ad()
+      elseif peek_token() and peek_token().kind == TK.LBRACKET then
+        advance_token()
+        if peek_token() and peek_token().kind == TK.COLON then
+          advance_token()
           local lower, upper, step = nil, nil, nil
-          if pk() and pk().kind ~= TK.RBRACKET and pk().kind ~= TK.COLON then
+          if peek_token() and peek_token().kind ~= TK.RBRACKET and peek_token().kind ~= TK.COLON then
             upper = parse_expr()
           end
-          if pk() and pk().kind == TK.COLON then
-            ad()
-            if pk() and pk().kind ~= TK.RBRACKET then
+          if peek_token() and peek_token().kind == TK.COLON then
+            advance_token()
+            if peek_token() and peek_token().kind ~= TK.RBRACKET then
               step = parse_expr()
             end
           end
-          ex(TK.RBRACKET)
+          expect_token(TK.RBRACKET)
           expr =
             { type = "Subscript", value = expr, index = { type = "Slice", lower = lower, upper = upper, step = step } }
         else
           local idx = parse_expr()
-          if pk() and pk().kind == TK.COLON then
-            ad()
+          if peek_token() and peek_token().kind == TK.COLON then
+            advance_token()
             local upper, step = nil, nil
-            if pk() and pk().kind ~= TK.RBRACKET and pk().kind ~= TK.COLON then
+            if peek_token() and peek_token().kind ~= TK.RBRACKET and peek_token().kind ~= TK.COLON then
               upper = parse_expr()
             end
-            if pk() and pk().kind == TK.COLON then
-              ad()
-              if pk() and pk().kind ~= TK.RBRACKET then
+            if peek_token() and peek_token().kind == TK.COLON then
+              advance_token()
+              if peek_token() and peek_token().kind ~= TK.RBRACKET then
                 step = parse_expr()
               end
             end
-            ex(TK.RBRACKET)
+            expect_token(TK.RBRACKET)
             expr =
               { type = "Subscript", value = expr, index = { type = "Slice", lower = idx, upper = upper, step = step } }
           else
-            ex(TK.RBRACKET)
+            expect_token(TK.RBRACKET)
             expr = { type = "Subscript", value = expr, index = idx }
           end
         end
-      elseif pk() and pk().kind == TK.DOT then
-        ad()
-        expr = { type = "Attribute", value = expr, attr = ex(TK.IDENTIFIER).value }
+      elseif peek_token() and peek_token().kind == TK.DOT then
+        advance_token()
+        expr = { type = "Attribute", value = expr, attr = expect_token(TK.IDENTIFIER).value }
       else
         break
       end
@@ -895,135 +943,150 @@ local function parse(tokens)
   end
 
   parse_atom = function()
-    local t = pk()
-    if not t then
+    local current_token = peek_token()
+    if not current_token then
       error("unexpected EOF")
     end
-    if t.kind == TK.NONE then
-      ad()
+    if current_token.kind == TK.NONE then
+      advance_token()
       return { type = "Constant", value = nil }
-    elseif t.kind == TK.TRUE then
-      ad()
+    elseif current_token.kind == TK.TRUE then
+      advance_token()
       return { type = "Constant", value = true }
-    elseif t.kind == TK.FALSE then
-      ad()
+    elseif current_token.kind == TK.FALSE then
+      advance_token()
       return { type = "Constant", value = false }
-    elseif t.kind == TK.ELLIPSIS then
-      ad()
+    elseif current_token.kind == TK.ELLIPSIS then
+      advance_token()
       return { type = "Constant", value = nil }
-    elseif t.kind == TK.INTEGER or t.kind == TK.FLOAT then
-      ad()
-      return { type = "Constant", value = tonumber(t.value) }
-    elseif t.kind == TK.STRING then
-      ad()
-      local val = t.value:sub(2, #t.value - 1)
+    elseif current_token.kind == TK.INTEGER or current_token.kind == TK.FLOAT then
+      advance_token()
+      return { type = "Constant", value = tonumber(current_token.value) }
+    elseif current_token.kind == TK.STRING then
+      advance_token()
+      local val = current_token.value:sub(2, #current_token.value - 1)
       return { type = "Constant", value = unescape_string(val) }
-    elseif t.kind == TK.IDENTIFIER then
-      ad()
-      if t.value == "None" then
+    elseif current_token.kind == TK.IDENTIFIER then
+      advance_token()
+      if current_token.value == "None" then
         return { type = "Constant", value = nil }
-      elseif t.value == "True" then
+      elseif current_token.value == "True" then
         return { type = "Constant", value = true }
-      elseif t.value == "False" then
+      elseif current_token.value == "False" then
         return { type = "Constant", value = false }
       end
-      return { type = "Name", id = t.value }
-    elseif t.kind == TK.LPAREN then
-      ad()
+      return { type = "Name", id = current_token.value }
+    elseif current_token.kind == TK.LPAREN then
+      advance_token()
+      while
+        peek_token()
+        and (peek_token().kind == TK.NEWLINE or peek_token().kind == TK.INDENT or peek_token().kind == TK.DEDENT)
+      do
+        advance_token()
+      end
       local e = parse_expr()
-      ex(TK.RPAREN)
+      while
+        peek_token()
+        and (peek_token().kind == TK.NEWLINE or peek_token().kind == TK.INDENT or peek_token().kind == TK.DEDENT)
+      do
+        advance_token()
+      end
+      expect_token(TK.RPAREN)
       return e
-    elseif t.kind == TK.LBRACKET then
-      ad()
+    elseif current_token.kind == TK.LBRACKET then
+      advance_token()
       local first = parse_expr()
-      if pk() and pk().kind == TK.FOR then
-        ad()
+      if peek_token() and peek_token().kind == TK.FOR then
+        advance_token()
         local gens = parse_comprehension_clauses()
-        ex(TK.RBRACKET)
+        expect_token(TK.RBRACKET)
         return { type = "ListComp", elt = first, generators = gens }
       end
       local elts = { first }
-      while ma(TK.COMMA) do
+      while match_token(TK.COMMA) do
         elts[#elts + 1] = parse_expr()
       end
-      ex(TK.RBRACKET)
+      expect_token(TK.RBRACKET)
       return { type = "List", elts = elts }
-    elseif t.kind == TK.LBRACE then
-      ad()
-      local function snl()
-        while pk() and (pk().kind == TK.NEWLINE or pk().kind == TK.INDENT or pk().kind == TK.DEDENT) do
-          ad()
+    elseif current_token.kind == TK.LBRACE then
+      advance_token()
+      local function skip_newlines()
+        while
+          peek_token()
+          and (peek_token().kind == TK.NEWLINE or peek_token().kind == TK.INDENT or peek_token().kind == TK.DEDENT)
+        do
+          advance_token()
         end
       end
-      snl()
-      if pk() and pk().kind ~= TK.RBRACE then
+      skip_newlines()
+      if peek_token() and peek_token().kind ~= TK.RBRACE then
         local first = parse_expr()
-        snl()
-        if pk() and pk().kind == TK.COLON then
-          ad()
+        skip_newlines()
+        if peek_token() and peek_token().kind == TK.COLON then
+          advance_token()
           local key = first
-          snl()
+          skip_newlines()
           local val = parse_expr()
-          snl()
-          if pk() and pk().kind == TK.FOR then
-            ad()
+          skip_newlines()
+          if peek_token() and peek_token().kind == TK.FOR then
+            advance_token()
             local gens = parse_comprehension_clauses()
-            snl()
-            ex(TK.RBRACE)
+            skip_newlines()
+            expect_token(TK.RBRACE)
             return { type = "DictComp", key = key, value = val, generators = gens }
           end
           local keys = { key }
           local vals = { val }
-          while ma(TK.COMMA) do
-            snl()
-            if pk() and pk().kind == TK.RBRACE then
+          while match_token(TK.COMMA) do
+            skip_newlines()
+            if peek_token() and peek_token().kind == TK.RBRACE then
               break
             end
             keys[#keys + 1] = parse_expr()
-            ex(TK.COLON)
-            snl()
-            if pk() and pk().kind == TK.RBRACE then
+            expect_token(TK.COLON)
+            skip_newlines()
+            if peek_token() and peek_token().kind == TK.RBRACE then
               break
             end
             vals[#vals + 1] = parse_expr()
-            snl()
+            skip_newlines()
           end
-          snl()
-          ex(TK.RBRACE)
+          skip_newlines()
+          expect_token(TK.RBRACE)
           return { type = "Dict", keys = keys, values = vals }
         else
-          if pk() and pk().kind == TK.FOR then
-            ad()
+          if peek_token() and peek_token().kind == TK.FOR then
+            advance_token()
             local gens = parse_comprehension_clauses()
-            snl()
-            ex(TK.RBRACE)
+            skip_newlines()
+            expect_token(TK.RBRACE)
             return { type = "SetComp", elt = first, generators = gens }
           end
           local elts = { first }
-          while ma(TK.COMMA) do
-            snl()
+          while match_token(TK.COMMA) do
+            skip_newlines()
             elts[#elts + 1] = parse_expr()
-            snl()
+            skip_newlines()
           end
-          snl()
-          ex(TK.RBRACE)
+          skip_newlines()
+          expect_token(TK.RBRACE)
           return { type = "Set", elts = elts }
         end
       else
-        snl()
-        ex(TK.RBRACE)
+        skip_newlines()
+        expect_token(TK.RBRACE)
         return { type = "Set", elts = {} }
       end
     end
     error(
       "unexpected token "
-        .. (tk_name[t.kind] or t.kind)
+        .. (token_names[current_token.kind] or current_token.kind)
         .. " ("
-        .. t.value
+        .. current_token.value
         .. ") at line "
-        .. t.line
+        .. current_token.line
         .. " col "
-        .. t.col
+        .. current_token.col
     )
   end
 
@@ -1055,7 +1118,7 @@ local function generate(ast)
 
   -- pre-declare recursive functions for Lua 5.1
   local gen_body, with_indent, gen_str, gen_expr, gen_stmt
-  local gen_comp_loops, gen_comp_loops_dc
+  local gen_comprehension_loops, gen_dictcomp_loops
 
   gen_body = function(body)
     for _, s in ipairs(body) do
@@ -1078,7 +1141,7 @@ local function generate(ast)
     return '"' .. s .. '"'
   end
 
-  gen_comp_loops = function(elt, gens, idx)
+  gen_comprehension_loops = function(elt, gens, idx)
     if idx > #gens then
       return "__res[#__res + 1] = " .. gen_expr(elt) .. "; "
     end
@@ -1087,14 +1150,14 @@ local function generate(ast)
     for _, if_expr in ipairs(g.ifs or {}) do
       code = code .. "if " .. gen_expr(if_expr) .. " then "
     end
-    code = code .. gen_comp_loops(elt, gens, idx + 1)
+    code = code .. gen_comprehension_loops(elt, gens, idx + 1)
     for _ in ipairs(g.ifs or {}) do
       code = code .. "end "
     end
     code = code .. "end "
     return code
   end
-  gen_comp_loops_dc = function(key, val, gens, idx)
+  gen_dictcomp_loops = function(key, val, gens, idx)
     if idx > #gens then
       return "__res[" .. key .. "] = " .. val .. "; "
     end
@@ -1103,7 +1166,7 @@ local function generate(ast)
     for _, if_expr in ipairs(g.ifs or {}) do
       code = code .. "if " .. gen_expr(if_expr) .. " then "
     end
-    code = code .. gen_comp_loops_dc(key, val, gens, idx + 1)
+    code = code .. gen_dictcomp_loops(key, val, gens, idx + 1)
     for _ in ipairs(g.ifs or {}) do
       code = code .. "end "
     end
@@ -1172,7 +1235,7 @@ local function generate(ast)
       end
       return table.concat(vals, " " .. expr.op .. " ")
     elseif expr.type == "Compare" then
-      local function cmp(l, op, r)
+      local function compare_values(l, op, r)
         if op == "!=" then
           return "(" .. l .. " ~= " .. r .. ")"
         elseif op == "is" then
@@ -1188,13 +1251,13 @@ local function generate(ast)
         end
       end
       if #expr.ops == 1 then
-        return cmp(gen_expr(expr.left), expr.ops[1], gen_expr(expr.comparators[1]))
+        return compare_values(gen_expr(expr.left), expr.ops[1], gen_expr(expr.comparators[1]))
       else
         local parts = {}
         local prev = gen_expr(expr.left)
         for i = 1, #expr.ops do
           local r = gen_expr(expr.comparators[i])
-          parts[#parts + 1] = cmp(prev, expr.ops[i], r)
+          parts[#parts + 1] = compare_values(prev, expr.ops[i], r)
           prev = r
         end
         return table.concat(parts, " and ")
@@ -1205,11 +1268,11 @@ local function generate(ast)
         args[#args + 1] = gen_expr(a)
       end
       if expr.keywords and #expr.keywords > 0 then
-        local kw_parts = {}
+        local keyword_parts = {}
         for _, kw in ipairs(expr.keywords) do
-          kw_parts[#kw_parts + 1] = "[" .. gen_str(kw.arg) .. "] = " .. gen_expr(kw.value)
+          keyword_parts[#keyword_parts + 1] = "[" .. gen_str(kw.arg) .. "] = " .. gen_expr(kw.value)
         end
-        args[#args + 1] = "{" .. table.concat(kw_parts, ", ") .. "}"
+        args[#args + 1] = "{" .. table.concat(keyword_parts, ", ") .. "}"
       end
       return gen_expr(expr.func) .. "(" .. table.concat(args, ", ") .. ")"
     elseif expr.type == "Subscript" then
@@ -1266,12 +1329,14 @@ local function generate(ast)
         .. gen_expr(expr.orelse)
         .. " end end)()"
     elseif expr.type == "ListComp" or expr.type == "SetComp" then
-      return "(function() local __res = {} " .. gen_comp_loops(expr.elt, expr.generators, 1) .. " return __res end)()"
+      return "(function() local __res = {} "
+        .. gen_comprehension_loops(expr.elt, expr.generators, 1)
+        .. " return __res end)()"
     elseif expr.type == "DictComp" then
       local key = gen_expr(expr.key)
       local val = gen_expr(expr.value)
       return "(function() local __res = {} "
-        .. gen_comp_loops_dc(key, val, expr.generators, 1)
+        .. gen_dictcomp_loops(key, val, expr.generators, 1)
         .. " return __res end)()"
     end
     error("unknown expression type: " .. expr.type)
@@ -1359,8 +1424,8 @@ local function generate(ast)
         end
         return result
       end
-      local ts = flatten_targets(stmt.targets)
-      push(indent() .. table.concat(ts, ", ") .. " = " .. gen_expr(stmt.value))
+      local target_expressions = flatten_targets(stmt.targets)
+      push(indent() .. table.concat(target_expressions, ", ") .. " = " .. gen_expr(stmt.value))
     elseif stmt.type == "AugAssign" then
       local t = gen_expr(stmt.target)
       push(indent() .. t .. " = " .. t .. " " .. stmt.op .. " " .. gen_expr(stmt.value))
@@ -1375,9 +1440,7 @@ local function generate(ast)
         push(indent() .. gen_expr(stmt.expr))
       end
     elseif stmt.type == "Global" then
-      push(indent() .. "-- global " .. table.concat(stmt.names, ", "))
     elseif stmt.type == "Pass" then
-      push(indent() .. "-- pass")
     elseif stmt.type == "Break" then
       push(indent() .. "break")
     elseif stmt.type == "Continue" then
