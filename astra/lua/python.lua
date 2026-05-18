@@ -62,6 +62,8 @@ local TK = {
   TRY = 60,
   EXCEPT = 61,
   FINALLY = 62,
+  GLOBAL = 63,
+  AS = 64,
 }
 
 local tk_name = {}
@@ -92,6 +94,8 @@ local keyword_tokens = {
   ["try"] = TK.TRY,
   ["except"] = TK.EXCEPT,
   ["finally"] = TK.FINALLY,
+  ["global"] = TK.GLOBAL,
+  ["as"] = TK.AS,
 }
 
 local token_om = {
@@ -292,6 +296,24 @@ local function tokenize(source)
         ac()
       elseif ch == " " or ch == "\t" or ch == "\r" then
         ac()
+      elseif ch == "\\" then
+        local nc = i + 1 <= n and source:sub(i + 1, i + 1) or ""
+        if nc == "\n" then
+          i = i + 2
+          line = line + 1
+          col = 1
+        elseif nc == "\r" and i + 2 <= n and source:sub(i + 2, i + 2) == "\n" then
+          i = i + 3
+          line = line + 1
+          col = 1
+        elseif nc == "\r" and i + 2 <= n and source:sub(i + 2, i + 2) == "\n" then
+          i = i + 3
+          line = line + 1
+          col = 1
+          at_line_start = true
+        else
+          error("syntax error at line " .. line .. " col " .. col .. ": unexpected character " .. ch)
+        end
       else
         error("syntax error at line " .. line .. " col " .. col .. ": unexpected character " .. ch)
       end
@@ -357,7 +379,7 @@ local function parse(tokens)
 
   -- declare parser functions for Lua 5.1
   local parse_program, parse_stmt, parse_simple_stmt
-  local parse_func_def, parse_if, parse_while, parse_for, parse_return, parse_block_body
+  local parse_func_def, parse_if, parse_while, parse_for, parse_return, parse_try, parse_block_body
   local parse_expr, parse_lambda, parse_walrus, parse_if_expr, parse_or
   local parse_and, parse_not, parse_comparison
   local parse_term, parse_factor, parse_unary, parse_power, parse_primary, parse_atom
@@ -395,8 +417,11 @@ local function parse(tokens)
     return gens
   end
 
-    parse_program = function()
+  parse_program = function()
     local body = {}
+    while pk() and pk().kind == TK.NEWLINE do
+      ad()
+    end
     while pk() and pk().kind ~= TK.EOF and pk().kind ~= TK.DEDENT do
       local stmts = parse_stmt()
       if stmts then
@@ -438,12 +463,22 @@ local function parse(tokens)
     elseif t.kind == TK.CONTINUE then
       ad()
       return { { type = "Continue" } }
+    elseif t.kind == TK.TRY then
+      return { parse_try() }
     else
       return { parse_simple_stmt() }
     end
   end
 
   parse_simple_stmt = function()
+    if pk() and pk().kind == TK.GLOBAL then
+      ad()
+      local names = { ex(TK.IDENTIFIER).value }
+      while ma(TK.COMMA) do
+        names[#names + 1] = ex(TK.IDENTIFIER).value
+      end
+      return { type = "Global", names = names }
+    end
     local first = parse_expr()
     local targets = { first }
     while pk() and pk().kind == TK.COMMA do
@@ -482,8 +517,16 @@ local function parse(tokens)
     local args = {}
     if pk() and pk().kind ~= TK.RPAREN then
       args[#args + 1] = ex(TK.IDENTIFIER).value
+      if pk() and pk().kind == TK.EQ then
+        ad()
+        parse_expr()
+      end
       while ma(TK.COMMA) do
         args[#args + 1] = ex(TK.IDENTIFIER).value
+        if pk() and pk().kind == TK.EQ then
+          ad()
+          parse_expr()
+        end
       end
     end
     ex(TK.RPAREN)
@@ -564,6 +607,34 @@ local function parse(tokens)
       is_range = is_range,
       range_args = range_args,
     }
+  end
+
+  parse_try = function()
+    ad()
+    ecs()
+    local body = parse_block_body()
+    local handlers = {}
+    local finalbody = nil
+    while pk() and pk().kind == TK.EXCEPT do
+      ad()
+      local exc_type = nil
+      local exc_var = nil
+      if pk() and pk().kind ~= TK.COLON then
+        exc_type = parse_expr()
+        if pk() and pk().kind == TK.AS then
+          ad()
+          exc_var = ex(TK.IDENTIFIER).value
+        end
+      end
+      ecs()
+      handlers[#handlers + 1] = { type = exc_type, name = exc_var, body = parse_block_body() }
+    end
+    if pk() and pk().kind == TK.FINALLY then
+      ad()
+      ecs()
+      finalbody = parse_block_body()
+    end
+    return { type = "Try", body = body, handlers = handlers, finalbody = finalbody }
   end
 
   parse_return = function()
@@ -748,9 +819,32 @@ local function parse(tokens)
     while true do
       if pk() and pk().kind == TK.LPAREN then
         ad()
-        local args = parse_comma_list(TK.RPAREN)
+        local args = {}
+        local keywords = {}
+        local function parse_call_arg()
+          local saved = pos
+          local t = pk()
+          local t2 = pos + 1 <= #tokens and tokens[pos + 1] or nil
+          if t and t.kind == TK.IDENTIFIER and t2 and t2.kind == TK.EQ then
+            ad()
+            ad()
+            keywords[#keywords + 1] = { arg = t.value, value = parse_expr() }
+          else
+            args[#args + 1] = parse_expr()
+          end
+        end
+        if pk() and pk().kind ~= TK.RPAREN then
+          parse_call_arg()
+          while ma(TK.COMMA) do
+            parse_call_arg()
+          end
+        end
         ex(TK.RPAREN)
-        expr = { type = "Call", func = expr, args = args }
+        if #keywords > 0 then
+          expr = { type = "Call", func = expr, args = args, keywords = keywords }
+        else
+          expr = { type = "Call", func = expr, args = args }
+        end
       elseif pk() and pk().kind == TK.LBRACKET then
         ad()
         if pk() and pk().kind == TK.COLON then
@@ -856,42 +950,67 @@ local function parse(tokens)
       return { type = "List", elts = elts }
     elseif t.kind == TK.LBRACE then
       ad()
+      local function snl()
+        while pk() and (pk().kind == TK.NEWLINE or pk().kind == TK.INDENT or pk().kind == TK.DEDENT) do
+          ad()
+        end
+      end
+      snl()
       if pk() and pk().kind ~= TK.RBRACE then
         local first = parse_expr()
+        snl()
         if pk() and pk().kind == TK.COLON then
           ad()
           local key = first
+          snl()
           local val = parse_expr()
+          snl()
           if pk() and pk().kind == TK.FOR then
             ad()
             local gens = parse_comprehension_clauses()
+            snl()
             ex(TK.RBRACE)
             return { type = "DictComp", key = key, value = val, generators = gens }
           end
           local keys = { key }
           local vals = { val }
           while ma(TK.COMMA) do
+            snl()
+            if pk() and pk().kind == TK.RBRACE then
+              break
+            end
             keys[#keys + 1] = parse_expr()
             ex(TK.COLON)
+            snl()
+            if pk() and pk().kind == TK.RBRACE then
+              break
+            end
             vals[#vals + 1] = parse_expr()
+            snl()
           end
+          snl()
           ex(TK.RBRACE)
           return { type = "Dict", keys = keys, values = vals }
         else
           if pk() and pk().kind == TK.FOR then
             ad()
             local gens = parse_comprehension_clauses()
+            snl()
             ex(TK.RBRACE)
             return { type = "SetComp", elt = first, generators = gens }
           end
           local elts = { first }
           while ma(TK.COMMA) do
+            snl()
             elts[#elts + 1] = parse_expr()
+            snl()
           end
+          snl()
           ex(TK.RBRACE)
           return { type = "Set", elts = elts }
         end
       else
+        snl()
         ex(TK.RBRACE)
         return { type = "Set", elts = {} }
       end
@@ -992,7 +1111,7 @@ local function generate(ast)
     return code
   end
 
-    gen_expr = function(expr)
+  gen_expr = function(expr)
     if expr.type == "Constant" then
       local v = expr.value
       if v == nil then
@@ -1031,6 +1150,14 @@ local function generate(ast)
         end
         if expr.right.type == "Constant" and type(expr.right.value) == "string" then
           return "string.rep(" .. r .. ", " .. l .. ")"
+        end
+        if
+          expr.left.type == "List"
+          or expr.left.type == "Set"
+          or expr.right.type == "List"
+          or expr.right.type == "Set"
+        then
+          return "__py_repeat(" .. l .. ", " .. r .. ")"
         end
         return "(" .. l .. " * " .. r .. ")"
       else
@@ -1076,6 +1203,13 @@ local function generate(ast)
       local args = {}
       for _, a in ipairs(expr.args) do
         args[#args + 1] = gen_expr(a)
+      end
+      if expr.keywords and #expr.keywords > 0 then
+        local kw_parts = {}
+        for _, kw in ipairs(expr.keywords) do
+          kw_parts[#kw_parts + 1] = "[" .. gen_str(kw.arg) .. "] = " .. gen_expr(kw.value)
+        end
+        args[#args + 1] = "{" .. table.concat(kw_parts, ", ") .. "}"
       end
       return gen_expr(expr.func) .. "(" .. table.concat(args, ", ") .. ")"
     elseif expr.type == "Subscript" then
@@ -1124,13 +1258,21 @@ local function generate(ast)
       local v = gen_expr(expr.value)
       return "(function() local __w = " .. v .. "; " .. t .. " = __w; return __w end)()"
     elseif expr.type == "IfExpr" then
-      return "(function(...) if " .. gen_expr(expr.test) .. " then return " .. gen_expr(expr.body) .. " else return " .. gen_expr(expr.orelse) .. " end end)()"
+      return "(function(...) if "
+        .. gen_expr(expr.test)
+        .. " then return "
+        .. gen_expr(expr.body)
+        .. " else return "
+        .. gen_expr(expr.orelse)
+        .. " end end)()"
     elseif expr.type == "ListComp" or expr.type == "SetComp" then
       return "(function() local __res = {} " .. gen_comp_loops(expr.elt, expr.generators, 1) .. " return __res end)()"
     elseif expr.type == "DictComp" then
       local key = gen_expr(expr.key)
       local val = gen_expr(expr.value)
-      return "(function() local __res = {} " .. gen_comp_loops_dc(key, val, expr.generators, 1) .. " return __res end)()"
+      return "(function() local __res = {} "
+        .. gen_comp_loops_dc(key, val, expr.generators, 1)
+        .. " return __res end)()"
     end
     error("unknown expression type: " .. expr.type)
   end
@@ -1204,22 +1346,73 @@ local function generate(ast)
         push(indent() .. "return")
       end
     elseif stmt.type == "Assign" then
-      local ts = {}
-      for _, t in ipairs(stmt.targets) do
-        ts[#ts + 1] = gen_expr(t)
+      local function flatten_targets(tt)
+        local result = {}
+        for _, t in ipairs(tt) do
+          if t.type == "List" or t.type == "Tuple" then
+            for _, e in ipairs(t.elts) do
+              result[#result + 1] = gen_expr(e)
+            end
+          else
+            result[#result + 1] = gen_expr(t)
+          end
+        end
+        return result
       end
+      local ts = flatten_targets(stmt.targets)
       push(indent() .. table.concat(ts, ", ") .. " = " .. gen_expr(stmt.value))
     elseif stmt.type == "AugAssign" then
       local t = gen_expr(stmt.target)
       push(indent() .. t .. " = " .. t .. " " .. stmt.op .. " " .. gen_expr(stmt.value))
     elseif stmt.type == "ExprStmt" then
-      push(indent() .. gen_expr(stmt.expr))
+      if stmt.expr.type == "Constant" and type(stmt.expr.value) == "string" then
+        -- docstring: skip
+      elseif stmt.expr.type == "Name" then
+        -- bare Name (e.g. `sys` from failed `import sys`): skip
+      elseif stmt.expr.type == "Module" then
+        -- bare import: skip
+      else
+        push(indent() .. gen_expr(stmt.expr))
+      end
+    elseif stmt.type == "Global" then
+      push(indent() .. "-- global " .. table.concat(stmt.names, ", "))
     elseif stmt.type == "Pass" then
       push(indent() .. "-- pass")
     elseif stmt.type == "Break" then
       push(indent() .. "break")
     elseif stmt.type == "Continue" then
       push(indent() .. "goto __continue")
+    elseif stmt.type == "Try" then
+      push(indent() .. "local __py_ok, __py_err = pcall(function()")
+      with_indent(function()
+        gen_body(stmt.body)
+      end)
+      push(indent() .. "end)")
+      if #stmt.handlers > 0 then
+        push(indent() .. "if not __py_ok then")
+        with_indent(function()
+          for _, h in ipairs(stmt.handlers) do
+            if h.name then
+              push(indent() .. "local " .. h.name .. " = __py_err")
+            end
+          end
+          -- execute the first matching handler
+          for _, h in ipairs(stmt.handlers) do
+            if h.type then
+              -- type-checked except: for now, just always execute
+            end
+            gen_body(h.body)
+          end
+        end)
+        push(indent() .. "end")
+      end
+      if stmt.finalbody then
+        push(indent() .. "do")
+        with_indent(function()
+          gen_body(stmt.finalbody)
+        end)
+        push(indent() .. "end")
+      end
     else
       error("unknown statement type: " .. stmt.type)
     end
@@ -1227,6 +1420,12 @@ local function generate(ast)
 
   -- runtime helpers preamble
   push("do")
+  push("chr = string.char")
+  push("ord = string.byte")
+  push("local function __py_len(x) return #x end")
+  push("len = __py_len")
+  push("local function __py_int(x) return type(x) == 'number' and math.floor(x) or tonumber(x) end")
+  push("int = __py_int")
   push("function __py_slice(tbl, start, stop, step)")
   push("    local s, e, st = start, stop, step or 1")
   push("    local n = #tbl")
@@ -1256,6 +1455,13 @@ local function generate(ast)
   push("        return string.find(container, item, 1, true) ~= nil")
   push("    end")
   push("    return false")
+  push("end")
+  push("function __py_repeat(val, n)")
+  push("    local res = {}")
+  push("    for _ = 1, n do")
+  push("        res[#res + 1] = val")
+  push("    end")
+  push("    return res")
   push("end")
   push("function __py_range(...)")
   push("    local start, stop, step")
