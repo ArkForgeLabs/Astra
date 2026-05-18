@@ -2,14 +2,6 @@
 
 These are some of the smaller utilities and functionality that are usually globally available regardless of the `Astra` namespace:
 
-## Pretty Print
-
-`pprint` function is a wrapper over `print` function that also lets you print tables as well as other values.
-
-## String Split
-
-`string.split` splits a string according to the seperator provided and result into an array of chunks.
-
 ## Dotenv
 
 It is always a good idea to never include sensitive API keys within your server code. For these reasons we usually recommend using a `.env` file. Astra automatically loads them if they are present in the same folder into the environment, accessible through the `os.getenv`. You can also load your own file using the global `dotenv_load` function.
@@ -30,24 +22,24 @@ Astra has support for a very performant regex engine. The regex code is advised 
 
 ```lua
 -- Create a new regex
-local my_re = regex([[(?:index)?\.(html|lua|tera)$]])
+local my_re = regex([[(?:index)?\.(html|jinja)$]])
 
 -- Capture all of the hits as list of string lists (string[][])
-pprint(my_re:captures([[
+print(my_re:captures([[
 path/to/file.html
 examples/templates/index.html
-src/components/base.tera
+src/components/base.jinja
 ]]))
 
 -- Check for matches available
-pprint(my_re:is_match("static/index.lua"))
+print(my_re:is_match("static/index.jinja"))
 
 -- Or replace matches
 local content = "examples/templates/index.html"
 local to_replace_with = ""
 local number_of_replaces = 1 -- can omit it and not add it at all as argument
 local new_string = my_re:replace(content, to_replace_with, number_of_replaces)
-pprint(new_string)
+print(new_string)
 ```
 
 ## Graceful Shutdowns
@@ -56,7 +48,7 @@ In Astra, you can run a piece of code when the runtime receives SIGTERM or SIGIN
 
 ```lua
 ASTRA_SHUTDOWN_CODE = function ()
-    pprint("EXITING!!!")
+    print("EXITING!!!")
 end
 ```
 
@@ -69,7 +61,9 @@ These are useful for when you do not wish to wait for something to be completed,
 An example of async task:
 
 ```lua
-spawn_task(function ()
+local utils = require("utils")
+
+utils.spawn_task(function ()
     print("RUNNING ON ASYNC GREENTHREAD")
 end)
 
@@ -82,12 +76,12 @@ Additionally two more task types are also available:
 
 ```lua
 -- Runs in a loop with a delay
-local task_id = spawn_interval(function ()
+local task_id = utils.spawn_interval(function ()
     print("I AM LOOPING");
 end, 2000)
 
 -- Runs once after the given delay in milliseconds
-spawn_timeout(function ()
+utils.spawn_timeout(function ()
     print("I AM RUNNING ONLY ONCE.")
     print("Time to abort the interval above")
     -- cancel the interval task

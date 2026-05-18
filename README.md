@@ -7,7 +7,7 @@
 [![Static Badge](https://img.shields.io/badge/Read_The_Docs-blue?style=flat&logo=docsdotrs&color=%23000000)](https://astra.arkforge.net/docs/latest)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-Astra is a Rust based runtime environment for Lua (5.1-5.5), Luau and LuaJIT. The goal is to get as much performance as possible while writing the logic in Lua instead for faster iteration, fault-tolerance and no-build requirements. This project is internally used here at [ArkForge](https://arkforge.net), by universities, research labs, and many large organizations.
+Astra is a Rust based runtime environment for Lua (5.1-5.5), Luau and LuaJIT. The goal is to get as much performance as possible while writing the logic in Lua instead for faster iteration, fault-tolerance, all the batteries included, and complete customization. This project is internally used here at [ArkForge](https://arkforge.net), by universities, research labs, and many large organizations.
 
 For enterprise and business inquiries, send us an email at [contact@arkforge.net](mailto:contact@arkforge.net)
 
@@ -62,7 +62,7 @@ Or fancy some multi threaded async code
 spawn_task(function ()
     -- HTTP Request to check your IP address
     local response = require("http").request("https://myip.wtf/json"):execute()
-    pprint(response:status_code(), response:remote_address(), response:body():json())
+    print(response:status_code(), response:remote_address(), response:body():json())
 end)
 ```
 
@@ -77,10 +77,10 @@ db:execute([[
     INSERT INTO data (name, age) VALUES ($1, $2);
 ]], { my_data.name, my_data.age })
 
-pprint(db:query_all("SELECT * FROM data"))
+print(db:query_all("SELECT * FROM data"))
 ```
 
-There is also support for cryptography, datetime, jinja2, markdown, pubsub/observers, structure validation, async filesystem, and many more, check them at at the [docs](https://astra.arkforge.net/docs/latest)
+There is also support for cryptography, datetime, jinja2, markdown, pubsub/observers, runtime and for LSP type safety and validation, async filesystem, and many more, check them at at the [docs](https://astra.arkforge.net/docs/latest)
 
 ## Community Projects
 

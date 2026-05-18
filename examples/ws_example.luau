@@ -1,7 +1,8 @@
-local http = require("http")
+--!strict
+
+local http = require("@astra/http")
 local server = http.server.new()
 
----@param socket WebSocket
 local function handle_socket(socket)
   print("Connection opened!")
   while true do
@@ -16,6 +17,6 @@ end
 
 server:websocket("/", handle_socket)
 
-print("🚀 Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port), "\n")
+print("Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port))
 
 server:run()

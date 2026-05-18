@@ -1,4 +1,5 @@
-local http = require("http")
+local http = require("@astra/http")
+
 local server = http.server.new()
 
 -- A simple GET index route with text return
@@ -51,4 +52,4 @@ end, { body_limit = 1024 * 1024 * 64 }) -- with 64MB body limit
 print("🚀 Listening at: http://" .. tostring(server.hostname) .. ":" .. tostring(server.port))
 
 -- Run the server
-server:run()
+-- server:run()

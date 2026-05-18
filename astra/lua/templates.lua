@@ -1,5 +1,7 @@
 ---@meta
 
+local utils = require("utils")
+
 --- Jinja2 templating engine
 ---@class Jinja2Engine
 ---@field add_template fun(templates: Jinja2Engine, name: string, template: string)
@@ -101,7 +103,7 @@ local function new_engine(dir)
     end
 
     local did_change = false
-    spawn_interval(function()
+    utils.spawn_interval(function()
       local old_files = serde.json.encode(files)
       files = {}
       read_recursive(dir_path)

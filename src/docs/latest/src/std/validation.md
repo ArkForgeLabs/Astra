@@ -1,75 +1,80 @@
 # Validation
 
-Sometimes during development, your server likely recieves structured data such as JSON from outside, or a function you have needs to have a certain parameter with a certain structure that you need to verify during runtime as well as development. You likely also have a structure in mind for them. For these cases to validate that the structures are correct and to confidently go through them without risk of errors, you can use the schema validation utility.
+Sometimes during development, your server receives structured data such as JSON
+from outside, or a function needs a parameter with a specific structure that
+must be verified at runtime. The validation module provides a composable
+builder API for defining and checking data structures.
 
-Structure Validation essentially is a function that returns true if a given table is of a given structure definition. The structure is defined as a separate table that has the field names along the types and requirements. For example:
+## Builder API
+
+The module returns builders under the `validation` key. Each builder creates a
+validator object with a `validate(validator, value)` standalone function.
+
+```luau
+local t = require("validation").types
+
+-- You can define types such as this
+local UserType = t.struct({ -- containers for values
+  id = t.number(),
+  name = t.string({ default = "Student" }),
+  email = t.optional(t.string()),
+  tags = t.array(t.string()),
+  metadata = t.optional(t.struct({
+    role = t.string(),
+    score = t.number({ range = { min = 0, max = 100 } }),
+  })),
+})
+-- In Luau
+type UserType = typeof(UserType)
+
+-- Or wrap it with t.build() to make it usable
+local User = t.build(UserType)
+-- In Luau, you can also use the :type() method to get the derived type with builder API
+type User = typeof(User:type())
+
+-- This allows us to do many cool things such as initializing and automatically validating:
+local alice = User({
+  id = 1,
+  name = "Alice",
+  tags = { "admin" },
+  metadata = { role = "student", score = 85 },
+})
+print(alice.name) -- Alice
+
+-- And of course you can still use the validate function standalone as well:
+assert(t.validate(User, alice))
+```
+
+The full API is as follows:
+
+```lua
+-- Primitives
+t.string()       -- validates type == "string"
+t.number()       -- validates type == "number"
+t.integer()      -- validates number is an integer
+t.boolean()      -- validates type == "boolean"
+t.none()          -- validates value == nil
+
+-- Constrained
+t.number({ integer = true })              -- integer only
+t.number({ range = { min = 0, max = 100 } })  -- inclusive range
+t.number({ range = { min = 0, minExclusive = true } })  -- exclusive
+t.pattern("^%a+$")                        -- string matching Lua pattern
+
+-- Compound
+t.struct({
+  id = t.number(),
+  name = t.string()
+})  -- object shape
+t.array(t.string())                        -- array of items
+t.optional(t.string())                     -- value or nil
+t.union(t.string(), t.number())            -- one of multiple types
+t.literal("exact")                         -- exact value match
+```
+
+### Regex
 
 ```lua
 local validation = require("validation")
-
--- Your schema
-local schema = {
-  -- Type names along their types and requirements
-  id = "number",
-  name = { "string", required = false }, -- optional field
-}
--- Your actual data
-local example = { id = "123", name = 456 }
--- Check the validation
-local is_valid, err = validation.validate_table(example, schema)
-assert(is_valid, "Validation failed: " .. tostring(err))
-```
-
-Almost all of the native lua types are accounted for. Deeply nesting is obviously supported as well:
-
-```lua
-local schema = {
-  user = {
-    "table",
-    {
-      profile = { "table", { id = "number", name = "string" } }
-    }
-  }
-}
-local example = {
-  user = { profile = { name = "John" } },
-}
-local is_valid, err = validation.validate_table(example, schema)
-assert(is_valid, "Validation failed: " .. tostring(err))
-```
-
-As well as arrays:
-
-```lua
-local schema = {
-  -- normal single type array
-  numbers = { "array", "number" },
-  strings = { "array", "string" },
-  -- table array
-  entries = {
-    "array",
-    {
-      id = "number",
-      text = "string",
-    },
-  },
-}
-
-local tbl = {
-  numbers = { 1, 2, 3 },
-  strings = { "a", "b", "c" },
-  entries = {
-    {
-      id = 123,
-      text = "hey!",
-    },
-    {
-      id = 456,
-      text = "hello!",
-    },
-  },
-}
-
-local is_valid, err = validation.validate_table(tbl, schema)
-assert(is_valid, "Validation failed: " .. tostring(err))
+local my_regex = validation.regex("^hello.*")
 ```

@@ -1,6 +1,6 @@
 local test = require("test")
 
-pprint([[
+print([[
     _    ____ _____ ____      _
    / \  / ___|_   _|  _ \    / \
   / _ \ \___ \ | | | |_) |  / _ \
@@ -21,7 +21,7 @@ require("tests.templates")(test)
 require("tests.database")(test)
 require("tests.stores")(test)
 
-pprint(
+print(
   "\n\n" .. string.char(27) .. "[32m" .. test.passes,
   string.char(27) .. "[0m" .. "passed and",
   string.char(27) .. "[31m" .. test.errors,

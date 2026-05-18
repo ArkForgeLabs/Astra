@@ -5,8 +5,6 @@ pub use upgrade::*;
 mod export;
 pub use export::*;
 
-use crate::components::read_from_stdlib;
-
 static LUA_ASTRA_STDLIB_TABLE: tokio::sync::OnceCell<mlua::Table> =
     tokio::sync::OnceCell::const_new();
 async fn stdlib_to_lua_table(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
@@ -43,25 +41,24 @@ async fn stdlib_to_lua_table(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
         .cloned()
 }
 
-async fn registration(lua: &mlua::Lua, stdlib_path: String) -> mlua::Result<()> {
+async fn registration(lua: &mlua::Lua, script_path: &str) -> mlua::Result<()> {
     crate::components::register_components(lua).await?;
-
-    let stdlib_path = std::path::PathBuf::from(stdlib_path);
 
     lua.globals().set(
         "ASTRA_INTERNAL__STDLIB_TABLE",
         stdlib_to_lua_table(lua).await?,
     )?;
+    lua.globals().set("ASTRA_VERSION", clap::crate_version!())?;
+    lua.globals().set("CURRENT_SCRIPT", script_path)?;
+    lua.globals().set("MAIN_SCRIPT", script_path)?;
 
-    // astra.d.lua
-    if let Some(content) =
-        read_from_stdlib(&stdlib_path, std::path::PathBuf::from("astra.d.lua")).await
-    {
-        lua.load(content)
-            .set_name("astra.d.lua")
-            .exec_async()
-            .await?;
-    }
+    let _ = dotenvy::from_filename_override(".env");
+    let _ = dotenvy::from_filename_override(".env.production");
+    let _ = dotenvy::from_filename_override(".env.prod");
+    let _ = dotenvy::from_filename_override(".env.development");
+    let _ = dotenvy::from_filename_override(".env.dev");
+    let _ = dotenvy::from_filename_override(".env.test");
+    let _ = dotenvy::from_filename_override(".env.local");
 
     Ok(())
 }
