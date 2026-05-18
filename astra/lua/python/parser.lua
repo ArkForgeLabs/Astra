@@ -1,3 +1,4 @@
+local ast = require("python.ast")
 local token = require("python.token")
 local TK = token.TK
 local token_names = token.token_names
@@ -61,9 +62,13 @@ function parser.parse(tokens)
 
   peek_one_of = function(...)
     local t = peek_token()
-    if not t then return false end
-    for _, k in ipairs({...}) do
-      if t.kind == k then return true end
+    if not t then
+      return false
+    end
+    for _, k in ipairs({ ... }) do
+      if t.kind == k then
+        return true
+      end
     end
     return false
   end
@@ -156,7 +161,7 @@ function parser.parse(tokens)
         break
       end
     end
-    return { type = "Program", body = body }
+    return ast.Program(body)
   end
 
   parse_stmt = function()
@@ -176,13 +181,13 @@ function parser.parse(tokens)
       return { parse_return() }
     elseif token.kind == TK.PASS then
       advance_token()
-      return { { type = "Pass" } }
+      return { ast.Pass() }
     elseif token.kind == TK.BREAK then
       advance_token()
-      return { { type = "Break" } }
+      return { ast.Break() }
     elseif token.kind == TK.CONTINUE then
       advance_token()
-      return { { type = "Continue" } }
+      return { ast.Continue() }
     elseif token.kind == TK.TRY then
       return { parse_try() }
     else
@@ -197,7 +202,7 @@ function parser.parse(tokens)
       while match_token(TK.COMMA) do
         names[#names + 1] = expect_token(TK.IDENTIFIER).value
       end
-      return { type = "Global", names = names }
+      return ast.Global(names)
     end
     local first = parse_expr()
     local targets = { first }
@@ -211,18 +216,19 @@ function parser.parse(tokens)
         values[#values + 1] = parse_expr()
       end
       if #values == 1 then
-        return { type = "Assign", targets = targets, value = values[1] }
+        return ast.Assign(targets, values[1])
       else
-        return { type = "Assign", targets = targets, value = { type = "Tuple", elements = values } }
+        return ast.Assign(targets, ast.Tuple(values))
       end
     end
-    local aug_ops = { [TK.PLUSEQ] = "+", [TK.MINUSEQ] = "-", [TK.STAREQ] = "*", [TK.SLASHEQ] = "/", [TK.PERCENTEQ] = "%" }
+    local aug_ops =
+      { [TK.PLUSEQ] = "+", [TK.MINUSEQ] = "-", [TK.STAREQ] = "*", [TK.SLASHEQ] = "/", [TK.PERCENTEQ] = "%" }
     local aug_kind = peek_token() and peek_token().kind
     if aug_ops[aug_kind] then
       advance_token()
-      return { type = "AugAssign", target = targets[1], op = aug_ops[aug_kind], value = parse_expr() }
+      return ast.AugAssign(targets[1], aug_ops[aug_kind], parse_expr())
     else
-      return { type = "ExprStmt", expr = targets[1] }
+      return ast.ExprStmt(targets[1])
     end
   end
 
@@ -247,7 +253,7 @@ function parser.parse(tokens)
     end
     expect_token(TK.RPAREN)
     local body = parse_block()
-    return { type = "FunctionDef", name = name.value, args = args, body = body }
+    return ast.FunctionDef(name.value, args, body)
   end
 
   parse_if = function()
@@ -263,7 +269,7 @@ function parser.parse(tokens)
       elifs[#elifs + 1] = { test = et, body = elif_body }
     end
     or_else = parse_or_else_block()
-    return { type = "If", test = test, body = body, elifs = elifs, or_else = or_else }
+    return ast.If(test, body, elifs, or_else)
   end
 
   parse_while = function()
@@ -272,12 +278,15 @@ function parser.parse(tokens)
     local body = parse_block()
     local or_else = nil
     or_else = parse_or_else_block()
-    return { type = "While", test = test, body = body, or_else = or_else }
+    return ast.While(test, body, or_else)
   end
 
   parse_for = function()
     advance_token()
-    local target = expect_token(TK.IDENTIFIER).value
+    local targets = { expect_token(TK.IDENTIFIER).value }
+    while match_token(TK.COMMA) do
+      targets[#targets + 1] = expect_token(TK.IDENTIFIER).value
+    end
     expect_token(TK.IN)
     local iterator = nil
     local is_range = false
@@ -299,15 +308,7 @@ function parser.parse(tokens)
     local body = parse_block()
     local or_else = nil
     or_else = parse_or_else_block()
-    return {
-      type = "For",
-      target = target,
-      iterator = iterator,
-      body = body,
-      or_else = or_else,
-      is_range = is_range,
-      range_args = range_args,
-    }
+    return ast.For(targets, iterator, body, or_else, is_range, range_args)
   end
 
   parse_try = function()
@@ -333,7 +334,7 @@ function parser.parse(tokens)
       advance_token()
       finally_body = parse_block()
     end
-    return { type = "Try", body = body, handlers = handlers, finally_body = finally_body }
+    return ast.Try(body, handlers, finally_body)
   end
 
   parse_return = function()
@@ -344,9 +345,9 @@ function parser.parse(tokens)
       and peek_token().kind ~= TK.DEDENT
       and peek_token().kind ~= TK.EOF
     then
-      return { type = "Return", value = parse_expr() }
+      return ast.Return(parse_expr())
     else
-      return { type = "Return", value = nil }
+      return ast.Return(nil)
     end
   end
 
@@ -392,7 +393,7 @@ function parser.parse(tokens)
         end
       end
       expect_token(TK.COLON)
-      return { type = "Lambda", args = args, body = parse_lambda() }
+      return ast.Lambda(args, parse_lambda())
     end
     return parse_walrus()
   end
@@ -400,7 +401,7 @@ function parser.parse(tokens)
     local result = parse_if_expr()
     if peek_is(TK.WALRUS) then
       advance_token()
-      result = { type = "Walrus", target = result, value = parse_walrus() }
+      result = ast.Walrus(result, parse_walrus())
     end
     return result
   end
@@ -410,7 +411,7 @@ function parser.parse(tokens)
       advance_token()
       local test = parse_or()
       expect_token(TK.ELSE)
-      body = { type = "IfExpr", test = test, body = body, or_else = parse_if_expr() }
+      body = ast.IfExpr(test, body, parse_if_expr())
     end
     return body
   end
@@ -419,7 +420,7 @@ function parser.parse(tokens)
     while peek_is(TK.OR) do
       advance_token()
       local r = parse_and()
-      left = { type = "BoolOp", op = "or", values = { left, r } }
+      left = ast.BoolOp("or", { left, r })
     end
     return left
   end
@@ -428,14 +429,14 @@ function parser.parse(tokens)
     while peek_is(TK.AND) do
       advance_token()
       local r = parse_not()
-      left = { type = "BoolOp", op = "and", values = { left, r } }
+      left = ast.BoolOp("and", { left, r })
     end
     return left
   end
   parse_not = function()
     if peek_is(TK.NOT) then
       advance_token()
-      return { type = "UnaryOp", op = "not", operand = parse_not() }
+      return ast.UnaryOp("not", parse_not())
     end
     return parse_comparison()
   end
@@ -487,14 +488,14 @@ function parser.parse(tokens)
     if #cmp_ops == 0 then
       return left
     end
-    return { type = "Compare", left = left, ops = cmp_ops, comparators = cmp_rights }
+    return ast.Compare(left, cmp_ops, cmp_rights)
   end
 
   parse_term = function()
     local left = parse_factor()
     while peek_one_of(TK.PLUS, TK.MINUS) do
       local op = advance_token()
-      left = { type = "BinOp", left = left, op = op.value, right = parse_factor() }
+      left = ast.BinOp(left, op.value, parse_factor())
     end
     return left
   end
@@ -503,14 +504,14 @@ function parser.parse(tokens)
     local left = parse_unary()
     while peek_token() and multiplicative_operators[peek_token().kind] do
       local op = advance_token()
-      left = { type = "BinOp", left = left, op = op.value, right = parse_unary() }
+      left = ast.BinOp(left, op.value, parse_unary())
     end
     return left
   end
 
   parse_unary = function()
     if peek_one_of(TK.PLUS, TK.MINUS) then
-      return { type = "UnaryOp", op = advance_token().value, operand = parse_unary() }
+      return ast.UnaryOp(advance_token().value, parse_unary())
     end
     return parse_power()
   end
@@ -519,7 +520,7 @@ function parser.parse(tokens)
     local left = parse_primary()
     if peek_is(TK.DOUBLESTAR) then
       advance_token()
-      left = { type = "BinOp", left = left, op = "**", right = parse_unary() }
+      left = ast.BinOp(left, "**", parse_unary())
     end
     return left
   end
@@ -541,9 +542,9 @@ function parser.parse(tokens)
         skip_continuation_tokens()
         expect_token(TK.RPAREN)
         if #keywords > 0 then
-          expr = { type = "Call", func = expr, args = args, keywords = keywords }
+          expr = ast.Call(expr, args, keywords)
         else
-          expr = { type = "Call", func = expr, args = args }
+          expr = ast.Call(expr, args)
         end
       elseif peek_is(TK.LBRACKET) then
         advance_token()
@@ -561,7 +562,7 @@ function parser.parse(tokens)
           end
           expect_token(TK.RBRACKET)
           expr =
-            { type = "Subscript", value = expr, index = { type = "Slice", lower = lower, upper = upper, step = step } }
+            ast.Subscript(expr, ast.Slice(lower, upper, step))
         else
           local idx = parse_expr()
           if peek_is(TK.COLON) then
@@ -578,15 +579,15 @@ function parser.parse(tokens)
             end
             expect_token(TK.RBRACKET)
             expr =
-              { type = "Subscript", value = expr, index = { type = "Slice", lower = idx, upper = upper, step = step } }
+              ast.Subscript(expr, ast.Slice(idx, upper, step))
           else
             expect_token(TK.RBRACKET)
-            expr = { type = "Subscript", value = expr, index = idx }
+            expr = ast.Subscript(expr, idx)
           end
         end
       elseif peek_is(TK.DOT) then
         advance_token()
-        expr = { type = "Attribute", value = expr, attr = expect_token(TK.IDENTIFIER).value }
+        expr = ast.Attribute(expr, expect_token(TK.IDENTIFIER).value)
       else
         break
       end
@@ -601,26 +602,26 @@ function parser.parse(tokens)
     end
     if current_token.kind == TK.NONE then
       advance_token()
-      return { type = "Constant", value = nil }
+      return ast.Constant(nil)
     elseif current_token.kind == TK.TRUE then
       advance_token()
-      return { type = "Constant", value = true }
+      return ast.Constant(true)
     elseif current_token.kind == TK.FALSE then
       advance_token()
-      return { type = "Constant", value = false }
+      return ast.Constant(false)
     elseif current_token.kind == TK.ELLIPSIS then
       advance_token()
-      return { type = "Constant", value = nil }
+      return ast.Constant(nil)
     elseif current_token.kind == TK.INTEGER or current_token.kind == TK.FLOAT then
       advance_token()
-      return { type = "Constant", value = tonumber(current_token.value) }
+      return ast.Constant(tonumber(current_token.value))
     elseif current_token.kind == TK.STRING then
       advance_token()
       local val = current_token.value:sub(2, #current_token.value - 1)
-      return { type = "Constant", value = unescape_string(val) }
+      return ast.Constant(unescape_string(val))
     elseif current_token.kind == TK.IDENTIFIER then
       advance_token()
-      return { type = "Name", id = current_token.value }
+      return ast.Name(current_token.value)
     elseif current_token.kind == TK.LPAREN then
       advance_token()
       skip_continuation_tokens()
@@ -635,14 +636,14 @@ function parser.parse(tokens)
         advance_token()
         local generators = parse_comprehension_clauses()
         expect_token(TK.RBRACKET)
-        return { type = "ListComp", element = first, generators = generators }
+        return ast.ListComp(first, generators)
       end
       local elements = { first }
       while match_token(TK.COMMA) do
         elements[#elements + 1] = parse_expr()
       end
       expect_token(TK.RBRACKET)
-      return { type = "List", elements = elements }
+      return ast.List(elements)
     elseif current_token.kind == TK.LBRACE then
       advance_token()
       skip_continuation_tokens()
@@ -660,7 +661,7 @@ function parser.parse(tokens)
             local generators = parse_comprehension_clauses()
             skip_continuation_tokens()
             expect_token(TK.RBRACE)
-            return { type = "DictComp", key = key, value = val, generators = generators }
+            return ast.DictComp(key, val, generators)
           end
           local keys = { key }
           local vals = { val }
@@ -680,14 +681,14 @@ function parser.parse(tokens)
           end
           skip_continuation_tokens()
           expect_token(TK.RBRACE)
-          return { type = "Dict", keys = keys, values = vals }
+          return ast.Dict(keys, vals)
         else
           if peek_is(TK.FOR) then
             advance_token()
             local generators = parse_comprehension_clauses()
             skip_continuation_tokens()
             expect_token(TK.RBRACE)
-            return { type = "SetComp", element = first, generators = generators }
+            return ast.SetComp(first, generators)
           end
           local elements = { first }
           while match_token(TK.COMMA) do
@@ -697,12 +698,12 @@ function parser.parse(tokens)
           end
           skip_continuation_tokens()
           expect_token(TK.RBRACE)
-          return { type = "Set", elements = elements }
+          return ast.Set(elements)
         end
       else
         skip_continuation_tokens()
         expect_token(TK.RBRACE)
-        return { type = "Dict", keys = {}, values = {} }
+        return ast.Dict({}, {})
       end
     end
     error(

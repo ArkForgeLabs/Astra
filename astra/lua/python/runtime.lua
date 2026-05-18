@@ -1,6 +1,6 @@
-local tokenizer = require("python.tokenizer")
-local parser = require("python.parser")
 local generator = require("python.generator")
+local parser = require("python.parser")
+local tokenizer = require("python.tokenizer")
 
 local python = {}
 

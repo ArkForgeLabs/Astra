@@ -40,6 +40,49 @@ function tokenizer.tokenize(source)
     end
   end
 
+  local function is_string_prefix(word)
+    local lower = word:lower()
+    return lower == "f" or lower == "r" or lower == "b" or lower == "u"
+      or lower == "rf" or lower == "fr" or lower == "rb" or lower == "br"
+  end
+
+  local function read_quoted_string(start_index, quote_char)
+    advance_char()
+    if source:sub(i, i + 1) == quote_char .. quote_char then
+      i = i + 2
+      col = col + 2
+      while i <= n do
+        if source:sub(i, i + 2) == quote_char .. quote_char .. quote_char then
+          i = i + 3
+          col = col + 3
+          break
+        end
+        if source:sub(i, i) == "\n" then
+          line = line + 1
+          col = 1
+        else
+          col = col + 1
+        end
+        i = i + 1
+      end
+      emit_token(TK.STRING, source:sub(start_index, i - 1))
+    else
+      while i <= n do
+        local c = source:sub(i, i)
+        if c == "\\" then
+          i = i + 2
+          col = col + 2
+        elseif c == quote_char then
+          advance_char()
+          break
+        else
+          advance_char()
+        end
+      end
+      emit_token(TK.STRING, source:sub(start_index, i - 1))
+    end
+  end
+
   while i <= n do
     local ch = source:sub(i, i)
 
@@ -93,43 +136,8 @@ function tokenizer.tokenize(source)
       while i <= n and source:sub(i, i) ~= "\n" do
         advance_char()
       end
-    elseif ch == '"' or ch == "'" then
-      local quote_char = ch
-      local start_index = i
-      advance_char()
-      if source:sub(i, i + 1) == quote_char .. quote_char then
-        i = i + 2
-        col = col + 2
-        while i <= n do
-          if source:sub(i, i + 2) == quote_char .. quote_char .. quote_char then
-            i = i + 3
-            col = col + 3
-            break
-          end
-          if source:sub(i, i) == "\n" then
-            line = line + 1
-            col = 1
-          else
-            col = col + 1
-          end
-          i = i + 1
-        end
-        emit_token(TK.STRING, source:sub(start_index, i - 1))
-      else
-        while i <= n do
-          local c = source:sub(i, i)
-          if c == "\\" then
-            i = i + 2
-            col = col + 2
-          elseif c == quote_char then
-            advance_char()
-            break
-          else
-            advance_char()
-          end
-        end
-        emit_token(TK.STRING, source:sub(start_index, i - 1))
-      end
+    elseif ch == '"' or ch == "\'" then
+      read_quoted_string(i, ch)
     elseif ch >= "0" and ch <= "9" then
       local start_index = i
       local is_float = false
@@ -144,9 +152,6 @@ function tokenizer.tokenize(source)
         elseif c == "e" or c == "E" then
           is_float = true
           advance_char()
-          if source:sub(i, i) == "+" or source:sub(i, i) == "-" then
-            advance_char()
-          end
         else
           break
         end
@@ -164,7 +169,12 @@ function tokenizer.tokenize(source)
         end
       end
       local word = source:sub(start_index, i - 1)
-      emit_token(keyword_token_map[word] or TK.IDENTIFIER, word)
+      local next_char = i <= n and source:sub(i, i) or ""
+      if (next_char == '"' or next_char == "\'") and is_string_prefix(word) then
+        read_quoted_string(start_index + #word, next_char)
+      else
+        emit_token(keyword_token_map[word] or TK.IDENTIFIER, word)
+      end
     else
       local next_two = i + 1 <= n and source:sub(i, i + 1) or ""
       local next_three = i + 2 <= n and source:sub(i, i + 2) or ""
