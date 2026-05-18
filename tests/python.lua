@@ -162,7 +162,11 @@ def outer():
     end)
 
     test.it("TDD: walrus operator (x := 1)", function()
-      local result = python.run("x = 0; y = (x := 1); return x + y")
+      local result = python.run([[
+x = 0
+y = (x := 1)
+return x + y
+]])
       test.expect(result).to.equal(2)
     end)
 
@@ -194,7 +198,10 @@ return {k: v for k, v in items}
     end)
 
     test.it("TDD: slice syntax x[1:3]", function()
-      local res = python.run("x = [0, 1, 2, 3]; return x[1:3]")
+      local res = python.run([[
+x = [0, 1, 2, 3]
+return x[1:3]
+]])
       test.expect(res[1]).to.equal(1)
       test.expect(res[2]).to.equal(2)
     end)
@@ -222,7 +229,10 @@ return x + y
     end)
 
     test.it("TDD: lambda expression", function()
-      local result = python.run("f = lambda x: x + 1; return f(5)")
+      local result = python.run([[
+f = lambda x: x + 1
+return f(5)
+]])
       test.expect(result).to.equal(6)
     end)
 
@@ -238,7 +248,12 @@ return result
     end)
 
     test.it("TDD: while/else", function()
-      local result = python.run("while False: pass\nelse: return 42")
+      local result = python.run([[
+while False:
+    pass
+else:
+    return 42
+]])
       test.expect(result).to.equal(42)
     end)
 
@@ -262,7 +277,11 @@ return add(*nums)
     end)
 
     test.it("TDD: tuple unpacking a, b = b, a", function()
-      local result = python.run("a, b = 1, 2; a, b = b, a; return a * 10 + b")
+      local result = python.run([[
+a, b = 1, 2
+a, b = b, a
+return a * 10 + b
+]])
       test.expect(result).to.equal(21)
     end)
 

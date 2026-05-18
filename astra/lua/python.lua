@@ -56,10 +56,18 @@ local TK = {
   TRUE = 54,
   FALSE = 55,
   EOF = 56,
+  WALRUS = 57,
+  ELLIPSIS = 58,
+  LAMBDA = 59,
+  TRY = 60,
+  EXCEPT = 61,
+  FINALLY = 62,
 }
 
 local tk_name = {}
-for name, id in pairs(TK) do tk_name[id] = name end
+for name, id in pairs(TK) do
+  tk_name[id] = name
+end
 
 local keyword_tokens = {
   def = TK.DEF,
@@ -80,6 +88,10 @@ local keyword_tokens = {
   None = TK.NONE,
   True = TK.TRUE,
   False = TK.FALSE,
+  lambda = TK.LAMBDA,
+  ["try"] = TK.TRY,
+  ["except"] = TK.EXCEPT,
+  ["finally"] = TK.FINALLY,
 }
 
 local token_om = {
@@ -94,6 +106,8 @@ local token_om = {
   ["*="] = TK.STAREQ,
   ["/="] = TK.SLASHEQ,
   ["%="] = TK.PERCENTEQ,
+  [":="] = TK.WALRUS,
+  ["..."] = TK.ELLIPSIS,
 }
 
 local token_sm = {
@@ -123,7 +137,6 @@ local token_mm = {
   [TK.DOUBLESLASH] = true,
   [TK.PERCENT] = true,
 }
-
 
 local function tokenize(source)
   local tokens = {}
@@ -345,7 +358,8 @@ local function parse(tokens)
   -- declare parser functions for Lua 5.1
   local parse_program, parse_stmt, parse_simple_stmt
   local parse_func_def, parse_if, parse_while, parse_for, parse_return, parse_block_body
-  local parse_expr, parse_or, parse_and, parse_not, parse_comparison
+  local parse_expr, parse_lambda, parse_walrus, parse_if_expr, parse_or
+  local parse_and, parse_not, parse_comparison
   local parse_term, parse_factor, parse_unary, parse_power, parse_primary, parse_atom
   local unescape_string, parse_comma_list
 
@@ -409,21 +423,34 @@ local function parse(tokens)
   end
 
   parse_simple_stmt = function()
-    local expr = parse_expr()
+    local first = parse_expr()
+    local targets = { first }
+    while pk() and pk().kind == TK.COMMA do
+      ad()
+      targets[#targets + 1] = parse_expr()
+    end
     if ma(TK.EQ) then
-      return { type = "Assign", targets = { expr }, value = parse_expr() }
+      local values = { parse_expr() }
+      while ma(TK.COMMA) do
+        values[#values + 1] = parse_expr()
+      end
+      if #values == 1 then
+        return { type = "Assign", targets = targets, value = values[1] }
+      else
+        return { type = "Assign", targets = targets, value = { type = "Tuple", elts = values } }
+      end
     elseif ma(TK.PLUSEQ) then
-      return { type = "AugAssign", target = expr, op = "+", value = parse_expr() }
+      return { type = "AugAssign", target = targets[1], op = "+", value = parse_expr() }
     elseif ma(TK.MINUSEQ) then
-      return { type = "AugAssign", target = expr, op = "-", value = parse_expr() }
+      return { type = "AugAssign", target = targets[1], op = "-", value = parse_expr() }
     elseif ma(TK.STAREQ) then
-      return { type = "AugAssign", target = expr, op = "*", value = parse_expr() }
+      return { type = "AugAssign", target = targets[1], op = "*", value = parse_expr() }
     elseif ma(TK.SLASHEQ) then
-      return { type = "AugAssign", target = expr, op = "/", value = parse_expr() }
+      return { type = "AugAssign", target = targets[1], op = "/", value = parse_expr() }
     elseif ma(TK.PERCENTEQ) then
-      return { type = "AugAssign", target = expr, op = "%", value = parse_expr() }
+      return { type = "AugAssign", target = targets[1], op = "%", value = parse_expr() }
     else
-      return { type = "ExprStmt", expr = expr }
+      return { type = "ExprStmt", expr = targets[1] }
     end
   end
 
@@ -468,7 +495,14 @@ local function parse(tokens)
     ad()
     local test = parse_expr()
     ecs()
-    return { type = "While", test = test, body = parse_block_body() }
+    local body = parse_block_body()
+    local orelse = nil
+    if pk() and pk().kind == TK.ELSE then
+      ad()
+      ecs()
+      orelse = parse_block_body()
+    end
+    return { type = "While", test = test, body = body, orelse = orelse }
   end
 
   parse_for = function()
@@ -493,11 +527,19 @@ local function parse(tokens)
       iter = parse_primary()
     end
     ecs()
+    local body = parse_block_body()
+    local orelse = nil
+    if pk() and pk().kind == TK.ELSE then
+      ad()
+      ecs()
+      orelse = parse_block_body()
+    end
     return {
       type = "For",
       target = target,
       iter = iter,
-      body = parse_block_body(),
+      body = body,
+      orelse = orelse,
       is_range = is_range,
       range_args = range_args,
     }
@@ -535,7 +577,40 @@ local function parse(tokens)
 
   -- expression parsing
   parse_expr = function()
-    return parse_or()
+    return parse_lambda()
+  end
+  parse_lambda = function()
+    if pk() and pk().kind == TK.LAMBDA then
+      ad()
+      local args = {}
+      if pk() and pk().kind ~= TK.COLON then
+        args[#args + 1] = ex(TK.IDENTIFIER).value
+        while ma(TK.COMMA) do
+          args[#args + 1] = ex(TK.IDENTIFIER).value
+        end
+      end
+      ex(TK.COLON)
+      return { type = "Lambda", args = args, body = parse_lambda() }
+    end
+    return parse_walrus()
+  end
+  parse_walrus = function()
+    local result = parse_if_expr()
+    if pk() and pk().kind == TK.WALRUS then
+      ad()
+      result = { type = "Walrus", target = result, value = parse_walrus() }
+    end
+    return result
+  end
+  parse_if_expr = function()
+    local body = parse_or()
+    if pk() and pk().kind == TK.IF then
+      ad()
+      local test = parse_or()
+      ex(TK.ELSE)
+      body = { type = "IfExpr", test = test, body = body, orelse = parse_if_expr() }
+    end
+    return body
   end
   parse_or = function()
     local left = parse_and()
@@ -573,6 +648,8 @@ local function parse(tokens)
       [TK.LESSEQ] = "<=",
       [TK.GREATEREQ] = ">=",
     }
+    local cmp_ops = {}
+    local cmp_rights = {}
     while pk() do
       local t = pk()
       local op = om[t.kind]
@@ -602,10 +679,13 @@ local function parse(tokens)
       else
         break
       end
-      local right = parse_term()
-      left = { type = "Compare", left = left, ops = { op }, comparators = { right } }
+      cmp_ops[#cmp_ops + 1] = op
+      cmp_rights[#cmp_rights + 1] = parse_term()
     end
-    return left
+    if #cmp_ops == 0 then
+      return left
+    end
+    return { type = "Compare", left = left, ops = cmp_ops, comparators = cmp_rights }
   end
 
   parse_term = function()
@@ -652,9 +732,43 @@ local function parse(tokens)
         expr = { type = "Call", func = expr, args = args }
       elseif pk() and pk().kind == TK.LBRACKET then
         ad()
-        local idx = parse_expr()
-        ex(TK.RBRACKET)
-        expr = { type = "Subscript", value = expr, index = idx }
+        if pk() and pk().kind == TK.COLON then
+          ad()
+          local lower, upper, step = nil, nil, nil
+          if pk() and pk().kind ~= TK.RBRACKET and pk().kind ~= TK.COLON then
+            upper = parse_expr()
+          end
+          if pk() and pk().kind == TK.COLON then
+            ad()
+            if pk() and pk().kind ~= TK.RBRACKET then
+              step = parse_expr()
+            end
+          end
+          ex(TK.RBRACKET)
+          expr =
+            { type = "Subscript", value = expr, index = { type = "Slice", lower = lower, upper = upper, step = step } }
+        else
+          local idx = parse_expr()
+          if pk() and pk().kind == TK.COLON then
+            ad()
+            local upper, step = nil, nil
+            if pk() and pk().kind ~= TK.RBRACKET and pk().kind ~= TK.COLON then
+              upper = parse_expr()
+            end
+            if pk() and pk().kind == TK.COLON then
+              ad()
+              if pk() and pk().kind ~= TK.RBRACKET then
+                step = parse_expr()
+              end
+            end
+            ex(TK.RBRACKET)
+            expr =
+              { type = "Subscript", value = expr, index = { type = "Slice", lower = idx, upper = upper, step = step } }
+          else
+            ex(TK.RBRACKET)
+            expr = { type = "Subscript", value = expr, index = idx }
+          end
+        end
       elseif pk() and pk().kind == TK.DOT then
         ad()
         expr = { type = "Attribute", value = expr, attr = ex(TK.IDENTIFIER).value }
@@ -679,6 +793,9 @@ local function parse(tokens)
     elseif t.kind == TK.FALSE then
       ad()
       return { type = "Constant", value = false }
+    elseif t.kind == TK.ELLIPSIS then
+      ad()
+      return { type = "Constant", value = nil }
     elseif t.kind == TK.INTEGER or t.kind == TK.FLOAT then
       ad()
       return { type = "Constant", value = tonumber(t.value) }
@@ -708,22 +825,42 @@ local function parse(tokens)
       return { type = "List", elts = elts }
     elseif t.kind == TK.LBRACE then
       ad()
-      local keys = {}
-      local vals = {}
       if pk() and pk().kind ~= TK.RBRACE then
-        keys[#keys + 1] = parse_expr()
-        ex(TK.COLON)
-        vals[#vals + 1] = parse_expr()
-        while ma(TK.COMMA) do
-          keys[#keys + 1] = parse_expr()
-          ex(TK.COLON)
-          vals[#vals + 1] = parse_expr()
+        local first = parse_expr()
+        if pk() and pk().kind == TK.COLON then
+          ad()
+          local keys = { first }
+          local vals = { parse_expr() }
+          while ma(TK.COMMA) do
+            keys[#keys + 1] = parse_expr()
+            ex(TK.COLON)
+            vals[#vals + 1] = parse_expr()
+          end
+          ex(TK.RBRACE)
+          return { type = "Dict", keys = keys, values = vals }
+        else
+          local elts = { first }
+          while ma(TK.COMMA) do
+            elts[#elts + 1] = parse_expr()
+          end
+          ex(TK.RBRACE)
+          return { type = "Set", elts = elts }
         end
+      else
+        ex(TK.RBRACE)
+        return { type = "Set", elts = {} }
       end
-      ex(TK.RBRACE)
-      return { type = "Dict", keys = keys, values = vals }
     end
-    error("unexpected token " .. (tk_name[t.kind] or t.kind) .. " (" .. t.value .. ") at line " .. t.line .. " col " .. t.col)
+    error(
+      "unexpected token "
+        .. (tk_name[t.kind] or t.kind)
+        .. " ("
+        .. t.value
+        .. ") at line "
+        .. t.line
+        .. " col "
+        .. t.col
+    )
   end
 
   unescape_string = function(s)
@@ -829,21 +966,32 @@ local function generate(ast)
       end
       return table.concat(vals, " " .. expr.op .. " ")
     elseif expr.type == "Compare" then
-      local l = gen_expr(expr.left)
-      local op = expr.ops[1]
-      local r = gen_expr(expr.comparators[1])
-      if op == "!=" then
-        return "(" .. l .. " ~= " .. r .. ")"
-      elseif op == "is" then
-        return "(" .. l .. " == " .. r .. ")"
-      elseif op == "is not" then
-        return "(" .. l .. " ~= " .. r .. ")"
-      elseif op == "in" then
-        return "__py_in(" .. r .. ", " .. l .. ")"
-      elseif op == "not in" then
-        return "not __py_in(" .. r .. ", " .. l .. ")"
+      local function cmp(l, op, r)
+        if op == "!=" then
+          return "(" .. l .. " ~= " .. r .. ")"
+        elseif op == "is" then
+          return "(" .. l .. " == " .. r .. ")"
+        elseif op == "is not" then
+          return "(" .. l .. " ~= " .. r .. ")"
+        elseif op == "in" then
+          return "__py_in(" .. r .. ", " .. l .. ")"
+        elseif op == "not in" then
+          return "not __py_in(" .. r .. ", " .. l .. ")"
+        else
+          return "(" .. l .. " " .. op .. " " .. r .. ")"
+        end
+      end
+      if #expr.ops == 1 then
+        return cmp(gen_expr(expr.left), expr.ops[1], gen_expr(expr.comparators[1]))
       else
-        return "(" .. l .. " " .. op .. " " .. r .. ")"
+        local parts = {}
+        local prev = gen_expr(expr.left)
+        for i = 1, #expr.ops do
+          local r = gen_expr(expr.comparators[i])
+          parts[#parts + 1] = cmp(prev, expr.ops[i], r)
+          prev = r
+        end
+        return table.concat(parts, " and ")
       end
     elseif expr.type == "Call" then
       local args = {}
@@ -853,6 +1001,12 @@ local function generate(ast)
       return gen_expr(expr.func) .. "(" .. table.concat(args, ", ") .. ")"
     elseif expr.type == "Subscript" then
       local v = gen_expr(expr.value)
+      if expr.index.type == "Slice" then
+        local lower = expr.index.lower and gen_expr(expr.index.lower) or "nil"
+        local upper = expr.index.upper and gen_expr(expr.index.upper) or "nil"
+        local step = expr.index.step and gen_expr(expr.index.step) or "nil"
+        return "__py_slice(" .. v .. ", " .. lower .. ", " .. upper .. ", " .. step .. ")"
+      end
       local idx = gen_expr(expr.index)
       if expr.index.type == "Constant" and type(expr.index.value) == "string" then
         return v .. "[" .. idx .. "]"
@@ -872,6 +1026,26 @@ local function generate(ast)
         items[#items + 1] = "[" .. gen_expr(expr.keys[i]) .. "] = " .. gen_expr(expr.values[i])
       end
       return "{" .. table.concat(items, ", ") .. "}"
+    elseif expr.type == "Set" then
+      local elts = {}
+      for _, e in ipairs(expr.elts) do
+        elts[#elts + 1] = gen_expr(e)
+      end
+      return "{" .. table.concat(elts, ", ") .. "}"
+    elseif expr.type == "Tuple" then
+      local elts = {}
+      for _, e in ipairs(expr.elts) do
+        elts[#elts + 1] = gen_expr(e)
+      end
+      return table.concat(elts, ", ")
+    elseif expr.type == "Lambda" then
+      return "function(" .. table.concat(expr.args, ", ") .. ") return " .. gen_expr(expr.body) .. " end"
+    elseif expr.type == "Walrus" then
+      local t = gen_expr(expr.target)
+      local v = gen_expr(expr.value)
+      return "(function() local __w = " .. v .. "; " .. t .. " = __w; return __w end)()"
+    elseif expr.type == "IfExpr" then
+      return "(function(...) if " .. gen_expr(expr.test) .. " then return " .. gen_expr(expr.body) .. " else return " .. gen_expr(expr.orelse) .. " end end)()"
     end
     error("unknown expression type: " .. expr.type)
   end
@@ -908,6 +1082,13 @@ local function generate(ast)
       end)
       push(indent() .. "::__continue::")
       push(indent() .. "end")
+      if stmt.orelse then
+        push(indent() .. "do")
+        with_indent(function()
+          gen_body(stmt.orelse)
+        end)
+        push(indent() .. "end")
+      end
     elseif stmt.type == "For" then
       if stmt.is_range then
         local n = #stmt.range_args
@@ -924,6 +1105,13 @@ local function generate(ast)
       end)
       push(indent() .. "::__continue::")
       push(indent() .. "end")
+      if stmt.orelse then
+        push(indent() .. "do")
+        with_indent(function()
+          gen_body(stmt.orelse)
+        end)
+        push(indent() .. "end")
+      end
     elseif stmt.type == "Return" then
       if stmt.value then
         push(indent() .. "return " .. gen_expr(stmt.value))
@@ -931,7 +1119,11 @@ local function generate(ast)
         push(indent() .. "return")
       end
     elseif stmt.type == "Assign" then
-      push(indent() .. gen_expr(stmt.targets[1]) .. " = " .. gen_expr(stmt.value))
+      local ts = {}
+      for _, t in ipairs(stmt.targets) do
+        ts[#ts + 1] = gen_expr(t)
+      end
+      push(indent() .. table.concat(ts, ", ") .. " = " .. gen_expr(stmt.value))
     elseif stmt.type == "AugAssign" then
       local t = gen_expr(stmt.target)
       push(indent() .. t .. " = " .. t .. " " .. stmt.op .. " " .. gen_expr(stmt.value))
@@ -950,6 +1142,27 @@ local function generate(ast)
 
   -- runtime helpers preamble
   push("do")
+  push("function __py_slice(tbl, start, stop, step)")
+  push("    local s, e, st = start, stop, step or 1")
+  push("    local n = #tbl")
+  push("    if st > 0 then")
+  push("        if s == nil then s = 0 end")
+  push("        if e == nil then e = n end")
+  push("        s = s + 1")
+  push("        local result = {}")
+  push("        for i = s, e, st do result[#result + 1] = tbl[i] end")
+  push("        return result")
+  push("    elseif st < 0 then")
+  push("        if s == nil then s = n - 1 end")
+  push("        if e == nil then e = -1 end")
+  push("        s = s + 1")
+  push("        e = e + 1")
+  push("        local result = {}")
+  push("        for i = s, e, st do result[#result + 1] = tbl[i] end")
+  push("        return result")
+  push("    end")
+  push("    return {}")
+  push("end")
   push("function __py_in(container, item)")
   push('    if type(container) == "table" then')
   push("        for _, __v in ipairs(container) do if __v == item then return true end end")
