@@ -58,6 +58,9 @@ local TK = {
   EOF = 56,
 }
 
+local tk_name = {}
+for name, id in pairs(TK) do tk_name[id] = name end
+
 local keyword_tokens = {
   def = TK.DEF,
   ["if"] = TK.IF,
@@ -78,6 +81,49 @@ local keyword_tokens = {
   True = TK.TRUE,
   False = TK.FALSE,
 }
+
+local token_om = {
+  ["=="] = TK.EQEQ,
+  ["!="] = TK.NOTEQ,
+  ["<="] = TK.LESSEQ,
+  [">="] = TK.GREATEREQ,
+  ["//"] = TK.DOUBLESLASH,
+  ["**"] = TK.DOUBLESTAR,
+  ["+="] = TK.PLUSEQ,
+  ["-="] = TK.MINUSEQ,
+  ["*="] = TK.STAREQ,
+  ["/="] = TK.SLASHEQ,
+  ["%="] = TK.PERCENTEQ,
+}
+
+local token_sm = {
+  ["+"] = TK.PLUS,
+  ["-"] = TK.MINUS,
+  ["*"] = TK.STAR,
+  ["/"] = TK.SLASH,
+  ["%"] = TK.PERCENT,
+  ["="] = TK.EQ,
+  ["<"] = TK.LESS,
+  [">"] = TK.GREATER,
+  ["("] = TK.LPAREN,
+  [")"] = TK.RPAREN,
+  ["["] = TK.LBRACKET,
+  ["]"] = TK.RBRACKET,
+  ["{"] = TK.LBRACE,
+  ["}"] = TK.RBRACE,
+  [":"] = TK.COLON,
+  [","] = TK.COMMA,
+  ["."] = TK.DOT,
+  [";"] = TK.SEMI,
+}
+
+local token_mm = {
+  [TK.STAR] = true,
+  [TK.SLASH] = true,
+  [TK.DOUBLESLASH] = true,
+  [TK.PERCENT] = true,
+}
+
 
 local function tokenize(source)
   local tokens = {}
@@ -219,50 +265,17 @@ local function tokenize(source)
     else
       local t2 = i + 1 <= n and source:sub(i, i + 1) or ""
       local t3 = i + 2 <= n and source:sub(i, i + 2) or ""
-      local om = {
-        ["=="] = TK.EQEQ,
-        ["!="] = TK.NOTEQ,
-        ["<="] = TK.LESSEQ,
-        [">="] = TK.GREATEREQ,
-        ["//"] = TK.DOUBLESLASH,
-        ["**"] = TK.DOUBLESTAR,
-        ["+="] = TK.PLUSEQ,
-        ["-="] = TK.MINUSEQ,
-        ["*="] = TK.STAREQ,
-        ["/="] = TK.SLASHEQ,
-        ["%="] = TK.PERCENTEQ,
-      }
-      local sm = {
-        ["+"] = TK.PLUS,
-        ["-"] = TK.MINUS,
-        ["*"] = TK.STAR,
-        ["/"] = TK.SLASH,
-        ["%"] = TK.PERCENT,
-        ["="] = TK.EQ,
-        ["<"] = TK.LESS,
-        [">"] = TK.GREATER,
-        ["("] = TK.LPAREN,
-        [")"] = TK.RPAREN,
-        ["["] = TK.LBRACKET,
-        ["]"] = TK.RBRACKET,
-        ["{"] = TK.LBRACE,
-        ["}"] = TK.RBRACE,
-        [":"] = TK.COLON,
-        [","] = TK.COMMA,
-        ["."] = TK.DOT,
-        [";"] = TK.SEMI,
-      }
 
-      if om[t3] then
-        emit_tk(om[t3], t3)
+      if token_om[t3] then
+        emit_tk(token_om[t3], t3)
         i = i + 3
         col = col + 3
-      elseif om[t2] then
-        emit_tk(om[t2], t2)
+      elseif token_om[t2] then
+        emit_tk(token_om[t2], t2)
         i = i + 2
         col = col + 2
-      elseif sm[ch] then
-        emit_tk(sm[ch], ch)
+      elseif token_sm[ch] then
+        emit_tk(token_sm[ch], ch)
         ac()
       elseif ch == " " or ch == "\t" or ch == "\r" then
         ac()
@@ -301,9 +314,9 @@ local function parse(tokens)
     if not t or t.kind ~= kind then
       error(
         "expected "
-          .. kind
+          .. (tk_name[kind] or kind)
           .. " got "
-          .. (t and t.kind or "EOF")
+          .. (t and (tk_name[t.kind] or t.kind) or "EOF")
           .. " at line "
           .. (t and t.line or "?")
           .. " col "
@@ -605,9 +618,8 @@ local function parse(tokens)
   end
 
   parse_factor = function()
-    local mm = { STAR = true, SLASH = true, DOUBLESLASH = true, PERCENT = true }
     local left = parse_unary()
-    while pk() and mm[pk().kind] do
+    while pk() and token_mm[pk().kind] do
       local op = ad()
       left = { type = "BinOp", left = left, op = op.value, right = parse_unary() }
     end
@@ -711,7 +723,7 @@ local function parse(tokens)
       ex(TK.RBRACE)
       return { type = "Dict", keys = keys, values = vals }
     end
-    error("unexpected token " .. t.kind .. " (" .. t.value .. ") at line " .. t.line .. " col " .. t.col)
+    error("unexpected token " .. (tk_name[t.kind] or t.kind) .. " (" .. t.value .. ") at line " .. t.line .. " col " .. t.col)
   end
 
   unescape_string = function(s)

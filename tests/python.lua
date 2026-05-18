@@ -143,5 +143,132 @@ def outer():
       local ok = pcall(python.run, [[print("hello from python")]])
       test.expect(ok).to.equal(true)
     end)
+
+    -- ============================================================
+    -- TDD: Features not yet implemented — tests document expected behavior
+    
+    -- ============================================================
+    -- TDD: Features not yet implemented
+    -- ============================================================
+
+    test.it("TDD: chained comparisons (1 < x < 10)", function()
+      local code = python.transpile("x = 1 < 2 < 3")
+      test.expect(code).to.match("and")
+    end)
+
+    test.it("TDD: ternary if-else expression", function()
+      local result = python.run("return 1 if True else 2")
+      test.expect(result).to.equal(1)
+    end)
+
+    test.it("TDD: walrus operator (x := 1)", function()
+      local result = python.run("x = 0; y = (x := 1); return x + y")
+      test.expect(result).to.equal(2)
+    end)
+
+    test.it("TDD: list comprehension", function()
+      local res = python.run("return [x * 2 for x in range(3)]")
+      test.expect(res[1]).to.equal(0)
+      test.expect(res[2]).to.equal(2)
+      test.expect(res[3]).to.equal(4)
+    end)
+
+    test.it("TDD: dict comprehension", function()
+      local python_code = [=[
+items = [["a", 1], ["b", 2]]
+return {k: v for k, v in items}
+      ]=]
+      local res = python.run(python_code)
+      test.expect(res.a).to.equal(1)
+      test.expect(res.b).to.equal(2)
+    end)
+
+    test.it("TDD: set literal {1, 2, 3}", function()
+      local code = python.transpile("s = {1, 2, 3}")
+      test.expect(load(code)).to.be.a("function")
+    end)
+
+    test.it("TDD: set comprehension", function()
+      local code = python.transpile("{x for x in range(3)}")
+      test.expect(code).to.be.a("string")
+    end)
+
+    test.it("TDD: slice syntax x[1:3]", function()
+      local res = python.run("x = [0, 1, 2, 3]; return x[1:3]")
+      test.expect(res[1]).to.equal(1)
+      test.expect(res[2]).to.equal(2)
+    end)
+
+    test.it("TDD: nested comprehension", function()
+      local res = python.run("return [x * y for x in [1, 2] for y in [3, 4]]")
+      test.expect(res[1]).to.equal(3)
+      test.expect(res[2]).to.equal(4)
+      test.expect(res[3]).to.equal(6)
+      test.expect(res[4]).to.equal(8)
+    end)
+
+    test.it("TDD: try/except/finally", function()
+      local ok, result = pcall(python.run, [[
+try:
+    x = 1
+except:
+    x = 2
+finally:
+    y = 3
+return x + y
+]])
+      test.expect(ok).to.equal(true)
+      test.expect(result).to.equal(4)
+    end)
+
+    test.it("TDD: lambda expression", function()
+      local result = python.run("f = lambda x: x + 1; return f(5)")
+      test.expect(result).to.equal(6)
+    end)
+
+    test.it("TDD: for/else", function()
+      local result = python.run([[
+for i in range(3):
+    pass
+else:
+    result = 42
+return result
+]])
+      test.expect(result).to.equal(42)
+    end)
+
+    test.it("TDD: while/else", function()
+      local result = python.run("while False: pass\nelse: return 42")
+      test.expect(result).to.equal(42)
+    end)
+
+    test.it("TDD: keyword arguments in calls", function()
+      local result = python.run([[
+def add(a, b):
+    return a + b
+return add(b = 2, a = 1)
+]])
+      test.expect(result).to.equal(3)
+    end)
+
+    test.it("TDD: starred unpacking *args", function()
+      local result = python.run([[
+def add(a, b):
+    return a + b
+nums = [1, 2]
+return add(*nums)
+]])
+      test.expect(result).to.equal(3)
+    end)
+
+    test.it("TDD: tuple unpacking a, b = b, a", function()
+      local result = python.run("a, b = 1, 2; a, b = b, a; return a * 10 + b")
+      test.expect(result).to.equal(21)
+    end)
+
+    test.it("TDD: ellipsis literal", function()
+      local code = python.transpile("x = ...")
+      test.expect(code).to.be.a("string")
+    end)
   end)
 end
