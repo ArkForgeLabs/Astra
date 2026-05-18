@@ -1,0 +1,732 @@
+local token = require("python.token")
+local TK = token.TK
+local token_names = token.token_names
+local multiplicative_operators = token.multiplicative_operators
+
+local parser = {}
+function parser.parse(tokens)
+  local pos = 1
+
+  local function peek_token()
+    return tokens[pos]
+  end
+  local function advance_token()
+    local token = tokens[pos]
+    pos = pos + 1
+    return token
+  end
+
+  local peek_is, peek_not, peek_one_of, parse_block, parse_or_else_block, parse_block_body
+
+  local function expect_token(kind)
+    local token = peek_token()
+    if not token or token.kind ~= kind then
+      error(
+        "expected "
+          .. (token_names[kind] or kind)
+          .. " got "
+          .. (token and (token_names[token.kind] or token.kind) or "EOF")
+          .. " at line "
+          .. (token and token.line or "?")
+          .. " col "
+          .. (token and token.col or "?")
+      )
+    end
+    return advance_token()
+  end
+
+  local function match_token(kind)
+    local token = peek_token()
+    if token and token.kind == kind then
+      advance_token()
+      return true
+    end
+    return false
+  end
+
+  local function expect_colon_newline()
+    expect_token(TK.COLON)
+    if peek_is(TK.NEWLINE) then
+      advance_token()
+    end
+  end
+
+  peek_is = function(kind)
+    return peek_token() and peek_token().kind == kind
+  end
+
+  peek_not = function(kind)
+    return peek_token() and peek_token().kind ~= kind
+  end
+
+  peek_one_of = function(...)
+    local t = peek_token()
+    if not t then return false end
+    for _, k in ipairs({...}) do
+      if t.kind == k then return true end
+    end
+    return false
+  end
+
+  parse_block = function()
+    expect_colon_newline()
+    return parse_block_body()
+  end
+
+  parse_or_else_block = function()
+    if peek_is(TK.ELSE) then
+      advance_token()
+      return parse_block()
+    end
+    return nil
+  end
+
+  -- declare parser functions for Lua 5.1
+  local parse_program, parse_stmt, parse_simple_stmt
+  local parse_func_def, parse_if, parse_while, parse_for, parse_return, parse_try
+  local parse_expr, parse_lambda, parse_walrus, parse_if_expr, parse_or
+  local parse_and, parse_not, parse_comparison
+  local parse_term, parse_factor, parse_unary, parse_power, parse_primary, parse_atom
+  local unescape_string, parse_comprehension_clauses
+
+  parse_comprehension_clauses = function()
+    local generators = {}
+    while true do
+      local target = expect_token(TK.IDENTIFIER).value
+      expect_token(TK.IN)
+      local iterator = parse_or()
+      local ifs = {}
+      while peek_is(TK.IF) do
+        advance_token()
+        ifs[#ifs + 1] = parse_or()
+      end
+      generators[#generators + 1] = { target = target, iterator = iterator, ifs = ifs }
+      if peek_is(TK.FOR) then
+        advance_token()
+      else
+        break
+      end
+    end
+    return generators
+  end
+
+  local function skip_continuation_tokens()
+    while
+      peek_token()
+      and (peek_token().kind == TK.NEWLINE or peek_token().kind == TK.INDENT or peek_token().kind == TK.DEDENT)
+    do
+      advance_token()
+    end
+  end
+
+  local function parse_call_arg_star(args, keywords)
+    local current_token = peek_token()
+    local next_token = pos + 1 <= #tokens and tokens[pos + 1] or nil
+    if current_token and current_token.kind == TK.IDENTIFIER and next_token and next_token.kind == TK.EQ then
+      advance_token()
+      advance_token()
+      keywords[#keywords + 1] = { arg = current_token.value, value = parse_expr() }
+    else
+      args[#args + 1] = parse_expr()
+    end
+  end
+
+  parse_program = function()
+    local body = {}
+    while peek_is(TK.NEWLINE) do
+      advance_token()
+    end
+    while peek_not(TK.EOF) and peek_token().kind ~= TK.DEDENT do
+      while peek_is(TK.NEWLINE) do
+        advance_token()
+      end
+      if peek_one_of(TK.DEDENT, TK.EOF) then
+        break
+      end
+      local stmts = parse_stmt()
+      if stmts then
+        for _, s in ipairs(stmts) do
+          body[#body + 1] = s
+        end
+      end
+      while peek_is(TK.NEWLINE) do
+        advance_token()
+      end
+      if peek_is(TK.DEDENT) then
+        break
+      end
+    end
+    return { type = "Program", body = body }
+  end
+
+  parse_stmt = function()
+    local token = peek_token()
+    if not token then
+      return nil
+    end
+    if token.kind == TK.DEF then
+      return { parse_func_def() }
+    elseif token.kind == TK.IF then
+      return { parse_if() }
+    elseif token.kind == TK.WHILE then
+      return { parse_while() }
+    elseif token.kind == TK.FOR then
+      return { parse_for() }
+    elseif token.kind == TK.RETURN then
+      return { parse_return() }
+    elseif token.kind == TK.PASS then
+      advance_token()
+      return { { type = "Pass" } }
+    elseif token.kind == TK.BREAK then
+      advance_token()
+      return { { type = "Break" } }
+    elseif token.kind == TK.CONTINUE then
+      advance_token()
+      return { { type = "Continue" } }
+    elseif token.kind == TK.TRY then
+      return { parse_try() }
+    else
+      return { parse_simple_stmt() }
+    end
+  end
+
+  parse_simple_stmt = function()
+    if peek_is(TK.GLOBAL) then
+      advance_token()
+      local names = { expect_token(TK.IDENTIFIER).value }
+      while match_token(TK.COMMA) do
+        names[#names + 1] = expect_token(TK.IDENTIFIER).value
+      end
+      return { type = "Global", names = names }
+    end
+    local first = parse_expr()
+    local targets = { first }
+    while peek_is(TK.COMMA) do
+      advance_token()
+      targets[#targets + 1] = parse_expr()
+    end
+    if match_token(TK.EQ) then
+      local values = { parse_expr() }
+      while match_token(TK.COMMA) do
+        values[#values + 1] = parse_expr()
+      end
+      if #values == 1 then
+        return { type = "Assign", targets = targets, value = values[1] }
+      else
+        return { type = "Assign", targets = targets, value = { type = "Tuple", elements = values } }
+      end
+    end
+    local aug_ops = { [TK.PLUSEQ] = "+", [TK.MINUSEQ] = "-", [TK.STAREQ] = "*", [TK.SLASHEQ] = "/", [TK.PERCENTEQ] = "%" }
+    local aug_kind = peek_token() and peek_token().kind
+    if aug_ops[aug_kind] then
+      advance_token()
+      return { type = "AugAssign", target = targets[1], op = aug_ops[aug_kind], value = parse_expr() }
+    else
+      return { type = "ExprStmt", expr = targets[1] }
+    end
+  end
+
+  parse_func_def = function()
+    advance_token()
+    local name = expect_token(TK.IDENTIFIER)
+    expect_token(TK.LPAREN)
+    local args = {}
+    if peek_not(TK.RPAREN) then
+      args[#args + 1] = expect_token(TK.IDENTIFIER).value
+      if peek_is(TK.EQ) then
+        advance_token()
+        parse_expr()
+      end
+      while match_token(TK.COMMA) do
+        args[#args + 1] = expect_token(TK.IDENTIFIER).value
+        if peek_is(TK.EQ) then
+          advance_token()
+          parse_expr()
+        end
+      end
+    end
+    expect_token(TK.RPAREN)
+    local body = parse_block()
+    return { type = "FunctionDef", name = name.value, args = args, body = body }
+  end
+
+  parse_if = function()
+    advance_token()
+    local test = parse_expr()
+    local body = parse_block()
+    local elifs = {}
+    local or_else = nil
+    while peek_is(TK.ELIF) do
+      advance_token()
+      local et = parse_expr()
+      local elif_body = parse_block()
+      elifs[#elifs + 1] = { test = et, body = elif_body }
+    end
+    or_else = parse_or_else_block()
+    return { type = "If", test = test, body = body, elifs = elifs, or_else = or_else }
+  end
+
+  parse_while = function()
+    advance_token()
+    local test = parse_expr()
+    local body = parse_block()
+    local or_else = nil
+    or_else = parse_or_else_block()
+    return { type = "While", test = test, body = body, or_else = or_else }
+  end
+
+  parse_for = function()
+    advance_token()
+    local target = expect_token(TK.IDENTIFIER).value
+    expect_token(TK.IN)
+    local iterator = nil
+    local is_range = false
+    local range_args = {}
+    if peek_is(TK.IDENTIFIER) and peek_token().value == "range" then
+      advance_token()
+      if peek_is(TK.LPAREN) then
+        advance_token()
+        is_range = true
+        range_args[1] = parse_expr()
+        while match_token(TK.COMMA) do
+          range_args[#range_args + 1] = parse_expr()
+        end
+        expect_token(TK.RPAREN)
+      end
+    else
+      iterator = parse_primary()
+    end
+    local body = parse_block()
+    local or_else = nil
+    or_else = parse_or_else_block()
+    return {
+      type = "For",
+      target = target,
+      iterator = iterator,
+      body = body,
+      or_else = or_else,
+      is_range = is_range,
+      range_args = range_args,
+    }
+  end
+
+  parse_try = function()
+    advance_token()
+    local body = parse_block()
+    local handlers = {}
+    local finally_body = nil
+    while peek_is(TK.EXCEPT) do
+      advance_token()
+      local exc_type = nil
+      local exc_var = nil
+      if peek_not(TK.COLON) then
+        exc_type = parse_expr()
+        if peek_is(TK.AS) then
+          advance_token()
+          exc_var = expect_token(TK.IDENTIFIER).value
+        end
+      end
+      local h_body = parse_block()
+      handlers[#handlers + 1] = { type = exc_type, name = exc_var, body = h_body }
+    end
+    if peek_is(TK.FINALLY) then
+      advance_token()
+      finally_body = parse_block()
+    end
+    return { type = "Try", body = body, handlers = handlers, finally_body = finally_body }
+  end
+
+  parse_return = function()
+    advance_token()
+    if
+      peek_token()
+      and peek_token().kind ~= TK.NEWLINE
+      and peek_token().kind ~= TK.DEDENT
+      and peek_token().kind ~= TK.EOF
+    then
+      return { type = "Return", value = parse_expr() }
+    else
+      return { type = "Return", value = nil }
+    end
+  end
+
+  parse_block_body = function()
+    while peek_is(TK.NEWLINE) do
+      advance_token()
+    end
+    expect_token(TK.INDENT)
+    local body = {}
+    while peek_not(TK.DEDENT) and peek_token().kind ~= TK.EOF do
+      while peek_is(TK.NEWLINE) do
+        advance_token()
+      end
+      if peek_one_of(TK.DEDENT, TK.EOF) then
+        break
+      end
+      local stmts = parse_stmt()
+      if stmts then
+        for _, s in ipairs(stmts) do
+          body[#body + 1] = s
+        end
+      end
+      while peek_is(TK.NEWLINE) do
+        advance_token()
+      end
+    end
+    expect_token(TK.DEDENT)
+    return body
+  end
+
+  -- expression parsing
+  parse_expr = function()
+    return parse_lambda()
+  end
+  parse_lambda = function()
+    if peek_is(TK.LAMBDA) then
+      advance_token()
+      local args = {}
+      if peek_not(TK.COLON) then
+        args[#args + 1] = expect_token(TK.IDENTIFIER).value
+        while match_token(TK.COMMA) do
+          args[#args + 1] = expect_token(TK.IDENTIFIER).value
+        end
+      end
+      expect_token(TK.COLON)
+      return { type = "Lambda", args = args, body = parse_lambda() }
+    end
+    return parse_walrus()
+  end
+  parse_walrus = function()
+    local result = parse_if_expr()
+    if peek_is(TK.WALRUS) then
+      advance_token()
+      result = { type = "Walrus", target = result, value = parse_walrus() }
+    end
+    return result
+  end
+  parse_if_expr = function()
+    local body = parse_or()
+    if peek_is(TK.IF) then
+      advance_token()
+      local test = parse_or()
+      expect_token(TK.ELSE)
+      body = { type = "IfExpr", test = test, body = body, or_else = parse_if_expr() }
+    end
+    return body
+  end
+  parse_or = function()
+    local left = parse_and()
+    while peek_is(TK.OR) do
+      advance_token()
+      local r = parse_and()
+      left = { type = "BoolOp", op = "or", values = { left, r } }
+    end
+    return left
+  end
+  parse_and = function()
+    local left = parse_not()
+    while peek_is(TK.AND) do
+      advance_token()
+      local r = parse_not()
+      left = { type = "BoolOp", op = "and", values = { left, r } }
+    end
+    return left
+  end
+  parse_not = function()
+    if peek_is(TK.NOT) then
+      advance_token()
+      return { type = "UnaryOp", op = "not", operand = parse_not() }
+    end
+    return parse_comparison()
+  end
+
+  parse_comparison = function()
+    local left = parse_term()
+    local comparison_ops = {
+      [TK.EQEQ] = "==",
+      [TK.NOTEQ] = "!=",
+      [TK.LESS] = "<",
+      [TK.GREATER] = ">",
+      [TK.LESSEQ] = "<=",
+      [TK.GREATEREQ] = ">=",
+    }
+    local cmp_ops = {}
+    local cmp_rights = {}
+    while peek_token() do
+      local current_token = peek_token()
+      local op = comparison_ops[current_token.kind]
+      if not op and current_token.kind == TK.IS then
+        advance_token()
+        if peek_is(TK.NOT) then
+          advance_token()
+          op = "is not"
+        else
+          op = "is"
+        end
+      elseif not op and current_token.kind == TK.IN then
+        advance_token()
+        op = "in"
+      elseif not op and current_token.kind == TK.NOT then
+        local saved = pos
+        advance_token()
+        if peek_is(TK.IN) then
+          advance_token()
+          op = "not in"
+        else
+          pos = saved
+          break
+        end
+      elseif op then
+        advance_token()
+      else
+        break
+      end
+      cmp_ops[#cmp_ops + 1] = op
+      cmp_rights[#cmp_rights + 1] = parse_term()
+    end
+    if #cmp_ops == 0 then
+      return left
+    end
+    return { type = "Compare", left = left, ops = cmp_ops, comparators = cmp_rights }
+  end
+
+  parse_term = function()
+    local left = parse_factor()
+    while peek_one_of(TK.PLUS, TK.MINUS) do
+      local op = advance_token()
+      left = { type = "BinOp", left = left, op = op.value, right = parse_factor() }
+    end
+    return left
+  end
+
+  parse_factor = function()
+    local left = parse_unary()
+    while peek_token() and multiplicative_operators[peek_token().kind] do
+      local op = advance_token()
+      left = { type = "BinOp", left = left, op = op.value, right = parse_unary() }
+    end
+    return left
+  end
+
+  parse_unary = function()
+    if peek_one_of(TK.PLUS, TK.MINUS) then
+      return { type = "UnaryOp", op = advance_token().value, operand = parse_unary() }
+    end
+    return parse_power()
+  end
+
+  parse_power = function()
+    local left = parse_primary()
+    if peek_is(TK.DOUBLESTAR) then
+      advance_token()
+      left = { type = "BinOp", left = left, op = "**", right = parse_unary() }
+    end
+    return left
+  end
+
+  parse_primary = function()
+    local expr = parse_atom()
+    while true do
+      if peek_is(TK.LPAREN) then
+        advance_token()
+        skip_continuation_tokens()
+        local args = {}
+        local keywords = {}
+        if peek_not(TK.RPAREN) then
+          parse_call_arg_star(args, keywords)
+          while match_token(TK.COMMA) do
+            parse_call_arg_star(args, keywords)
+          end
+        end
+        skip_continuation_tokens()
+        expect_token(TK.RPAREN)
+        if #keywords > 0 then
+          expr = { type = "Call", func = expr, args = args, keywords = keywords }
+        else
+          expr = { type = "Call", func = expr, args = args }
+        end
+      elseif peek_is(TK.LBRACKET) then
+        advance_token()
+        if peek_is(TK.COLON) then
+          advance_token()
+          local lower, upper, step = nil, nil, nil
+          if peek_not(TK.RBRACKET) and peek_token().kind ~= TK.COLON then
+            upper = parse_expr()
+          end
+          if peek_is(TK.COLON) then
+            advance_token()
+            if peek_not(TK.RBRACKET) then
+              step = parse_expr()
+            end
+          end
+          expect_token(TK.RBRACKET)
+          expr =
+            { type = "Subscript", value = expr, index = { type = "Slice", lower = lower, upper = upper, step = step } }
+        else
+          local idx = parse_expr()
+          if peek_is(TK.COLON) then
+            advance_token()
+            local upper, step = nil, nil
+            if peek_not(TK.RBRACKET) and peek_token().kind ~= TK.COLON then
+              upper = parse_expr()
+            end
+            if peek_is(TK.COLON) then
+              advance_token()
+              if peek_not(TK.RBRACKET) then
+                step = parse_expr()
+              end
+            end
+            expect_token(TK.RBRACKET)
+            expr =
+              { type = "Subscript", value = expr, index = { type = "Slice", lower = idx, upper = upper, step = step } }
+          else
+            expect_token(TK.RBRACKET)
+            expr = { type = "Subscript", value = expr, index = idx }
+          end
+        end
+      elseif peek_is(TK.DOT) then
+        advance_token()
+        expr = { type = "Attribute", value = expr, attr = expect_token(TK.IDENTIFIER).value }
+      else
+        break
+      end
+    end
+    return expr
+  end
+
+  parse_atom = function()
+    local current_token = peek_token()
+    if not current_token then
+      error("unexpected EOF")
+    end
+    if current_token.kind == TK.NONE then
+      advance_token()
+      return { type = "Constant", value = nil }
+    elseif current_token.kind == TK.TRUE then
+      advance_token()
+      return { type = "Constant", value = true }
+    elseif current_token.kind == TK.FALSE then
+      advance_token()
+      return { type = "Constant", value = false }
+    elseif current_token.kind == TK.ELLIPSIS then
+      advance_token()
+      return { type = "Constant", value = nil }
+    elseif current_token.kind == TK.INTEGER or current_token.kind == TK.FLOAT then
+      advance_token()
+      return { type = "Constant", value = tonumber(current_token.value) }
+    elseif current_token.kind == TK.STRING then
+      advance_token()
+      local val = current_token.value:sub(2, #current_token.value - 1)
+      return { type = "Constant", value = unescape_string(val) }
+    elseif current_token.kind == TK.IDENTIFIER then
+      advance_token()
+      return { type = "Name", id = current_token.value }
+    elseif current_token.kind == TK.LPAREN then
+      advance_token()
+      skip_continuation_tokens()
+      local e = parse_expr()
+      skip_continuation_tokens()
+      expect_token(TK.RPAREN)
+      return e
+    elseif current_token.kind == TK.LBRACKET then
+      advance_token()
+      local first = parse_expr()
+      if peek_is(TK.FOR) then
+        advance_token()
+        local generators = parse_comprehension_clauses()
+        expect_token(TK.RBRACKET)
+        return { type = "ListComp", element = first, generators = generators }
+      end
+      local elements = { first }
+      while match_token(TK.COMMA) do
+        elements[#elements + 1] = parse_expr()
+      end
+      expect_token(TK.RBRACKET)
+      return { type = "List", elements = elements }
+    elseif current_token.kind == TK.LBRACE then
+      advance_token()
+      skip_continuation_tokens()
+      if peek_not(TK.RBRACE) then
+        local first = parse_expr()
+        skip_continuation_tokens()
+        if peek_is(TK.COLON) then
+          advance_token()
+          local key = first
+          skip_continuation_tokens()
+          local val = parse_expr()
+          skip_continuation_tokens()
+          if peek_is(TK.FOR) then
+            advance_token()
+            local generators = parse_comprehension_clauses()
+            skip_continuation_tokens()
+            expect_token(TK.RBRACE)
+            return { type = "DictComp", key = key, value = val, generators = generators }
+          end
+          local keys = { key }
+          local vals = { val }
+          while match_token(TK.COMMA) do
+            skip_continuation_tokens()
+            if peek_is(TK.RBRACE) then
+              break
+            end
+            keys[#keys + 1] = parse_expr()
+            expect_token(TK.COLON)
+            skip_continuation_tokens()
+            if peek_is(TK.RBRACE) then
+              break
+            end
+            vals[#vals + 1] = parse_expr()
+            skip_continuation_tokens()
+          end
+          skip_continuation_tokens()
+          expect_token(TK.RBRACE)
+          return { type = "Dict", keys = keys, values = vals }
+        else
+          if peek_is(TK.FOR) then
+            advance_token()
+            local generators = parse_comprehension_clauses()
+            skip_continuation_tokens()
+            expect_token(TK.RBRACE)
+            return { type = "SetComp", element = first, generators = generators }
+          end
+          local elements = { first }
+          while match_token(TK.COMMA) do
+            skip_continuation_tokens()
+            elements[#elements + 1] = parse_expr()
+            skip_continuation_tokens()
+          end
+          skip_continuation_tokens()
+          expect_token(TK.RBRACE)
+          return { type = "Set", elements = elements }
+        end
+      else
+        skip_continuation_tokens()
+        expect_token(TK.RBRACE)
+        return { type = "Dict", keys = {}, values = {} }
+      end
+    end
+    error(
+      "unexpected token "
+        .. (token_names[current_token.kind] or current_token.kind)
+        .. " ("
+        .. current_token.value
+        .. ") at line "
+        .. current_token.line
+        .. " col "
+        .. current_token.col
+    )
+  end
+
+  unescape_string = function(s)
+    s = s:gsub("\\\\", "\\")
+    s = s:gsub("\\n", "\n")
+    s = s:gsub("\\t", "\t")
+    s = s:gsub('\\"', '"')
+    s = s:gsub("\\'", "'")
+    return s
+  end
+
+  return parse_program()
+end
+
+return parser
