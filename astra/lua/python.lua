@@ -62,13 +62,17 @@ local function tokenize(source)
                 end
 
                 local current = indent_stack[#indent_stack]
-                if indent_count > current then
-                    emit("INDENT")
-                    indent_stack[#indent_stack + 1] = indent_count
-                elseif indent_count < current then
-                    while #indent_stack > 1 and indent_stack[#indent_stack] > indent_count do
-                        emit("DEDENT")
-                        indent_stack[#indent_stack] = nil
+                -- Skip indent tracking for whitespace-only (blank) lines
+                local next_ch = i <= n and source:sub(i, i) or ''
+                if next_ch ~= '\n' and next_ch ~= '' then
+                    if indent_count > current then
+                        emit("INDENT")
+                        indent_stack[#indent_stack + 1] = indent_count
+                    elseif indent_count < current then
+                        while #indent_stack > 1 and indent_stack[#indent_stack] > indent_count do
+                            emit("DEDENT")
+                            indent_stack[#indent_stack] = nil
+                        end
                     end
                 end
                 at_line_start = false
@@ -1050,6 +1054,15 @@ end
 local python = {}
 
 function python.transpile(source)
+    -- Strip trailing whitespace and remove blank lines
+    local lines = {}
+    for line in source:gmatch("[^\n]+") do
+        line = line:match("^(.-)%s*$")
+        if line ~= "" then
+            lines[#lines + 1] = line
+        end
+    end
+    source = table.concat(lines, "\n")
     local tokens = tokenize(source)
     local ast = parse(tokens)
     local lua_code = generate(ast)
