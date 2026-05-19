@@ -286,5 +286,67 @@ return a * 10 + b
       local code = python.transpile("x = ...")
       test.expect(code).to.be.a("string")
     end)
+    test.it("TDD: empty class", function()
+      local result = python.run([[
+class X:
+    pass
+return "ok"
+]])
+      test.expect(result).to.equal("ok")
+    end)
+    test.it("TDD: class with method", function()
+      local result = python.run([[
+class X:
+    def method(self):
+        return 42
+x = X()
+return x.method()
+]])
+      test.expect(result).to.equal(42)
+    end)
+    test.it("TDD: class with __init__", function()
+      local result = python.run([[
+class X:
+    def __init__(self, val):
+        self.val = val
+    def get(self):
+        return self.val
+x = X(99)
+return x.get()
+]])
+      test.expect(result).to.equal(99)
+    end)
+    test.it("TDD: class inheritance", function()
+      local result = python.run([[
+class Base:
+    def meth(self):
+        return 1
+class Derived(Base):
+    def meth(self):
+        return 2
+d = Derived()
+return d.meth()
+]])
+      test.expect(result).to.equal(2)
+    end)
+    test.it("TDD: function decorator", function()
+      local result = python.run([[
+def deco(fn):
+    return lambda: 42
+@deco
+def foo():
+    return 0
+return foo()
+]])
+      test.expect(result).to.equal(42)
+    end)
+    test.it("TDD: class variable", function()
+      local result = python.run([[
+class X:
+    val = 42
+return X.val
+]])
+      test.expect(result).to.equal(42)
+    end)
   end)
 end

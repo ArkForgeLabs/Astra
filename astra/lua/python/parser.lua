@@ -88,11 +88,12 @@ function parser.parse(tokens)
 
   -- declare parser functions for Lua 5.1
   local parse_program, parse_stmt, parse_simple_stmt
-  local parse_func_def, parse_if, parse_while, parse_for, parse_return, parse_try
+  local parse_func_def, parse_class_def, parse_if, parse_while, parse_for, parse_return, parse_try
   local parse_expr, parse_lambda, parse_walrus, parse_if_expr, parse_or
   local parse_and, parse_not, parse_comparison
   local parse_term, parse_factor, parse_unary, parse_power, parse_primary, parse_atom
   local unescape_string, parse_comprehension_clauses
+  local parse_decorators
 
   parse_comprehension_clauses = function()
     local generators = {}
@@ -125,6 +126,11 @@ function parser.parse(tokens)
   end
 
   local function parse_call_arg_star(args, keywords)
+    if peek_is(TK.STAR) then
+      advance_token()
+      args[#args + 1] = ast.Starred(parse_expr())
+      return
+    end
     local current_token = peek_token()
     local next_token = pos + 1 <= #tokens and tokens[pos + 1] or nil
     if current_token and current_token.kind == TK.IDENTIFIER and next_token and next_token.kind == TK.EQ then
@@ -171,6 +177,8 @@ function parser.parse(tokens)
     end
     if token.kind == TK.DEF then
       return { parse_func_def() }
+    elseif token.kind == TK.CLASS then
+      return { parse_class_def() }
     elseif token.kind == TK.IF then
       return { parse_if() }
     elseif token.kind == TK.WHILE then
@@ -190,6 +198,16 @@ function parser.parse(tokens)
       return { ast.Continue() }
     elseif token.kind == TK.TRY then
       return { parse_try() }
+    elseif token.kind == TK.AT then
+      local decos = parse_decorators()
+      local next_kind = peek_token() and peek_token().kind
+      if next_kind == TK.DEF then
+        return { parse_func_def(decos) }
+      elseif next_kind == TK.CLASS then
+        return { parse_class_def(decos) }
+      else
+        error("decorator must precede function or class definition")
+      end
     else
       return { parse_simple_stmt() }
     end
@@ -232,7 +250,7 @@ function parser.parse(tokens)
     end
   end
 
-  parse_func_def = function()
+  parse_func_def = function(decorators)
     advance_token()
     local name = expect_token(TK.IDENTIFIER)
     expect_token(TK.LPAREN)
@@ -253,7 +271,34 @@ function parser.parse(tokens)
     end
     expect_token(TK.RPAREN)
     local body = parse_block()
-    return ast.FunctionDef(name.value, args, body)
+    return ast.FunctionDef(name.value, args, body, decorators)
+  end
+
+  parse_class_def = function(decorators)
+    advance_token()
+    local name = expect_token(TK.IDENTIFIER).value
+    local bases = {}
+    if match_token(TK.LPAREN) then
+      if peek_not(TK.RPAREN) then
+        bases[1] = parse_expr()
+        while match_token(TK.COMMA) do
+          bases[#bases + 1] = parse_expr()
+        end
+      end
+      expect_token(TK.RPAREN)
+    end
+    local body = parse_block()
+    return ast.ClassDef(name, bases, body, decorators)
+  end
+
+  parse_decorators = function()
+    local decorators = {}
+    while peek_is(TK.AT) do
+      advance_token()
+      decorators[#decorators + 1] = parse_primary()
+      if peek_is(TK.NEWLINE) then advance_token() end
+    end
+    return decorators
   end
 
   parse_if = function()

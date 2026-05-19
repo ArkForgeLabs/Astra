@@ -34,13 +34,15 @@ ast.LIST_COMP = "ListComp"
 ast.SET_COMP = "SetComp"
 ast.DICT_COMP = "DictComp"
 ast.SLICE = "Slice"
+ast.CLASS_DEF = "ClassDef"
+ast.STARRED = "Starred"
 
 function ast.Program(body)
   return { type = ast.PROGRAM, body = body }
 end
 
-function ast.FunctionDef(name, args, body)
-  return { type = ast.FUNCTION_DEF, name = name, args = args, body = body }
+function ast.FunctionDef(name, args, body, decorators)
+  return { type = ast.FUNCTION_DEF, name = name, args = args, body = body, decorators = decorators or {} }
 end
 
 function ast.If(test, body, elifs, or_else)
@@ -177,6 +179,20 @@ end
 
 function ast.Slice(lower, upper, step)
   return { type = ast.SLICE, lower = lower, upper = upper, step = step }
+end
+
+function ast.ClassDef(name, bases, body, decorators)
+  return {
+    type = ast.CLASS_DEF,
+    name = name,
+    bases = bases or {},
+    body = body,
+    decorators = decorators or {},
+  }
+end
+
+function ast.Starred(value)
+  return { type = ast.STARRED, value = value }
 end
 
 return ast

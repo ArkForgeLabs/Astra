@@ -62,6 +62,8 @@ local TK = {
   FINALLY = 62,
   GLOBAL = 63,
   AS = 64,
+  CLASS = 65,
+  AT = 66,
 }
 
 local token_names = {}
@@ -94,6 +96,7 @@ local keyword_token_map = {
   ["finally"] = TK.FINALLY,
   ["global"] = TK.GLOBAL,
   ["as"] = TK.AS,
+  ["class"] = TK.CLASS,
 }
 
 local two_character_tokens = {
@@ -131,6 +134,7 @@ local single_character_tokens = {
   [","] = TK.COMMA,
   ["."] = TK.DOT,
   [";"] = TK.SEMI,
+  ["@"] = TK.AT,
 }
 
 local multiplicative_operators = {

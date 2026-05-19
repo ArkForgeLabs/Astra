@@ -86,6 +86,11 @@ function generator.generate(prog)
     end
   end
 
+  local function is_lua_module(name)
+    local modules = { math = true, string = true, table = true, io = true, os = true, debug = true, coroutine = true }
+    return modules[name]
+  end
+
   local expr_handlers = {
     [ast.CONSTANT] = function(expr)
       local v = expr.value
@@ -153,13 +158,23 @@ function generator.generate(prog)
         end
       end
       local args = {}
-      for _, a in ipairs(expr.args) do args[#args + 1] = gen_expr(a) end
-      if expr.keywords and #expr.keywords > 0 then
-        local keyword_parts = {}
-        for _, kw in ipairs(expr.keywords) do
-          keyword_parts[#keyword_parts + 1] = "[" .. gen_str(kw.arg) .. "] = " .. gen_expr(kw.value)
+      for _, a in ipairs(expr.args) do
+        if a.type == ast.STARRED then
+          args[#args + 1] = "table.unpack(" .. gen_expr(a.value) .. ")"
+        else
+          args[#args + 1] = gen_expr(a)
         end
-        args[#args + 1] = "{" .. table.concat(keyword_parts, ", ") .. "}"
+      end
+      if expr.func.type == ast.ATTRIBUTE and expr.func.value.type == ast.NAME and not is_lua_module(expr.func.value.id) and not (expr.keywords and #expr.keywords > 0) then
+        local obj = gen_expr(expr.func.value)
+        return obj .. ":" .. expr.func.attr .. "(" .. table.concat(args, ", ") .. ")"
+      end
+      if expr.keywords and #expr.keywords > 0 then
+        local kw_parts = {}
+        for _, kw in ipairs(expr.keywords) do
+          kw_parts[#kw_parts + 1] = "{arg=" .. gen_str(kw.arg) .. ", value=" .. gen_expr(kw.value) .. "}"
+        end
+        return "__py_call(" .. gen_expr(expr.func) .. ", {" .. table.concat(args, ", ") .. "}, {" .. table.concat(kw_parts, ", ") .. "})"
       end
       return gen_expr(expr.func) .. "(" .. table.concat(args, ", ") .. ")"
     end,
@@ -254,9 +269,63 @@ function generator.generate(prog)
 
   local stmt_handlers = {
     [ast.FUNCTION_DEF] = function(stmt)
-      push(indent() .. "function " .. stmt.name .. "(" .. table.concat(stmt.args, ", ") .. ")")
-      with_indent(function() gen_body(stmt.body) end)
+      local has_decos = stmt.decorators and #stmt.decorators > 0
+      if has_decos then
+        push(indent() .. "do")
+        with_indent(function()
+          push(indent() .. "local __fn")
+          push(indent() .. "__fn = function(" .. table.concat(stmt.args, ", ") .. ")")
+          with_indent(function() gen_body(stmt.body) end)
+          push(indent() .. "end")
+          if #stmt.args > 0 then
+            push(indent() .. "__py_fn_params[__fn] = {\"" .. table.concat(stmt.args, "\", \"") .. "\"}")
+          end
+          push(indent() .. stmt.name .. " = __fn")
+        end)
+        push(indent() .. "end")
+        for _, d in ipairs(stmt.decorators) do
+          push(indent() .. stmt.name .. " = " .. gen_expr(d) .. "(" .. stmt.name .. ")")
+        end
+      else
+        push(indent() .. "function " .. stmt.name .. "(" .. table.concat(stmt.args, ", ") .. ")")
+        with_indent(function() gen_body(stmt.body) end)
+        push(indent() .. "end")
+        if #stmt.args > 0 then
+          push(indent() .. "__py_fn_params[" .. stmt.name .. "] = {\"" .. table.concat(stmt.args, "\", \"") .. "\"}")
+        end
+      end
+    end,
+    [ast.CLASS_DEF] = function(stmt)
+      push(indent() .. "do")
+      with_indent(function()
+        push(indent() .. "local __class, __call")
+        push(indent() .. "__call = function(cls, ...)")
+        push(indent() .. "    local inst = setmetatable({}, {__index = cls})")
+        push(indent() .. "    if cls.__init__ then cls.__init__(inst, ...) end")
+        push(indent() .. "    return inst")
+        push(indent() .. "end")
+        if #stmt.bases == 0 then
+          push(indent() .. "__class = setmetatable({}, {__call = __call})")
+        else
+          push(indent() .. "__class = setmetatable({}, {__index = " .. gen_expr(stmt.bases[1]) .. ", __call = __call})")
+        end
+        for _, s in ipairs(stmt.body) do
+          if s.type == ast.FUNCTION_DEF then
+            push(indent() .. "function __class." .. s.name .. "(" .. table.concat(s.args, ", ") .. ")")
+            with_indent(function() gen_body(s.body) end)
+            push(indent() .. "end")
+          elseif s.type == ast.ASSIGN and #s.targets == 1 and s.targets[1].type == ast.NAME then
+            push(indent() .. "__class." .. s.targets[1].id .. " = " .. gen_expr(s.value))
+          elseif s.type == ast.EXPR_STMT then
+            push(indent() .. gen_expr(s.expr))
+          end
+        end
+        push(indent() .. stmt.name .. " = __class")
+      end)
       push(indent() .. "end")
+      for _, d in ipairs(stmt.decorators or {}) do
+        push(indent() .. stmt.name .. " = " .. gen_expr(d) .. "(" .. stmt.name .. ")")
+      end
     end,
     [ast.IF] = function(stmt)
       push(indent() .. "if " .. gen_expr(stmt.test) .. " then")
@@ -366,6 +435,7 @@ function generator.generate(prog)
 
   -- runtime helpers preamble
   push("do")
+  push('if not table.unpack then table.unpack = unpack end')
   push("chr = string.char")
   push("ord = string.byte")
   push("local function __py_len(x) return #x end")
@@ -445,6 +515,24 @@ function generator.generate(prog)
   push("end")
   push("function __py_endswith(str, suffix)")
   push("    return string.sub(str, -#suffix) == suffix")
+  push("end")
+  push("__py_fn_params = {}")
+  push("function __py_call(func, args, kwargs)")
+  push("    local params = __py_fn_params[func]")
+  push("    if not params then")
+  push("        return func(table.unpack(args))")
+  push("    end")
+  push("    local merged = {}")
+  push("    for i = 1, #params do merged[i] = args[i] end")
+  push("    for _, kw in ipairs(kwargs) do")
+  push("        for j, name in ipairs(params) do")
+  push("            if kw.arg == name then")
+  push("                merged[j] = kw.value")
+  push("                break")
+  push("            end")
+  push("        end")
+  push("    end")
+  push("    return func(table.unpack(merged, 1, #params))")
   push("end")
   push("end")
 
