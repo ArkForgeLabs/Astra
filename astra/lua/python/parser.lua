@@ -126,6 +126,11 @@ function parser.parse(tokens)
   end
 
   local function parse_call_arg_star(args, keywords)
+    if peek_is(TK.DOUBLESTAR) then
+      advance_token()
+      args[#args + 1] = ast.Starred(parse_expr(), true)
+      return
+    end
     if peek_is(TK.STAR) then
       advance_token()
       args[#args + 1] = ast.Starred(parse_expr())
@@ -255,23 +260,39 @@ function parser.parse(tokens)
     local name = expect_token(TK.IDENTIFIER)
     expect_token(TK.LPAREN)
     local args = {}
+    local vararg = nil
+    local kwarg = nil
     if peek_not(TK.RPAREN) then
-      args[#args + 1] = expect_token(TK.IDENTIFIER).value
-      if peek_is(TK.EQ) then
-        advance_token()
-        parse_expr()
-      end
-      while match_token(TK.COMMA) do
-        args[#args + 1] = expect_token(TK.IDENTIFIER).value
-        if peek_is(TK.EQ) then
+      local function parse_param()
+        if peek_is(TK.DOUBLESTAR) then
           advance_token()
-          parse_expr()
+          kwarg = expect_token(TK.IDENTIFIER).value
+          return true
+        elseif peek_is(TK.STAR) then
+          advance_token()
+          if peek_not(TK.IDENTIFIER) then
+            -- bare *, keyword-only separator, skip
+            return true
+          end
+          vararg = expect_token(TK.IDENTIFIER).value
+          return true
+        else
+          args[#args + 1] = expect_token(TK.IDENTIFIER).value
+          if peek_is(TK.EQ) then
+            advance_token()
+            parse_expr()
+          end
+          return false
         end
+      end
+      parse_param()
+      while match_token(TK.COMMA) do
+        parse_param()
       end
     end
     expect_token(TK.RPAREN)
     local body = parse_block()
-    return ast.FunctionDef(name.value, args, body, decorators)
+    return ast.FunctionDef(name.value, args, body, decorators, vararg, kwarg)
   end
 
   parse_class_def = function(decorators)
@@ -296,7 +317,9 @@ function parser.parse(tokens)
     while peek_is(TK.AT) do
       advance_token()
       decorators[#decorators + 1] = parse_primary()
-      if peek_is(TK.NEWLINE) then advance_token() end
+      if peek_is(TK.NEWLINE) then
+        advance_token()
+      end
     end
     return decorators
   end
@@ -431,14 +454,35 @@ function parser.parse(tokens)
     if peek_is(TK.LAMBDA) then
       advance_token()
       local args = {}
+      local has_vararg = false
       if peek_not(TK.COLON) then
-        args[#args + 1] = expect_token(TK.IDENTIFIER).value
-        while match_token(TK.COMMA) do
+        if peek_is(TK.STAR) then
+          advance_token()
+          if peek_is(TK.IDENTIFIER) then
+            args[#args + 1] = "*" .. expect_token(TK.IDENTIFIER).value
+          end
+          has_vararg = true
+        else
           args[#args + 1] = expect_token(TK.IDENTIFIER).value
+        end
+        while match_token(TK.COMMA) do
+          if peek_is(TK.STAR) then
+            advance_token()
+            if peek_is(TK.IDENTIFIER) then
+              args[#args + 1] = "*" .. expect_token(TK.IDENTIFIER).value
+            end
+            has_vararg = true
+          else
+            args[#args + 1] = expect_token(TK.IDENTIFIER).value
+          end
         end
       end
       expect_token(TK.COLON)
-      return ast.Lambda(args, parse_lambda())
+      local lambda_ast = ast.Lambda(args, parse_lambda())
+      if has_vararg then
+        lambda_ast.has_vararg = true
+      end
+      return lambda_ast
     end
     return parse_walrus()
   end
@@ -606,8 +650,7 @@ function parser.parse(tokens)
             end
           end
           expect_token(TK.RBRACKET)
-          expr =
-            ast.Subscript(expr, ast.Slice(lower, upper, step))
+          expr = ast.Subscript(expr, ast.Slice(lower, upper, step))
         else
           local idx = parse_expr()
           if peek_is(TK.COLON) then
@@ -623,8 +666,7 @@ function parser.parse(tokens)
               end
             end
             expect_token(TK.RBRACKET)
-            expr =
-              ast.Subscript(expr, ast.Slice(idx, upper, step))
+            expr = ast.Subscript(expr, ast.Slice(idx, upper, step))
           else
             expect_token(TK.RBRACKET)
             expr = ast.Subscript(expr, idx)
@@ -666,14 +708,28 @@ function parser.parse(tokens)
       return ast.Constant(unescape_string(val))
     elseif current_token.kind == TK.IDENTIFIER then
       advance_token()
+      if current_token.value == "super" then
+        return ast.Super()
+      end
       return ast.Name(current_token.value)
     elseif current_token.kind == TK.LPAREN then
       advance_token()
       skip_continuation_tokens()
-      local e = parse_expr()
+      local first = parse_expr()
       skip_continuation_tokens()
+      if match_token(TK.COMMA) then
+        local elements = { first }
+        while peek_not(TK.RPAREN) do
+          elements[#elements + 1] = parse_expr()
+          skip_continuation_tokens()
+          match_token(TK.COMMA)
+          skip_continuation_tokens()
+        end
+        expect_token(TK.RPAREN)
+        return ast.Tuple(elements)
+      end
       expect_token(TK.RPAREN)
-      return e
+      return first
     elseif current_token.kind == TK.LBRACKET then
       advance_token()
       local first = parse_expr()

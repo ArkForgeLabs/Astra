@@ -1,0 +1,11 @@
+return function(test)
+  test.describe("Python transpiler AST structure", function()
+    require("tests.python_tests.test_ast")(test)
+  end)
+  test.describe("Python transpiler generated code", function()
+    require("tests.python_tests.test_generated_code")(test)
+  end)
+  test.describe("Python transpiler equivalence", function()
+    require("tests.python_tests.test_equivalence")(test)
+  end)
+end

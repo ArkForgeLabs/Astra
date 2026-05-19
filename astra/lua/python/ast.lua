@@ -36,13 +36,22 @@ ast.DICT_COMP = "DictComp"
 ast.SLICE = "Slice"
 ast.CLASS_DEF = "ClassDef"
 ast.STARRED = "Starred"
+ast.SUPER = "Super"
 
 function ast.Program(body)
   return { type = ast.PROGRAM, body = body }
 end
 
-function ast.FunctionDef(name, args, body, decorators)
-  return { type = ast.FUNCTION_DEF, name = name, args = args, body = body, decorators = decorators or {} }
+function ast.FunctionDef(name, args, body, decorators, vararg, kwarg)
+  return {
+    type = ast.FUNCTION_DEF,
+    name = name,
+    args = args,
+    body = body,
+    decorators = decorators or {},
+    vararg = vararg,
+    kwarg = kwarg,
+  }
 end
 
 function ast.If(test, body, elifs, or_else)
@@ -191,8 +200,12 @@ function ast.ClassDef(name, bases, body, decorators)
   }
 end
 
-function ast.Starred(value)
-  return { type = ast.STARRED, value = value }
+function ast.Starred(value, double_star)
+  return { type = ast.STARRED, value = value, double_star = double_star or false }
+end
+
+function ast.Super()
+  return { type = ast.SUPER }
 end
 
 return ast

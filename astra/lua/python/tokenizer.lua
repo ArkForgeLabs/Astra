@@ -42,8 +42,14 @@ function tokenizer.tokenize(source)
 
   local function is_string_prefix(word)
     local lower = word:lower()
-    return lower == "f" or lower == "r" or lower == "b" or lower == "u"
-      or lower == "rf" or lower == "fr" or lower == "rb" or lower == "br"
+    return lower == "f"
+      or lower == "r"
+      or lower == "b"
+      or lower == "u"
+      or lower == "rf"
+      or lower == "fr"
+      or lower == "rb"
+      or lower == "br"
   end
 
   local function read_quoted_string(start_index, quote_char)
@@ -136,7 +142,7 @@ function tokenizer.tokenize(source)
       while i <= n and source:sub(i, i) ~= "\n" do
         advance_char()
       end
-    elseif ch == '"' or ch == "\'" then
+    elseif ch == '"' or ch == "'" then
       read_quoted_string(i, ch)
     elseif ch >= "0" and ch <= "9" then
       local start_index = i
@@ -170,7 +176,7 @@ function tokenizer.tokenize(source)
       end
       local word = source:sub(start_index, i - 1)
       local next_char = i <= n and source:sub(i, i) or ""
-      if (next_char == '"' or next_char == "\'") and is_string_prefix(word) then
+      if (next_char == '"' or next_char == "'") and is_string_prefix(word) then
         read_quoted_string(start_index + #word, next_char)
       else
         emit_token(keyword_token_map[word] or TK.IDENTIFIER, word)

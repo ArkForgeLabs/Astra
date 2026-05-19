@@ -348,5 +348,160 @@ return X.val
 ]])
       test.expect(result).to.equal(42)
     end)
+    test.it("TDD: super() call", function()
+      local result = python.run([[
+class Base:
+    def method(self):
+        return 1
+class Derived(Base):
+    def method(self):
+        return super().method() + 1
+d = Derived()
+return d.method()
+]])
+      test.expect(result).to.equal(2)
+    end)
+    test.it("TDD: staticmethod", function()
+      local result = python.run([[
+class X:
+    @staticmethod
+    def add(a, b):
+        return a + b
+return X.add(3, 4)
+]])
+      test.expect(result).to.equal(7)
+    end)
+    test.it("TDD: classmethod", function()
+      local result = python.run([[
+class X:
+    count = 0
+    @classmethod
+    def get_count(cls):
+        return cls.count
+return X.get_count()
+]])
+      test.expect(result).to.equal(0)
+    end)
+    test.it("TDD: __str__ dunder", function()
+      local result = python.run([[
+class X:
+    def __init__(self, val):
+        self.val = val
+    def __str__(self):
+        return self.val
+x = X("hello")
+return str(x)
+]])
+      test.expect(result).to.equal("hello")
+    end)
+    test.it("TDD: __len__ dunder", function()
+      local result = python.run([[
+class X:
+    def __init__(self, items):
+        self.items = items
+    def __len__(self):
+        return len(self.items)
+x = X([1, 2, 3])
+return len(x)
+]])
+      test.expect(result).to.equal(3)
+    end)
+    test.it("TDD: __add__ dunder", function()
+      local result = python.run([[
+class X:
+    def __init__(self, val):
+        self.val = val
+    def __add__(self, other):
+        return X(self.val + other.val)
+    def get(self):
+        return self.val
+a = X(10)
+b = X(20)
+c = a + b
+return c.get()
+]])
+      test.expect(result).to.equal(30)
+    end)
+    test.it("TDD: @property", function()
+      local result = python.run([[
+class X:
+    def __init__(self, val):
+        self._val = val
+    @property
+    def val(self):
+        return self._val
+x = X(42)
+return x.val
+]])
+      test.expect(result).to.equal(42)
+    end)
+    test.it("TDD: isinstance", function()
+      local result = python.run([[
+class Base:
+    pass
+class Derived(Base):
+    pass
+d = Derived()
+return isinstance(d, Base)
+]])
+      test.expect(result).to.equal(true)
+    end)
+    test.it("TDD: isinstance false", function()
+      local result = python.run([[
+class A:
+    pass
+class B:
+    pass
+a = A()
+return isinstance(a, B)
+]])
+      test.expect(result).to.equal(false)
+    end)
+    test.it("TDD: issubclass", function()
+      local result = python.run([[
+class Base:
+    pass
+class Derived(Base):
+    pass
+return issubclass(Derived, Base)
+]])
+      test.expect(result).to.equal(true)
+    end)
+    test.it("TDD: *args in function def", function()
+      local result = python.run([[
+def f(*args):
+    return len(args)
+return f(1, 2, 3)
+]])
+      test.expect(result).to.equal(3)
+    end)
+    test.it("TDD: **kwargs in function def", function()
+      local result = python.run([[
+def f(**kwargs):
+    return len(kwargs)
+return f(a=1, b=2)
+]])
+      test.expect(result).to.equal(2)
+    end)
+    test.it("TDD: slice assignment", function()
+      local result = python.run([[
+items = [1, 2, 3, 4, 5]
+items[1:3] = [9, 9]
+return items
+]])
+      local expected = {1, 9, 9, 4, 5}
+      test.expect(#result).to.equal(#expected)
+      for i = 1, #expected do
+        test.expect(result[i]).to.equal(expected[i])
+      end
+    end)
+    test.it("TDD: isinstance with builtin int", function()
+      local result = python.run("return isinstance(42, int)")
+      test.expect(result).to.equal(true)
+    end)
+    test.it("TDD: isinstance with builtin string", function()
+      local result = python.run("return isinstance('hello', str)")
+      test.expect(result).to.equal(true)
+    end)
   end)
 end

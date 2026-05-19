@@ -20,6 +20,7 @@ require("tests.http")(test)
 require("tests.templates")(test)
 require("tests.database")(test)
 require("tests.python")(test)
+require("tests.python_tests")(test)
 require("tests.stores")(test)
 
 print(
