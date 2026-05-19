@@ -42,32 +42,34 @@ function generator.generate(prog)
       return "__res[#__res + 1] = " .. gen_expr(element) .. "; "
     end
     local g = generators[idx]
-    local code = "for _, " .. g.target .. " in ipairs(" .. gen_expr(g.iterator) .. ") do "
+    local parts = {}
+    parts[#parts + 1] = "for _, " .. g.target .. " in ipairs(" .. gen_expr(g.iterator) .. ") do "
     for _, if_expr in ipairs(g.ifs or {}) do
-      code = code .. "if " .. gen_expr(if_expr) .. " then "
+      parts[#parts + 1] = "if " .. gen_expr(if_expr) .. " then "
     end
-    code = code .. gen_comprehension_loops(element, generators, idx + 1)
+    parts[#parts + 1] = gen_comprehension_loops(element, generators, idx + 1)
     for _ in ipairs(g.ifs or {}) do
-      code = code .. "end "
+      parts[#parts + 1] = "end "
     end
-    code = code .. "end "
-    return code
+    parts[#parts + 1] = "end "
+    return table.concat(parts)
   end
   gen_dictcomp_loops = function(key, val, generators, idx)
     if idx > #generators then
       return "__res[" .. key .. "] = " .. val .. "; "
     end
     local g = generators[idx]
-    local code = "for _, " .. g.target .. " in ipairs(" .. gen_expr(g.iterator) .. ") do "
+    local parts = {}
+    parts[#parts + 1] = "for _, " .. g.target .. " in ipairs(" .. gen_expr(g.iterator) .. ") do "
     for _, if_expr in ipairs(g.ifs or {}) do
-      code = code .. "if " .. gen_expr(if_expr) .. " then "
+      parts[#parts + 1] = "if " .. gen_expr(if_expr) .. " then "
     end
-    code = code .. gen_dictcomp_loops(key, val, generators, idx + 1)
+    parts[#parts + 1] = gen_dictcomp_loops(key, val, generators, idx + 1)
     for _ in ipairs(g.ifs or {}) do
-      code = code .. "end "
+      parts[#parts + 1] = "end "
     end
-    code = code .. "end "
-    return code
+    parts[#parts + 1] = "end "
+    return table.concat(parts)
   end
 
   local function compare_values(l, op, r)
@@ -686,158 +688,7 @@ function generator.generate(prog)
   end
 
   -- runtime helpers preamble
-  push("do")
-  push("if not table.unpack then table.unpack = unpack end")
-  push("chr = string.char")
-  push("ord = string.byte")
-  push("local function __py_len(x)")
-  push("  local mt = getmetatable(x)")
-  push("  if mt and mt.__len then return mt.__len(x) end")
-  push("  return #x")
-  push("end")
-  push("len = __py_len")
-  push("local function __py_int(x) return type(x) == 'number' and math.floor(x) or tonumber(x) end")
-  push("int = __py_int")
-  push("-- built-in type markers for isinstance")
-  push("function __py_slice(tbl, start, stop, step)")
-  push("    local s, e, st = start, stop, step or 1")
-  push("    local n = #tbl")
-  push("    if st > 0 then")
-  push("        if s == nil then s = 0 end")
-  push("        if e == nil then e = n end")
-  push("        s = s + 1")
-  push("        local result = {}")
-  push("        for i = s, e, st do result[#result + 1] = tbl[i] end")
-  push("        return result")
-  push("    elseif st < 0 then")
-  push("        if s == nil then s = n - 1 end")
-  push("        if e == nil then e = -1 end")
-  push("        s = s + 1")
-  push("        e = e + 1")
-  push("        local result = {}")
-  push("        for i = s, e, st do result[#result + 1] = tbl[i] end")
-  push("        return result")
-  push("    end")
-  push("    return {}")
-  push("end")
-  push("function __py_in(container, item)")
-  push('    if type(container) == "table" then')
-  push("        for _, __v in ipairs(container) do if __v == item then return true end end")
-  push("        return false")
-  push('    elseif type(container) == "string" then')
-  push("        return string.find(container, item, 1, true) ~= nil")
-  push("    end")
-  push("    return false")
-  push("end")
-  push("function __py_repeat(val, n)")
-  push("    local res = {}")
-  push('    if type(val) == "table" then')
-  push("        for _ = 1, n do")
-  push("            for _, __v in ipairs(val) do")
-  push("                res[#res + 1] = __v")
-  push("            end")
-  push("        end")
-  push("    else")
-  push("        for _ = 1, n do")
-  push("            res[#res + 1] = val")
-  push("        end")
-  push("    end")
-  push("    return res")
-  push("end")
-  push("function __py_range(...)")
-  push("    local start, stop, step")
-  push('    if select("#", ...) == 1 then start, stop, step = 0, (...), 1')
-  push('    elseif select("#", ...) == 2 then start, stop, step = (...), select(2, ...), 1')
-  push("    else start, stop, step = (...), select(2, ...), select(3, ...) end")
-  push("    local result = {}")
-  push("    if step > 0 then for i = start, stop - 1, step do result[#result + 1] = i end")
-  push("    end")
-  push("    if step < 0 then for i = start, stop + 1, step do result[#result + 1] = i end")
-  push("    end")
-  push("    return result")
-  push("end")
-  push("range = __py_range")
-  push("function __py_getitem(container, index)")
-  push('  if type(container) == "string" then')
-  push("    return string.sub(container, index, index)")
-  push("  end")
-  push("  return container[index]")
-  push("end")
-  push("function __py_items(container)")
-  push("    local result = {}")
-  push("    for k, v in pairs(container) do")
-  push("        result[#result + 1] = {k, v}")
-  push("    end")
-  push("    return result")
-  push("end")
-  push("function __py_endswith(str, suffix)")
-  push("    return string.sub(str, -#suffix) == suffix")
-  push("end")
-  push("str = tostring")
-  push("function __py_super(cls, self)")
-  push("    local base = cls.__py_base")
-  push("    if not base then error('super(): no base class') end")
-  push("    return setmetatable({}, {__index = function(_, k)")
-  push("        local fn = base[k]")
-  push("        if fn then return function(...) return fn(self, ...) end end")
-  push("    end})")
-  push("end")
-  push("function __py_isinstance(obj, cls)")
-  push("    if type(cls) == 'table' then")
-  push("        local mt = getmetatable(obj)")
-  push("        while mt do")
-  push("            if mt.__index == cls then return true end")
-  push("            if mt.__index and mt.__index.__py_base then")
-  push("                local base = mt.__index")
-  push("                while base do")
-  push("                    if base == cls then return true end")
-  push("                    base = base.__py_base")
-  push("                end")
-  push("            end")
-  push("            mt = getmetatable(mt)")
-  push("        end")
-  push("        return false")
-  push("    elseif type(cls) == 'function' then")
-  push("        if cls == int then return type(obj) == 'number' end")
-  push("        if cls == str or cls == chr then return type(obj) == 'string' end")
-  push("        if cls == chr then return type(obj) == 'string' end")
-  push("        return false")
-  push("    end")
-  push("    return false")
-  push("end")
-  push("function __py_issubclass(child, parent)")
-  push("    if type(child) ~= 'table' then return false end")
-  push("    local base = child.__py_base or (getmetatable(child) or {}).__index")
-  push("    while base do")
-  push("        if base == parent then return true end")
-  push("        base = base.__py_base")
-  push("    end")
-  push("    return false")
-  push("end")
-  push("isinstance = __py_isinstance")
-  push("issubclass = __py_issubclass")
-  push("__py_fn_params = {}")
-  push("function __py_call(func, args, kwargs)")
-  push("    local params = __py_fn_params[func]")
-  push("    if not params then")
-  push("        local all = {}")
-  push("        for _, a in ipairs(args) do all[#all + 1] = a end")
-  push("        for _, kw in ipairs(kwargs) do all[#all + 1] = kw.value end")
-  push("        return func(table.unpack(all))")
-  push("    end")
-  push("    local merged = {}")
-  push("    for i = 1, #params do merged[i] = args[i] end")
-  push("    for _, kw in ipairs(kwargs) do")
-  push("        for j, name in ipairs(params) do")
-  push("            if kw.arg == name then")
-  push("                merged[j] = kw.value")
-  push("                break")
-  push("            end")
-  push("        end")
-  push("    end")
-  push("    return func(table.unpack(merged, 1, #params))")
-  push("end")
-  push("end")
+  push("require('python.stdlib')")
 
   gen_body(prog.body)
   return table.concat(parts, "\n")

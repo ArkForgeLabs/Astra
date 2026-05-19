@@ -29,4 +29,16 @@ function python.run(source)
   return fn()
 end
 
+function python.transpile_file(path)
+  local fs = require("fs")
+  local source = fs.read_file(path)
+  return python.transpile(source)
+end
+
+function python.run_file(path)
+  local fs = require("fs")
+  local source = fs.read_file(path)
+  return python.run(source)
+end
+
 return python

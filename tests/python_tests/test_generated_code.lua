@@ -81,14 +81,9 @@ test.it("string concatenation uses Lua ..", function()
   test.expect(lua).to.match("%.%.%s")
 end)
 
-test.it("generates int = __py_int alias", function()
+test.it("preamble loads stdlib via require", function()
   local lua = python.transpile("")
-  test.expect(lua).to.match("int = __py_int")
-end)
-
-test.it("generates range = __py_range alias", function()
-  local lua = python.transpile("")
-  test.expect(lua).to.match("range = __py_range")
+  test.expect(lua).to.match("require")
 end)
 
 test.it("class generates __call metamethod", function()
