@@ -1,5 +1,6 @@
 local ast = require("python.ast")
 local token = require("python.token")
+local util = require("python.util")
 local TK = token.TK
 local token_names = token.token_names
 local multiplicative_operators = token.multiplicative_operators
@@ -17,7 +18,7 @@ function parser.parse(tokens)
     return token
   end
 
-  local peek_is, peek_not, peek_one_of, parse_block, parse_or_else_block, parse_block_body
+  local peek_is, peek_not, peek_one_of, parse_block, parse_or_else_block, parse_block_body, parse_statements
 
   local function expect_token(kind)
     local token = peek_token()
@@ -89,11 +90,9 @@ function parser.parse(tokens)
   -- declare parser functions for Lua 5.1
   local parse_program, parse_stmt, parse_simple_stmt
   local parse_func_def, parse_class_def, parse_if, parse_while, parse_for, parse_return, parse_try
-  local parse_expr, parse_lambda, parse_walrus, parse_if_expr, parse_or
-  local parse_and, parse_not, parse_comparison
+  local parse_expr, parse_lambda, parse_walrus, parse_if_expr, parse_or, parse_and, parse_not, parse_comparison
   local parse_term, parse_factor, parse_unary, parse_power, parse_primary, parse_atom
-  local unescape_string, parse_comprehension_clauses
-  local parse_decorators
+  local parse_comprehension_clauses, parse_decorators
 
   parse_comprehension_clauses = function()
     local generators = {}
@@ -147,12 +146,9 @@ function parser.parse(tokens)
     end
   end
 
-  parse_program = function()
+  parse_statements = function()
     local body = {}
-    while peek_is(TK.NEWLINE) do
-      advance_token()
-    end
-    while peek_not(TK.EOF) and peek_token().kind ~= TK.DEDENT do
+    while peek_not(TK.DEDENT) and peek_token().kind ~= TK.EOF do
       while peek_is(TK.NEWLINE) do
         advance_token()
       end
@@ -168,42 +164,63 @@ function parser.parse(tokens)
       while peek_is(TK.NEWLINE) do
         advance_token()
       end
-      if peek_is(TK.DEDENT) then
-        break
-      end
     end
-    return ast.Program(body)
+    return body
   end
+
+  parse_program = function()
+    while peek_is(TK.NEWLINE) do
+      advance_token()
+    end
+    return ast.Program(parse_statements())
+  end
+
+  local stmt_dispatch = {
+    [TK.DEF] = function()
+      return { parse_func_def() }
+    end,
+    [TK.CLASS] = function()
+      return { parse_class_def() }
+    end,
+    [TK.IF] = function()
+      return { parse_if() }
+    end,
+    [TK.WHILE] = function()
+      return { parse_while() }
+    end,
+    [TK.FOR] = function()
+      return { parse_for() }
+    end,
+    [TK.RETURN] = function()
+      return { parse_return() }
+    end,
+    [TK.PASS] = function()
+      advance_token()
+      return { ast.Pass() }
+    end,
+    [TK.BREAK] = function()
+      advance_token()
+      return { ast.Break() }
+    end,
+    [TK.CONTINUE] = function()
+      advance_token()
+      return { ast.Continue() }
+    end,
+    [TK.TRY] = function()
+      return { parse_try() }
+    end,
+  }
 
   parse_stmt = function()
     local token = peek_token()
     if not token then
       return nil
     end
-    if token.kind == TK.DEF then
-      return { parse_func_def() }
-    elseif token.kind == TK.CLASS then
-      return { parse_class_def() }
-    elseif token.kind == TK.IF then
-      return { parse_if() }
-    elseif token.kind == TK.WHILE then
-      return { parse_while() }
-    elseif token.kind == TK.FOR then
-      return { parse_for() }
-    elseif token.kind == TK.RETURN then
-      return { parse_return() }
-    elseif token.kind == TK.PASS then
-      advance_token()
-      return { ast.Pass() }
-    elseif token.kind == TK.BREAK then
-      advance_token()
-      return { ast.Break() }
-    elseif token.kind == TK.CONTINUE then
-      advance_token()
-      return { ast.Continue() }
-    elseif token.kind == TK.TRY then
-      return { parse_try() }
-    elseif token.kind == TK.AT then
+    local handler = stmt_dispatch[token.kind]
+    if handler then
+      return handler()
+    end
+    if token.kind == TK.AT then
       local decos = parse_decorators()
       local next_kind = peek_token() and peek_token().kind
       if next_kind == TK.DEF then
@@ -213,9 +230,8 @@ function parser.parse(tokens)
       else
         error("decorator must precede function or class definition")
       end
-    else
-      return { parse_simple_stmt() }
     end
+    return { parse_simple_stmt() }
   end
 
   parse_simple_stmt = function()
@@ -260,6 +276,7 @@ function parser.parse(tokens)
     local name = expect_token(TK.IDENTIFIER)
     expect_token(TK.LPAREN)
     local args = {}
+    local defaults = {}
     local vararg = nil
     local kwarg = nil
     if peek_not(TK.RPAREN) then
@@ -271,7 +288,6 @@ function parser.parse(tokens)
         elseif peek_is(TK.STAR) then
           advance_token()
           if peek_not(TK.IDENTIFIER) then
-            -- bare *, keyword-only separator, skip
             return true
           end
           vararg = expect_token(TK.IDENTIFIER).value
@@ -280,7 +296,7 @@ function parser.parse(tokens)
           args[#args + 1] = expect_token(TK.IDENTIFIER).value
           if peek_is(TK.EQ) then
             advance_token()
-            parse_expr()
+            defaults[#args] = parse_expr()
           end
           return false
         end
@@ -292,7 +308,7 @@ function parser.parse(tokens)
     end
     expect_token(TK.RPAREN)
     local body = parse_block()
-    return ast.FunctionDef(name.value, args, body, decorators, vararg, kwarg)
+    return ast.FunctionDef(name.value, args, body, decorators, vararg, kwarg, defaults)
   end
 
   parse_class_def = function(decorators)
@@ -344,8 +360,7 @@ function parser.parse(tokens)
     advance_token()
     local test = parse_expr()
     local body = parse_block()
-    local or_else = nil
-    or_else = parse_or_else_block()
+    local or_else = parse_or_else_block()
     return ast.While(test, body, or_else)
   end
 
@@ -374,8 +389,7 @@ function parser.parse(tokens)
       iterator = parse_primary()
     end
     local body = parse_block()
-    local or_else = nil
-    or_else = parse_or_else_block()
+    local or_else = parse_or_else_block()
     return ast.For(targets, iterator, body, or_else, is_range, range_args)
   end
 
@@ -424,24 +438,7 @@ function parser.parse(tokens)
       advance_token()
     end
     expect_token(TK.INDENT)
-    local body = {}
-    while peek_not(TK.DEDENT) and peek_token().kind ~= TK.EOF do
-      while peek_is(TK.NEWLINE) do
-        advance_token()
-      end
-      if peek_one_of(TK.DEDENT, TK.EOF) then
-        break
-      end
-      local stmts = parse_stmt()
-      if stmts then
-        for _, s in ipairs(stmts) do
-          body[#body + 1] = s
-        end
-      end
-      while peek_is(TK.NEWLINE) do
-        advance_token()
-      end
-    end
+    local body = parse_statements()
     expect_token(TK.DEDENT)
     return body
   end
@@ -705,7 +702,7 @@ function parser.parse(tokens)
     elseif current_token.kind == TK.STRING then
       advance_token()
       local val = current_token.value:sub(2, #current_token.value - 1)
-      return ast.Constant(unescape_string(val))
+      return ast.Constant(util.unescape(val))
     elseif current_token.kind == TK.IDENTIFIER then
       advance_token()
       if current_token.value == "super" then
@@ -817,15 +814,6 @@ function parser.parse(tokens)
         .. " col "
         .. current_token.col
     )
-  end
-
-  unescape_string = function(s)
-    s = s:gsub("\\\\", "\\")
-    s = s:gsub("\\n", "\n")
-    s = s:gsub("\\t", "\t")
-    s = s:gsub('\\"', '"')
-    s = s:gsub("\\'", "'")
-    return s
   end
 
   return parse_program()

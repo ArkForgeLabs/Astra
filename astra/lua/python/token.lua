@@ -99,7 +99,7 @@ local keyword_token_map = {
   ["class"] = TK.CLASS,
 }
 
-local two_character_tokens = {
+local multi_character_tokens = {
   ["=="] = TK.EQEQ,
   ["!="] = TK.NOTEQ,
   ["<="] = TK.LESSEQ,
@@ -148,7 +148,7 @@ return {
   TK = TK,
   token_names = token_names,
   keyword_token_map = keyword_token_map,
-  two_character_tokens = two_character_tokens,
+  multi_character_tokens = multi_character_tokens,
   single_character_tokens = single_character_tokens,
   multiplicative_operators = multiplicative_operators,
 }

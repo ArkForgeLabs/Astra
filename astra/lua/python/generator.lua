@@ -1,4 +1,5 @@
 local ast = require("python.ast")
+local util = require("python.util")
 local generator = {}
 function generator.generate(prog)
   local indent_level = 0
@@ -12,9 +13,17 @@ function generator.generate(prog)
   end
 
   -- pre-declare recursive functions for Lua 5.1
-  local gen_body, with_indent, gen_str, gen_expr, gen_stmt
-  local gen_comprehension_loops, gen_dictcomp_loops
+  local gen_body, with_indent, gen_expr, gen_stmt
+  local gen_comp_loops
   local gen_subscript_target
+
+  local function gen_index(expr)
+    local idx = gen_expr(expr.index)
+    if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
+      return idx
+    end
+    return idx .. " + 1"
+  end
 
   gen_body = function(body)
     for _, s in ipairs(body) do
@@ -28,18 +37,9 @@ function generator.generate(prog)
     indent_level = indent_level - 1
   end
 
-  gen_str = function(s)
-    s = s:gsub("\\", "\\\\")
-    s = s:gsub("\n", "\\n")
-    s = s:gsub("\t", "\\t")
-    s = s:gsub('"', '\\"')
-    s = s:gsub("'", "\\'")
-    return '"' .. s .. '"'
-  end
-
-  gen_comprehension_loops = function(element, generators, idx)
+  gen_comp_loops = function(inner_fn, generators, idx)
     if idx > #generators then
-      return "__res[#__res + 1] = " .. gen_expr(element) .. "; "
+      return inner_fn()
     end
     local g = generators[idx]
     local parts = {}
@@ -47,24 +47,7 @@ function generator.generate(prog)
     for _, if_expr in ipairs(g.ifs or {}) do
       parts[#parts + 1] = "if " .. gen_expr(if_expr) .. " then "
     end
-    parts[#parts + 1] = gen_comprehension_loops(element, generators, idx + 1)
-    for _ in ipairs(g.ifs or {}) do
-      parts[#parts + 1] = "end "
-    end
-    parts[#parts + 1] = "end "
-    return table.concat(parts)
-  end
-  gen_dictcomp_loops = function(key, val, generators, idx)
-    if idx > #generators then
-      return "__res[" .. key .. "] = " .. val .. "; "
-    end
-    local g = generators[idx]
-    local parts = {}
-    parts[#parts + 1] = "for _, " .. g.target .. " in ipairs(" .. gen_expr(g.iterator) .. ") do "
-    for _, if_expr in ipairs(g.ifs or {}) do
-      parts[#parts + 1] = "if " .. gen_expr(if_expr) .. " then "
-    end
-    parts[#parts + 1] = gen_dictcomp_loops(key, val, generators, idx + 1)
+    parts[#parts + 1] = gen_comp_loops(inner_fn, generators, idx + 1)
     for _ in ipairs(g.ifs or {}) do
       parts[#parts + 1] = "end "
     end
@@ -72,25 +55,42 @@ function generator.generate(prog)
     return table.concat(parts)
   end
 
-  local function compare_values(l, op, r)
-    if op == "!=" then
+  local compare_handlers = {
+    ["!="] = function(l, r)
       return "(" .. l .. " ~= " .. r .. ")"
-    elseif op == "is" then
+    end,
+    ["is"] = function(l, r)
       return "(" .. l .. " == " .. r .. ")"
-    elseif op == "is not" then
+    end,
+    ["is not"] = function(l, r)
       return "(" .. l .. " ~= " .. r .. ")"
-    elseif op == "in" then
+    end,
+    ["in"] = function(l, r)
       return "__py_in(" .. r .. ", " .. l .. ")"
-    elseif op == "not in" then
+    end,
+    ["not in"] = function(l, r)
       return "not __py_in(" .. r .. ", " .. l .. ")"
-    else
-      return "(" .. l .. " " .. op .. " " .. r .. ")"
+    end,
+  }
+  local function compare_values(l, op, r)
+    local h = compare_handlers[op]
+    if h then
+      return h(l, r)
     end
+    return "(" .. l .. " " .. op .. " " .. r .. ")"
   end
 
   local function is_lua_module(name)
     local modules = { math = true, string = true, table = true, io = true, os = true, debug = true, coroutine = true }
     return modules[name]
+  end
+
+  local function gen_list(expr)
+    local elements = {}
+    for _, e in ipairs(expr.elements) do
+      elements[#elements + 1] = gen_expr(e)
+    end
+    return "{" .. table.concat(elements, ", ") .. "}"
   end
 
   local expr_handlers = {
@@ -106,7 +106,7 @@ function generator.generate(prog)
         return "false"
       end
       if type(v) == "string" then
-        return gen_str(v)
+        return util.escape(v)
       end
       return tostring(v)
     end,
@@ -212,7 +212,7 @@ function generator.generate(prog)
       if expr.keywords and #expr.keywords > 0 then
         local kw_parts = {}
         for _, kw in ipairs(expr.keywords) do
-          kw_parts[#kw_parts + 1] = "{arg=" .. gen_str(kw.arg) .. ", value=" .. gen_expr(kw.value) .. "}"
+          kw_parts[#kw_parts + 1] = "{arg=" .. util.escape(kw.arg) .. ", value=" .. gen_expr(kw.value) .. "}"
         end
         return "__py_call("
           .. gen_expr(expr.func)
@@ -232,35 +232,23 @@ function generator.generate(prog)
         local step = expr.index.step and gen_expr(expr.index.step) or "nil"
         return "__py_slice(" .. v .. ", " .. lower .. ", " .. upper .. ", " .. step .. ")"
       end
-      local idx = gen_expr(expr.index)
+      local idx = gen_index(expr)
       if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
         return v .. "[" .. idx .. "]"
       end
-      return "__py_getitem(" .. v .. ", " .. idx .. " + 1)"
+      return "__py_getitem(" .. v .. ", " .. idx .. ")"
     end,
     [ast.ATTRIBUTE] = function(expr)
       return gen_expr(expr.value) .. "." .. expr.attr
     end,
-    [ast.LIST] = function(expr)
-      local elements = {}
-      for _, e in ipairs(expr.elements) do
-        elements[#elements + 1] = gen_expr(e)
-      end
-      return "{" .. table.concat(elements, ", ") .. "}"
-    end,
+    [ast.LIST] = gen_list,
+    [ast.SET] = gen_list,
     [ast.DICT] = function(expr)
       local items = {}
       for i = 1, #expr.keys do
         items[#items + 1] = "[" .. gen_expr(expr.keys[i]) .. "] = " .. gen_expr(expr.values[i])
       end
       return "{" .. table.concat(items, ", ") .. "}"
-    end,
-    [ast.SET] = function(expr)
-      local elements = {}
-      for _, e in ipairs(expr.elements) do
-        elements[#elements + 1] = gen_expr(e)
-      end
-      return "{" .. table.concat(elements, ", ") .. "}"
     end,
     [ast.TUPLE] = function(expr)
       local elements = {}
@@ -304,19 +292,25 @@ function generator.generate(prog)
     end,
     [ast.LIST_COMP] = function(expr)
       return "(function() local __res = {} "
-        .. gen_comprehension_loops(expr.element, expr.generators, 1)
+        .. gen_comp_loops(function()
+          return "__res[#__res + 1] = " .. gen_expr(expr.element) .. "; "
+        end, expr.generators, 1)
         .. " return __res end)()"
     end,
     [ast.SET_COMP] = function(expr)
       return "(function() local __res = {} "
-        .. gen_comprehension_loops(expr.element, expr.generators, 1)
+        .. gen_comp_loops(function()
+          return "__res[#__res + 1] = " .. gen_expr(expr.element) .. "; "
+        end, expr.generators, 1)
         .. " return __res end)()"
     end,
     [ast.DICT_COMP] = function(expr)
       local key = gen_expr(expr.key)
       local val = gen_expr(expr.value)
       return "(function() local __res = {} "
-        .. gen_dictcomp_loops(key, val, expr.generators, 1)
+        .. gen_comp_loops(function()
+          return "__res[" .. key .. "] = " .. val .. "; "
+        end, expr.generators, 1)
         .. " return __res end)()"
     end,
   }
@@ -331,7 +325,7 @@ function generator.generate(prog)
   local function flatten_targets(tt)
     local result = {}
     for _, t in ipairs(tt) do
-      if t.type == "List" or t.type == "Tuple" then
+      if t.type == ast.LIST or t.type == ast.TUPLE then
         for _, e in ipairs(t.elements) do
           result[#result + 1] = gen_subscript_target(e)
         end
@@ -344,11 +338,11 @@ function generator.generate(prog)
 
   gen_subscript_target = function(expr)
     if expr.type == ast.SUBSCRIPT then
-      local idx = gen_expr(expr.index)
-      if expr.index.type == "Constant" and type(expr.index.value) == "string" then
+      local idx = gen_index(expr)
+      if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
         return gen_expr(expr.value) .. "[" .. idx .. "]"
       end
-      return gen_expr(expr.value) .. "[" .. idx .. " + 1]"
+      return gen_expr(expr.value) .. "[" .. idx .. "]"
     end
     return gen_expr(expr)
   end
@@ -364,11 +358,27 @@ function generator.generate(prog)
     return table.concat(parts, ", ")
   end
 
+  local function apply_decorators(stmt)
+    if not stmt.decorators then
+      return
+    end
+    for i = #stmt.decorators, 1, -1 do
+      local d = stmt.decorators[i]
+      push(indent() .. stmt.name .. " = " .. gen_expr(d) .. "(" .. stmt.name .. ")")
+    end
+  end
+
   local stmt_handlers = {
     [ast.FUNCTION_DEF] = function(stmt)
       local has_decos = stmt.decorators and #stmt.decorators > 0
       local sig = gen_fn_sig(stmt.args, stmt.vararg, stmt.kwarg)
       local function emit_body()
+        for i, d in ipairs(stmt.args) do
+          local def = stmt.defaults[i]
+          if def then
+            push(indent() .. "if " .. d .. " == nil then " .. d .. " = " .. gen_expr(def) .. " end")
+          end
+        end
         if stmt.vararg then
           push(indent() .. "local " .. stmt.vararg .. " = {...}")
         end
@@ -392,10 +402,7 @@ function generator.generate(prog)
           push(indent() .. stmt.name .. " = __fn")
         end)
         push(indent() .. "end")
-        for i = #stmt.decorators, 1, -1 do
-          local d = stmt.decorators[i]
-          push(indent() .. stmt.name .. " = " .. gen_expr(d) .. "(" .. stmt.name .. ")")
-        end
+        apply_decorators(stmt)
       else
         push(indent() .. "function " .. stmt.name .. "(" .. sig .. ")")
         with_indent(function()
@@ -502,7 +509,7 @@ function generator.generate(prog)
               push(
                 indent()
                   .. "function __mt.__newindex(t, k, v) if k == "
-                  .. gen_str(prop_name)
+                  .. util.escape(prop_name)
                   .. " then __class."
                   .. prop_name
                   .. "(t, v) else rawset(t, k, v) end end"
@@ -518,7 +525,7 @@ function generator.generate(prog)
           push(indent() .. "__mt.__index = function(_, k)")
           with_indent(function()
             for name, _ in pairs(property_getters) do
-              push(indent() .. "if k == " .. gen_str(name) .. " then return __class." .. name .. "(_, _) end")
+              push(indent() .. "if k == " .. util.escape(name) .. " then return __class." .. name .. "(_, _) end")
             end
             push(indent() .. "return __class[k]")
           end)
@@ -527,10 +534,7 @@ function generator.generate(prog)
         push(indent() .. stmt.name .. " = __class")
       end)
       push(indent() .. "end")
-      for i = #stmt.decorators, 1, -1 do
-        local d = stmt.decorators[i]
-        push(indent() .. stmt.name .. " = " .. gen_expr(d) .. "(" .. stmt.name .. ")")
-      end
+      apply_decorators(stmt)
     end,
     [ast.IF] = function(stmt)
       push(indent() .. "if " .. gen_expr(stmt.test) .. " then")
@@ -636,7 +640,6 @@ function generator.generate(prog)
       if
         not (stmt.expr.type == ast.CONSTANT and type(stmt.expr.value) == "string")
         and not (stmt.expr.type == ast.NAME)
-        and not (stmt.expr.type == ast.MODULE)
       then
         push(indent() .. gen_expr(stmt.expr))
       end
@@ -662,8 +665,6 @@ function generator.generate(prog)
             if h.name then
               push(indent() .. "local " .. h.name .. " = __py_err")
             end
-          end
-          for _, h in ipairs(stmt.handlers) do
             gen_body(h.body)
           end
         end)

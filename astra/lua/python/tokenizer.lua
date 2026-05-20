@@ -1,7 +1,7 @@
 local token = require("python.token")
 local TK = token.TK
 local keyword_token_map = token.keyword_token_map
-local two_character_tokens = token.two_character_tokens
+local multi_character_tokens = token.multi_character_tokens
 local single_character_tokens = token.single_character_tokens
 
 local tokenizer = {}
@@ -185,12 +185,12 @@ function tokenizer.tokenize(source)
       local next_two = i + 1 <= n and source:sub(i, i + 1) or ""
       local next_three = i + 2 <= n and source:sub(i, i + 2) or ""
 
-      if two_character_tokens[next_three] then
-        emit_token(two_character_tokens[next_three], next_three)
+      if multi_character_tokens[next_three] then
+        emit_token(multi_character_tokens[next_three], next_three)
         i = i + 3
         col = col + 3
-      elseif two_character_tokens[next_two] then
-        emit_token(two_character_tokens[next_two], next_two)
+      elseif multi_character_tokens[next_two] then
+        emit_token(multi_character_tokens[next_two], next_two)
         i = i + 2
         col = col + 2
       elseif single_character_tokens[ch] then
