@@ -357,6 +357,162 @@ local function unreachable_pass(prog)
   recurse(prog.body)
 end
 
+local function stdlib_usage_pass(prog, analysis)
+  analysis.used_stdlib = {}
+  local used = analysis.used_stdlib
+
+  local alias_names = {
+    len = "__py_len",
+    int = "__py_int",
+    range = "__py_range",
+    isinstance = "__py_isinstance",
+    issubclass = "__py_issubclass",
+  }
+
+  local function walk_expr(expr)
+    if not expr or type(expr) ~= "table" then return end
+    if expr.type == ast.CALL then
+      if expr.keywords and #expr.keywords > 0 then
+        used.__py_call = true
+      end
+      if expr.func.type == ast.SUPER then
+        used.__py_super = true
+      end
+      if expr.func.type == ast.NAME then
+        local alias = alias_names[expr.func.id]
+        if alias then
+          expr.func.id = alias
+          used[alias] = true
+          -- isinstance/issubclass may reference int/str/chr as type arguments
+          if alias == "__py_isinstance" or alias == "__py_issubclass" then
+          end
+        end
+      end
+      if expr.func.type == ast.ATTRIBUTE and not (expr.keywords and #expr.keywords > 0) then
+        if expr.func.attr == "items" and #expr.args == 0 then
+          used.__py_items = true
+        elseif expr.func.attr == "endswith" and #expr.args == 1 then
+          used.__py_endswith = true
+        end
+      end
+    elseif expr.type == ast.SUBSCRIPT then
+      if expr.index.type == ast.SLICE then
+        used.__py_slice = true
+      end
+      if expr.index.type ~= ast.CONSTANT or type(expr.index.value) ~= "string" then
+        used.__py_getitem = true
+      end
+    elseif expr.type == ast.COMPARE then
+      for _, op in ipairs(expr.ops) do
+        if op == "in" or op == "not in" then
+          used.__py_in = true
+          break
+        end
+      end
+    elseif expr.type == ast.BIN_OP and expr.op == "*" then
+      if expr.left.type == ast.LIST
+        or expr.left.type == ast.SET
+        or expr.left.type == ast.TUPLE
+        or expr.right.type == ast.LIST
+        or expr.right.type == ast.SET
+        or expr.right.type == ast.TUPLE
+      then
+        used.__py_repeat = true
+      end
+    end
+    if expr.type == ast.CALL then
+      walk_expr(expr.func)
+      for _, a in ipairs(expr.args or {}) do walk_expr(a) end
+      for _, kw in ipairs(expr.keywords or {}) do walk_expr(kw.value) end
+    elseif expr.type == ast.BIN_OP then
+      walk_expr(expr.left); walk_expr(expr.right)
+    elseif expr.type == ast.UNARY_OP then walk_expr(expr.operand)
+    elseif expr.type == ast.BOOL_OP then
+      for _, v in ipairs(expr.values) do walk_expr(v) end
+    elseif expr.type == ast.COMPARE then
+      walk_expr(expr.left)
+      for _, c in ipairs(expr.comparators) do walk_expr(c) end
+    elseif expr.type == ast.SUBSCRIPT then
+      walk_expr(expr.value); walk_expr(expr.index)
+    elseif expr.type == ast.ATTRIBUTE then walk_expr(expr.value)
+    elseif expr.type == ast.LIST or expr.type == ast.SET or expr.type == ast.TUPLE then
+      for _, e in ipairs(expr.elements or {}) do walk_expr(e) end
+    elseif expr.type == ast.DICT then
+      for _, k in ipairs(expr.keys or {}) do walk_expr(k) end
+      for _, v in ipairs(expr.values or {}) do walk_expr(v) end
+    elseif expr.type == ast.LAMBDA then walk_expr(expr.body)
+    elseif expr.type == ast.WALRUS then walk_expr(expr.target); walk_expr(expr.value)
+    elseif expr.type == ast.IF_EXPR then
+      walk_expr(expr.test); walk_expr(expr.body); walk_expr(expr.or_else)
+    elseif expr.type == ast.LIST_COMP or expr.type == ast.SET_COMP then
+      walk_expr(expr.element)
+      for _, g in ipairs(expr.generators or {}) do
+        walk_expr(g.iterator)
+        for _, if_expr in ipairs(g.ifs or {}) do walk_expr(if_expr) end
+      end
+    elseif expr.type == ast.DICT_COMP then
+      walk_expr(expr.key); walk_expr(expr.value)
+      for _, g in ipairs(expr.generators or {}) do
+        walk_expr(g.iterator)
+        for _, if_expr in ipairs(g.ifs or {}) do walk_expr(if_expr) end
+      end
+    elseif expr.type == ast.STARRED then walk_expr(expr.value)
+    end
+  end
+
+  local function walk_stmt(stmt)
+    if not stmt or type(stmt) ~= "table" then return end
+    if stmt.type == ast.FUNCTION_DEF or stmt.type == ast.CLASS_DEF then
+      for _, d in ipairs(stmt.decorators or {}) do walk_expr(d) end
+      for _, s in ipairs(stmt.body or {}) do walk_stmt(s) end
+    elseif stmt.type == ast.IF then
+      walk_expr(stmt.test)
+      for _, s in ipairs(stmt.body or {}) do walk_stmt(s) end
+      for _, elif in ipairs(stmt.elifs or {}) do
+        walk_expr(elif.test)
+        for _, s in ipairs(elif.body or {}) do walk_stmt(s) end
+      end
+      if stmt.or_else then
+        for _, s in ipairs(stmt.or_else) do walk_stmt(s) end
+      end
+    elseif stmt.type == ast.WHILE then
+      walk_expr(stmt.test)
+      for _, s in ipairs(stmt.body or {}) do walk_stmt(s) end
+      if stmt.or_else then
+        for _, s in ipairs(stmt.or_else) do walk_stmt(s) end
+      end
+    elseif stmt.type == ast.FOR then
+      if stmt.iterator then walk_expr(stmt.iterator) end
+      for _, arg in ipairs(stmt.range_args or {}) do walk_expr(arg) end
+      for _, s in ipairs(stmt.body or {}) do walk_stmt(s) end
+      if stmt.or_else then
+        for _, s in ipairs(stmt.or_else) do walk_stmt(s) end
+      end
+    elseif stmt.type == ast.TRY then
+      for _, s in ipairs(stmt.body or {}) do walk_stmt(s) end
+      for _, h in ipairs(stmt.handlers or {}) do
+        for _, s in ipairs(h.body or {}) do walk_stmt(s) end
+      end
+      if stmt.finally_body then
+        for _, s in ipairs(stmt.finally_body) do walk_stmt(s) end
+      end
+    elseif stmt.type == ast.RETURN then
+      if stmt.value then walk_expr(stmt.value) end
+    elseif stmt.type == ast.ASSIGN then
+      for _, t in ipairs(stmt.targets or {}) do walk_expr(t) end
+      if stmt.value then walk_expr(stmt.value) end
+    elseif stmt.type == ast.AUG_ASSIGN then
+      walk_expr(stmt.target); walk_expr(stmt.value)
+    elseif stmt.type == ast.EXPR_STMT then
+      walk_expr(stmt.expr)
+    end
+  end
+
+  for _, stmt in ipairs(prog.body or {}) do
+    walk_stmt(stmt)
+  end
+end
+
 function optimizer.analyze(prog, opts)
   opts = opts or {}
   local analysis = {}
@@ -376,6 +532,9 @@ function optimizer.analyze(prog, opts)
   end
   if optimize and opts.unreachable_prune ~= false then
     unreachable_pass(prog)
+  end
+  if optimize and opts.stdlib_inline ~= false then
+    stdlib_usage_pass(prog, analysis)
   end
 
   return analysis

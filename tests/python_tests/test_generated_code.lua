@@ -11,9 +11,9 @@ end
 
 return function(test)
 
-test.it("generates __py_getitem for list access", function()
+test.it("generates inline subscript for list access", function()
   local lua = python.transpile("items[0]")
-  test.expect(lua).to.match("__py_getitem%(items, 0 %+ 1%)")
+  test.expect(lua).to.match("items%[0 %+ 1%]")
 end)
 
 test.it("generates __py_slice for slice access", function()
@@ -57,9 +57,9 @@ test.it("generates __py_items for .items()", function()
   test.expect(lua).to.match("__py_items%(")
 end)
 
-test.it("generates __py_endswith for .endswith()", function()
+test.it("generates inline endswith for .endswith()", function()
   local lua = python.transpile('s.endswith("x")')
-  test.expect(lua).to.match("__py_endswith%(")
+  test.expect(lua).to.match(":sub%(%-")
 end)
 
 test.it("generates __name__ == __main__ guard", function()
@@ -82,9 +82,10 @@ test.it("string concatenation uses Lua ..", function()
   test.expect(lua).to.match("%.%.%s")
 end)
 
-test.it("preamble loads stdlib via require", function()
-  local lua = python.transpile("")
-  test.expect(lua).to.match("require")
+test.it("preamble inlines stdlib functions", function()
+  local lua = python.transpile("x = len([1,2,3])")
+  test.expect(lua).to.match("getmetatable")
+  test.expect(lua).to.match("local chr, ord, str, int")
 end)
 
 test.it("class generates __call metamethod", function()
