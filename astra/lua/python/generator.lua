@@ -1,7 +1,8 @@
 local ast = require("python.ast")
 local util = require("python.util")
 local generator = {}
-function generator.generate(prog)
+function generator.generate(prog, analysis)
+  analysis = analysis or {}
   local indent_level = 0
   local parts = {}
 
@@ -396,7 +397,7 @@ function generator.generate(prog)
             emit_body()
           end)
           push(indent() .. "end")
-          if #stmt.args > 0 then
+          if analysis.has_kwargs and #stmt.args > 0 then
             push(indent() .. '__py_fn_params[__fn] = {"' .. table.concat(stmt.args, '", "') .. '"}')
           end
           push(indent() .. stmt.name .. " = __fn")
@@ -409,7 +410,7 @@ function generator.generate(prog)
           emit_body()
         end)
         push(indent() .. "end")
-        if #stmt.args > 0 then
+        if analysis.has_kwargs and #stmt.args > 0 then
           push(indent() .. "__py_fn_params[" .. stmt.name .. '] = {"' .. table.concat(stmt.args, '", "') .. '"}')
         end
       end
