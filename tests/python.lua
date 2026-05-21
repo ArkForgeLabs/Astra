@@ -31,12 +31,15 @@ print(1 + 2)
     end)
 
     test.it("handles blank lines before indented blocks", function()
-      local ok = pcall(python.run, [[
+      local ok = pcall(
+        python.run,
+        [[
 def foo():
 
     return 42
 print(foo())
-]])
+]]
+      )
       test.expect(ok).to.equal(true)
     end)
 
@@ -146,7 +149,7 @@ def outer():
 
     -- ============================================================
     -- TDD: Features not yet implemented — tests document expected behavior
-    
+
     -- ============================================================
     -- TDD: Features not yet implemented
     -- ============================================================
@@ -212,7 +215,9 @@ return x[1:3]
     end)
 
     test.it("TDD: try/except/finally", function()
-      local ok, result = pcall(python.run, [[
+      local ok, result = pcall(
+        python.run,
+        [[
 try:
     x = 1
 except:
@@ -220,7 +225,8 @@ except:
 finally:
     y = 3
 return x + y
-]])
+]]
+      )
       test.expect(ok).to.equal(true)
       test.expect(result).to.equal(4)
     end)
@@ -489,7 +495,7 @@ items = [1, 2, 3, 4, 5]
 items[1:3] = [9, 9]
 return items
 ]])
-      local expected = {1, 9, 9, 4, 5}
+      local expected = { 1, 9, 9, 4, 5 }
       test.expect(#result).to.equal(#expected)
       for i = 1, #expected do
         test.expect(result[i]).to.equal(expected[i])

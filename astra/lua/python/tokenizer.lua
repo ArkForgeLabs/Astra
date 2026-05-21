@@ -9,8 +9,8 @@ function tokenizer.tokenize(source)
   local tokens = {}
   local line = 1
   local col = 1
-  local i = 1
-  local n = #source
+  local source_pos = 1
+  local source_len = #source
   local indent_stack = { 0 }
   local at_line_start = true
   local bracket_depth = 0
@@ -27,7 +27,7 @@ function tokenizer.tokenize(source)
   }
 
   local function advance_char()
-    i = i + 1
+    source_pos = source_pos + 1
     col = col + 1
   end
 
@@ -54,29 +54,29 @@ function tokenizer.tokenize(source)
 
   local function read_quoted_string(start_index, quote_char)
     advance_char()
-    if source:sub(i, i + 1) == quote_char .. quote_char then
-      i = i + 2
+    if source:sub(source_pos, source_pos + 1) == quote_char .. quote_char then
+      source_pos = source_pos + 2
       col = col + 2
-      while i <= n do
-        if source:sub(i, i + 2) == quote_char .. quote_char .. quote_char then
-          i = i + 3
+      while source_pos <= source_len do
+        if source:sub(source_pos, source_pos + 2) == quote_char .. quote_char .. quote_char then
+          source_pos = source_pos + 3
           col = col + 3
           break
         end
-        if source:sub(i, i) == "\n" then
+        if source:sub(source_pos, source_pos) == "\n" then
           line = line + 1
           col = 1
         else
           col = col + 1
         end
-        i = i + 1
+        source_pos = source_pos + 1
       end
-      emit_token(TK.STRING, source:sub(start_index, i - 1))
+      emit_token(TK.STRING, source:sub(start_index, source_pos - 1))
     else
-      while i <= n do
-        local c = source:sub(i, i)
+      while source_pos <= source_len do
+        local c = source:sub(source_pos, source_pos)
         if c == "\\" then
-          i = i + 2
+          source_pos = source_pos + 2
           col = col + 2
         elseif c == quote_char then
           advance_char()
@@ -85,31 +85,34 @@ function tokenizer.tokenize(source)
           advance_char()
         end
       end
-      emit_token(TK.STRING, source:sub(start_index, i - 1))
+      emit_token(TK.STRING, source:sub(start_index, source_pos - 1))
     end
   end
 
-  while i <= n do
-    local ch = source:sub(i, i)
+  while source_pos <= source_len do
+    local char = source:sub(source_pos, source_pos)
 
-    if ch == "\n" then
+    if char == "\n" then
       if bracket_depth > 0 then
-        i = i + 1
+        source_pos = source_pos + 1
         line = line + 1
         col = 1
       else
         emit_token(TK.NEWLINE, "\n")
         line = line + 1
         col = 1
-        i = i + 1
+        source_pos = source_pos + 1
         at_line_start = true
       end
+    -- Indent/dedent tracking: counts leading whitespace (mixing tabs/spaces),
+    -- compares against the indent stack, and emits INDENT/DEDENT tokens.
+    -- Bracketed expressions suppress indent tracking (bracket_depth > 0).
     elseif at_line_start then
-      if ch == " " or ch == "\t" then
+      if char == " " or char == "\t" then
         local indent_count = 0
-        local indent_char = ch
-        while i <= n do
-          local c = source:sub(i, i)
+        local indent_char = char
+        while source_pos <= source_len do
+          local c = source:sub(source_pos, source_pos)
           if c == " " or c == "\t" then
             indent_count = indent_count + (c ~= indent_char and (c == "\t" and 4 or 1) or 1)
             advance_char()
@@ -117,13 +120,13 @@ function tokenizer.tokenize(source)
             break
           end
         end
-        local cur = indent_stack[#indent_stack]
-        local nx = i <= n and source:sub(i, i) or ""
-        if nx ~= "\n" and nx ~= "" then
-          if indent_count > cur then
+        local current_indent = indent_stack[#indent_stack]
+        local next_char = source_pos <= source_len and source:sub(source_pos, source_pos) or ""
+        if next_char ~= "\n" and next_char ~= "" then
+          if indent_count > current_indent then
             emit_token(TK.INDENT)
             indent_stack[#indent_stack + 1] = indent_count
-          elseif indent_count < cur then
+          elseif indent_count < current_indent then
             while #indent_stack > 1 and indent_stack[#indent_stack] > indent_count do
               emit_token(TK.DEDENT)
               indent_stack[#indent_stack] = nil
@@ -138,18 +141,18 @@ function tokenizer.tokenize(source)
         end
         at_line_start = false
       end
-    elseif ch == "#" then
-      while i <= n and source:sub(i, i) ~= "\n" do
+    elseif char == "#" then
+      while source_pos <= source_len and source:sub(source_pos, source_pos) ~= "\n" do
         advance_char()
       end
-    elseif ch == '"' or ch == "'" then
-      read_quoted_string(i, ch)
-    elseif ch >= "0" and ch <= "9" then
-      local start_index = i
+    elseif char == '"' or char == "'" then
+      read_quoted_string(source_pos, char)
+    elseif char >= "0" and char <= "9" then
+      local start_index = source_pos
       local is_float = false
       advance_char()
-      while i <= n do
-        local c = source:sub(i, i)
+      while source_pos <= source_len do
+        local c = source:sub(source_pos, source_pos)
         if c >= "0" and c <= "9" then
           advance_char()
         elseif c == "." then
@@ -162,57 +165,61 @@ function tokenizer.tokenize(source)
           break
         end
       end
-      emit_token(is_float and TK.FLOAT or TK.INTEGER, source:sub(start_index, i - 1))
-    elseif (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or ch == "_" then
-      local start_index = i
+      emit_token(is_float and TK.FLOAT or TK.INTEGER, source:sub(start_index, source_pos - 1))
+    elseif (char >= "a" and char <= "z") or (char >= "A" and char <= "Z") or char == "_" then
+      local start_index = source_pos
       advance_char()
-      while i <= n do
-        local c = source:sub(i, i)
+      while source_pos <= source_len do
+        local c = source:sub(source_pos, source_pos)
         if (c >= "a" and c <= "z") or (c >= "A" and c <= "Z") or (c >= "0" and c <= "9") or c == "_" then
           advance_char()
         else
           break
         end
       end
-      local word = source:sub(start_index, i - 1)
-      local next_char = i <= n and source:sub(i, i) or ""
+      local word = source:sub(start_index, source_pos - 1)
+      local next_char = source_pos <= source_len and source:sub(source_pos, source_pos) or ""
       if (next_char == '"' or next_char == "'") and is_string_prefix(word) then
         read_quoted_string(start_index + #word, next_char)
       else
         emit_token(keyword_token_map[word] or TK.IDENTIFIER, word)
       end
     else
-      local next_two = i + 1 <= n and source:sub(i, i + 1) or ""
-      local next_three = i + 2 <= n and source:sub(i, i + 2) or ""
+      local next_two = source_pos + 1 <= source_len and source:sub(source_pos, source_pos + 1) or ""
+      local next_three = source_pos + 2 <= source_len and source:sub(source_pos, source_pos + 2) or ""
 
       if multi_character_tokens[next_three] then
         emit_token(multi_character_tokens[next_three], next_three)
-        i = i + 3
+        source_pos = source_pos + 3
         col = col + 3
       elseif multi_character_tokens[next_two] then
         emit_token(multi_character_tokens[next_two], next_two)
-        i = i + 2
+        source_pos = source_pos + 2
         col = col + 2
-      elseif single_character_tokens[ch] then
-        emit_token(single_character_tokens[ch], ch)
+      elseif single_character_tokens[char] then
+        emit_token(single_character_tokens[char], char)
         advance_char()
-      elseif ch == " " or ch == "\t" or ch == "\r" then
+      elseif char == " " or char == "\t" or char == "\r" then
         advance_char()
-      elseif ch == "\\" then
-        local next_char = i + 1 <= n and source:sub(i + 1, i + 1) or ""
+      elseif char == "\\" then
+        local next_char = source_pos + 1 <= source_len and source:sub(source_pos + 1, source_pos + 1) or ""
         if next_char == "\n" then
-          i = i + 2
+          source_pos = source_pos + 2
           line = line + 1
           col = 1
-        elseif next_char == "\r" and i + 2 <= n and source:sub(i + 2, i + 2) == "\n" then
-          i = i + 3
+        elseif
+          next_char == "\r"
+          and source_pos + 2 <= source_len
+          and source:sub(source_pos + 2, source_pos + 2) == "\n"
+        then
+          source_pos = source_pos + 3
           line = line + 1
           col = 1
         else
-          error("syntax error at line " .. line .. " col " .. col .. ": unexpected character " .. ch)
+          error("syntax error at line " .. line .. " col " .. col .. ": unexpected character " .. char)
         end
       else
-        error("syntax error at line " .. line .. " col " .. col .. ": unexpected character " .. ch)
+        error("syntax error at line " .. line .. " col " .. col .. ": unexpected character " .. char)
       end
     end
   end

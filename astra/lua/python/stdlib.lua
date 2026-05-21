@@ -10,7 +10,7 @@ _G.chr = string.char
 _G.ord = string.byte
 _G.str = tostring
 
-function stdlib.__py_len(x)
+function stdlib.__py_len(value)
   local mt = getmetatable(x)
   if mt and mt.__len then
     return mt.__len(x)
@@ -18,13 +18,13 @@ function stdlib.__py_len(x)
   return #x
 end
 
-function stdlib.__py_int(x)
+function stdlib.__py_int(value)
   return type(x) == "number" and math.floor(x) or tonumber(x)
 end
 
-function stdlib.__py_slice(tbl, start, stop, step)
-  local s, e, st = start, stop, step or 1
-  local n = #tbl
+function stdlib.__py_slice(tbl, start_val, end_val, step_val)
+  local s, e, st = start_val, end_val, step_val or 1
+  local length = #tbl
   if st > 0 then
     if s == nil then
       s = 0
@@ -58,8 +58,8 @@ end
 
 function stdlib.__py_in(container, item)
   if type(container) == "table" then
-    for _, __v in ipairs(container) do
-      if __v == item then
+    for _, __elem in ipairs(container) do
+      if __elem == item then
         return true
       end
     end
@@ -71,16 +71,16 @@ function stdlib.__py_in(container, item)
 end
 
 function stdlib.__py_repeat(val, n)
-  local res = {}
+  local result = {}
   if type(val) == "table" then
-    for _ = 1, n do
-      for _, __v in ipairs(val) do
-        res[#res + 1] = __v
+    for _ = 1, count do
+      for _, __elem in ipairs(val) do
+        result[#result + 1] = __elem
       end
     end
   else
-    for _ = 1, n do
-      res[#res + 1] = val
+    for _ = 1, count do
+      result[#result + 1] = val
     end
   end
   return res
@@ -193,14 +193,14 @@ end
 
 function stdlib.__py_call(func, args, kwargs, params)
   if not params then
-    local all = {}
-    for _, a in ipairs(args) do
-      all[#all + 1] = a
+    local all_args = {}
+    for _, arg in ipairs(args) do
+      all_args[#all_args + 1] = a
     end
     for _, kw in ipairs(kwargs) do
-      all[#all + 1] = kw.value
+      all_args[#all_args + 1] = kw.value
     end
-    return func(table.unpack(all))
+    return func(table.unpack(all_args))
   end
   local merged = {}
   for i = 1, #params do

@@ -222,6 +222,8 @@ function generator.generate(prog, analysis)
   local gen_comp_loops
   local gen_subscript_target
 
+  -- Converts Python 0-based index to Lua 1-based by appending +1
+  -- String keys skip the offset (e.g. dict["key"] stays as-is)
   local function gen_index(expr)
     local idx = gen_expr(expr.index)
     if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
@@ -242,18 +244,20 @@ function generator.generate(prog, analysis)
     indent_level = indent_level - 1
   end
 
+  -- Recursively emits for/if clauses for list/set/dict comprehensions
+  -- inner_fn produces the element expression, generators are the for/if clauses
   gen_comp_loops = function(inner_fn, generators, idx)
     if idx > #generators then
       return inner_fn()
     end
-    local g = generators[idx]
+    local gen_clause = generators[idx]
     local parts = {}
-    parts[#parts + 1] = "for _, " .. g.target .. " in ipairs(" .. gen_expr(g.iterator) .. ") do "
-    for _, if_expr in ipairs(g.ifs or {}) do
+    parts[#parts + 1] = "for _, " .. gen_clause.target .. " in ipairs(" .. gen_expr(gen_clause.iterator) .. ") do "
+    for _, if_expr in ipairs(gen_clause.ifs or {}) do
       parts[#parts + 1] = "if " .. gen_expr(if_expr) .. " then "
     end
     parts[#parts + 1] = gen_comp_loops(inner_fn, generators, idx + 1)
-    for _ in ipairs(g.ifs or {}) do
+    for _ in ipairs(gen_clause.ifs or {}) do
       parts[#parts + 1] = "end "
     end
     parts[#parts + 1] = "end "
@@ -261,28 +265,28 @@ function generator.generate(prog, analysis)
   end
 
   local compare_handlers = {
-    ["!="] = function(l, r)
-      return "(" .. l .. " ~= " .. r .. ")"
+    ["!="] = function(left, right)
+      return "(" .. left .. " ~= " .. right .. ")"
     end,
-    ["is"] = function(l, r)
-      return "(" .. l .. " == " .. r .. ")"
+    ["is"] = function(left, right)
+      return "(" .. left .. " == " .. right .. ")"
     end,
-    ["is not"] = function(l, r)
-      return "(" .. l .. " ~= " .. r .. ")"
+    ["is not"] = function(left, right)
+      return "(" .. left .. " ~= " .. right .. ")"
     end,
-    ["in"] = function(l, r)
-      return "__py_in(" .. r .. ", " .. l .. ")"
+    ["in"] = function(left, right)
+      return "__py_in(" .. right .. ", " .. left .. ")"
     end,
-    ["not in"] = function(l, r)
-      return "not __py_in(" .. r .. ", " .. l .. ")"
+    ["not in"] = function(left, right)
+      return "not __py_in(" .. right .. ", " .. left .. ")"
     end,
   }
-  local function compare_values(l, op, r)
+  local function compare_values(left, op, right)
     local h = compare_handlers[op]
     if h then
-      return h(l, r)
+      return h(left, right)
     end
-    return "(" .. l .. " " .. op .. " " .. r .. ")"
+    return "(" .. left .. " " .. op .. " " .. right .. ")"
   end
 
   local function is_lua_module(name)
@@ -298,6 +302,8 @@ function generator.generate(prog, analysis)
     return "{" .. table.concat(elements, ", ") .. "}"
   end
 
+  -- Expression dispatch table: each AST node type maps to a generator function
+  -- that produces a Lua expression string from the AST node
   local expr_handlers = {
     [ast.CONSTANT] = function(expr)
       local v = expr.value
@@ -319,12 +325,12 @@ function generator.generate(prog, analysis)
       return expr.id
     end,
     [ast.BIN_OP] = function(expr)
-      local l = gen_expr(expr.left)
-      local r = gen_expr(expr.right)
+      local left = gen_expr(expr.left)
+      local right = gen_expr(expr.right)
       if expr.op == "**" then
-        return "(" .. l .. " ^ " .. r .. ")"
+        return "(" .. left .. " ^ " .. right .. ")"
       elseif expr.op == "//" then
-        return "math.floor(" .. l .. " / " .. r .. ")"
+        return "math.floor(" .. left .. " / " .. right .. ")"
       elseif
         expr.op == "+"
         and (
@@ -332,13 +338,13 @@ function generator.generate(prog, analysis)
           or (expr.right.type == ast.CONSTANT and type(expr.right.value) == "string")
         )
       then
-        return "(" .. l .. " .. " .. r .. ")"
+        return "(" .. left .. " .. " .. right .. ")"
       elseif expr.op == "*" then
         if expr.left.type == ast.CONSTANT and type(expr.left.value) == "string" then
-          return "string.rep(" .. l .. ", " .. r .. ")"
+          return "string.rep(" .. left .. ", " .. right .. ")"
         end
         if expr.right.type == ast.CONSTANT and type(expr.right.value) == "string" then
-          return "string.rep(" .. r .. ", " .. l .. ")"
+          return "string.rep(" .. right .. ", " .. lefteft .. ")"
         end
         if
           expr.left.type == ast.LIST
@@ -346,11 +352,11 @@ function generator.generate(prog, analysis)
           or expr.right.type == ast.LIST
           or expr.right.type == ast.SET
         then
-          return "__py_repeat(" .. l .. ", " .. r .. ")"
+          return "__py_repeat(" .. left .. ", " .. right .. ")"
         end
-        return "(" .. l .. " * " .. r .. ")"
+        return "(" .. left .. " * " .. right .. ")"
       else
-        return "(" .. l .. " " .. expr.op .. " " .. r .. ")"
+        return "(" .. left .. " " .. expr.op .. " " .. right .. ")"
       end
     end,
     [ast.UNARY_OP] = function(expr)
@@ -379,9 +385,9 @@ function generator.generate(prog, analysis)
         local parts = {}
         local prev = gen_expr(expr.left)
         for i = 1, #expr.ops do
-          local r = gen_expr(expr.comparators[i])
-          parts[#parts + 1] = compare_values(prev, expr.ops[i], r)
-          prev = r
+          local right = gen_expr(expr.comparators[i])
+          parts[#parts + 1] = compare_values(prev, expr.ops[i], right)
+          prev = right
         end
         return table.concat(parts, " and ")
       end
@@ -391,7 +397,17 @@ function generator.generate(prog, analysis)
         local id = expr.func.id
         if id == "len" or id == "__py_len" then
           local a = gen_expr(expr.args[1])
-          return "(getmetatable(" .. a .. ") and getmetatable(" .. a .. ").__len and getmetatable(" .. a .. ").__len(" .. a .. ") or #" .. a .. ")"
+          return "(getmetatable("
+            .. a
+            .. ") and getmetatable("
+            .. a
+            .. ").__len and getmetatable("
+            .. a
+            .. ").__len("
+            .. a
+            .. ") or #"
+            .. a
+            .. ")"
         end
         if id == "int" or id == "__py_int" then
           return "tonumber(" .. gen_expr(expr.args[1]) .. ")"
@@ -411,11 +427,11 @@ function generator.generate(prog, analysis)
         end
       end
       local args = {}
-      for _, a in ipairs(expr.args) do
-        if a.type == ast.STARRED then
-          args[#args + 1] = "table.unpack(" .. gen_expr(a.value) .. ")"
+      for _, arg in ipairs(expr.args) do
+        if arg.type == ast.STARRED then
+          args[#args + 1] = "table.unpack(" .. gen_expr(arg.value) .. ")"
         else
-          args[#args + 1] = gen_expr(a)
+          args[#args + 1] = gen_expr(arg)
         end
       end
       if
@@ -440,9 +456,9 @@ function generator.generate(prog, analysis)
             .. table.concat(args, ", ")
             .. "}, {"
             .. table.concat(kw_parts, ", ")
-            .. "}, {\""
+            .. '}, {"'
             .. table.concat(params, '", "')
-            .. "\"})"
+            .. '"})'
         end
         return "__py_call("
           .. gen_expr(expr.func)
@@ -455,21 +471,21 @@ function generator.generate(prog, analysis)
       return gen_expr(expr.func) .. "(" .. table.concat(args, ", ") .. ")"
     end,
     [ast.SUBSCRIPT] = function(expr)
-      local v = gen_expr(expr.value)
+      local target_obj = gen_expr(expr.value)
       if expr.index.type == ast.SLICE then
         local lower = expr.index.lower and gen_expr(expr.index.lower) or "nil"
         local upper = expr.index.upper and gen_expr(expr.index.upper) or "nil"
         local step = expr.index.step and gen_expr(expr.index.step) or "nil"
-        return "__py_slice(" .. v .. ", " .. lower .. ", " .. upper .. ", " .. step .. ")"
+        return "__py_slice(" .. target_obj .. ", " .. lower .. ", " .. upper .. ", " .. step .. ")"
       end
       local idx = gen_index(expr)
       if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
-        return v .. "[" .. idx .. "]"
+        return target_obj .. "[" .. idx .. "]"
       end
       if analysis and analysis.used_stdlib then
-        return v .. "[" .. idx .. "]"
+        return target_obj .. "[" .. idx .. "]"
       end
-      return "__py_getitem(" .. v .. ", " .. idx .. ")"
+      return "__py_getitem(" .. target_obj .. ", " .. idx .. ")"
     end,
     [ast.ATTRIBUTE] = function(expr)
       return gen_expr(expr.value) .. "." .. expr.attr
@@ -493,12 +509,12 @@ function generator.generate(prog, analysis)
     [ast.LAMBDA] = function(expr)
       local parts = {}
       local has_vararg = false
-      for _, a in ipairs(expr.args) do
-        if a:sub(1, 1) == "*" then
+      for _, arg in ipairs(expr.args) do
+        if arg:sub(1, 1) == "*" then
           parts[#parts + 1] = "..."
           has_vararg = true
         else
-          parts[#parts + 1] = a
+          parts[#parts + 1] = arg
         end
       end
       local sig = table.concat(parts, ", ")
@@ -510,9 +526,9 @@ function generator.generate(prog, analysis)
       return "function(" .. sig .. ") return " .. body_code .. " end"
     end,
     [ast.WALRUS] = function(expr)
-      local t = gen_expr(expr.target)
-      local v = gen_expr(expr.value)
-      return "(function() local __w = " .. v .. "; " .. t .. " = __w; return __w end)()"
+      local target = gen_expr(expr.target)
+      local value = gen_expr(expr.value)
+      return "(function() local __w = " .. value .. "; " .. target .. " = __w; return __w end)()"
     end,
     [ast.IF_EXPR] = function(expr)
       return "(function(...) if "
@@ -601,13 +617,15 @@ function generator.generate(prog, analysis)
     end
   end
 
+  -- Statement dispatch table: each AST node type maps to a generator function
+  -- that emits Lua code via push() and modifies the surrounding context
   local stmt_handlers = {
     [ast.FUNCTION_DEF] = function(stmt)
       local has_decos = stmt.decorators and #stmt.decorators > 0
-      local sig = gen_fn_sig(stmt.args, stmt.vararg, stmt.kwarg)
+      local signature = gen_fn_sig(stmt.args, stmt.vararg, stmt.kwarg)
       local function emit_body()
         for i, d in ipairs(stmt.args) do
-          local def = stmt.defaults[i]
+          local default_val = stmt.defaults[i]
           if def then
             push(indent() .. "if " .. d .. " == nil then " .. d .. " = " .. gen_expr(def) .. " end")
           end
@@ -624,7 +642,7 @@ function generator.generate(prog, analysis)
         push(indent() .. "do")
         with_indent(function()
           push(indent() .. "local __fn")
-          push(indent() .. "__fn = function(" .. sig .. ")")
+          push(indent() .. "__fn = function(" .. signature .. ")")
           with_indent(function()
             emit_body()
           end)
@@ -634,13 +652,16 @@ function generator.generate(prog, analysis)
         push(indent() .. "end")
         apply_decorators(stmt)
       else
-        push(indent() .. "function " .. stmt.name .. "(" .. sig .. ")")
+        push(indent() .. "function " .. stmt.name .. "(" .. signature .. ")")
         with_indent(function()
           emit_body()
         end)
         push(indent() .. "end")
       end
     end,
+    -- Emits a Lua metatable-based class with __call as constructor,
+    -- dunder method mapping (__add, __len, etc.), @property/@staticmethod/@classmethod,
+    -- and optional single-inheritance via __py_base
     [ast.CLASS_DEF] = function(stmt)
       local dunder_map = {
         __str__ = "__tostring",
@@ -799,25 +820,27 @@ function generator.generate(prog, analysis)
     end,
     [ast.FOR] = function(stmt)
       if stmt.is_range then
-        local n = #stmt.range_args
-        local s = gen_expr(stmt.range_args[1])
-        local st = n == 1 and "0" or s
-        local sp = gen_expr(stmt.range_args[n == 1 and 1 or 2])
-        local step = n == 3 and gen_expr(stmt.range_args[3]) or "1"
-        push(indent() .. "for " .. stmt.targets[1] .. " = " .. st .. ", " .. sp .. " - 1, " .. step .. " do")
+        local num_args = #stmt.range_args
+        local range_start = gen_expr(stmt.range_args[1])
+        local start_val = num_args == 1 and "0" or range_start
+        local stop_val = gen_expr(stmt.range_args[num_args == 1 and 1 or 2])
+        local step = num_args == 3 and gen_expr(stmt.range_args[3]) or "1"
+        push(
+          indent() .. "for " .. stmt.targets[1] .. " = " .. start_val .. ", " .. stop_val .. " - 1, " .. step .. " do"
+        )
       else
         if #stmt.targets == 1 then
           push(indent() .. "for _, " .. stmt.targets[1] .. " in ipairs(" .. gen_expr(stmt.iterator) .. ") do")
         else
           push(indent() .. "for _, __pair in ipairs(" .. gen_expr(stmt.iterator) .. ") do")
           indent_level = indent_level + 1
-          local tnames = {}
-          local texprs = {}
-          for i, t in ipairs(stmt.targets) do
-            tnames[i] = t
-            texprs[i] = "__pair[" .. i .. "]"
+          local target_names = {}
+          local target_exprs = {}
+          for i, target in ipairs(stmt.targets) do
+            target_names[i] = target
+            target_exprs[i] = "__pair[" .. i .. "]"
           end
-          push(indent() .. "local " .. table.concat(tnames, ", ") .. " = " .. table.concat(texprs, ", "))
+          push(indent() .. "local " .. table.concat(target_names, ", ") .. " = " .. table.concat(target_exprs, ", "))
           push("\n")
           indent_level = indent_level - 1
         end
@@ -844,15 +867,15 @@ function generator.generate(prog, analysis)
     end,
     [ast.ASSIGN] = function(stmt)
       if #stmt.targets == 1 and stmt.targets[1].type == ast.SUBSCRIPT and stmt.targets[1].index.type == ast.SLICE then
-        local sub = stmt.targets[1].index
-        local obj = gen_expr(stmt.targets[1].value)
-        local lo = sub.lower and gen_expr(sub.lower) or "0"
-        local hi = sub.upper and gen_expr(sub.upper) or "#" .. obj
+        local slice_index = stmt.targets[1].index
+        local target_obj = gen_expr(stmt.targets[1].value)
+        local lower = slice_index.lower and gen_expr(slice_index.lower) or "0"
+        local upper = slice_index.upper and gen_expr(slice_index.upper) or "#" .. target_obj
         push(indent() .. "do")
         with_indent(function()
           push(indent() .. "local __src = " .. gen_expr(stmt.value))
-          push(indent() .. "local __lo = " .. lo)
-          push(indent() .. "for __i = __lo + 1, " .. hi .. " do " .. obj .. "[__i] = __src[__i - __lo] end")
+          push(indent() .. "local __lo = " .. lower)
+          push(indent() .. "for __i = __lo + 1, " .. upper .. " do " .. target_obj .. "[__i] = __src[__i - __lo] end")
         end)
         push(indent() .. "end")
         return
@@ -879,6 +902,9 @@ function generator.generate(prog, analysis)
     [ast.CONTINUE] = function()
       push(indent() .. "goto __continue")
     end,
+    -- Simulates Python try/except via pcall:
+    -- wraps the try body in a pcall, checks for errors via __py_ok,
+    -- and binds the error message to the exception variable on match
     [ast.TRY] = function(stmt)
       push(indent() .. "local __py_ok, __py_err = pcall(function()")
       with_indent(function()
@@ -920,7 +946,17 @@ function generator.generate(prog, analysis)
   if used then
     push("local chr, ord, str, int = string.char, string.byte, tostring, tonumber")
     push("if not table.unpack then table.unpack = unpack end")
-    local order = {"__py_slice", "__py_in", "__py_repeat", "__py_range", "__py_items", "__py_super", "__py_isinstance", "__py_issubclass", "__py_call"}
+    local order = {
+      "__py_slice",
+      "__py_in",
+      "__py_repeat",
+      "__py_range",
+      "__py_items",
+      "__py_super",
+      "__py_isinstance",
+      "__py_issubclass",
+      "__py_call",
+    }
     for _, name in ipairs(order) do
       if used[name] then
         push(stdlib_inline[name])

@@ -1,7 +1,7 @@
 local generator = require("python.generator")
+local optimizer = require("python.optimizer")
 local parser = require("python.parser")
 local tokenizer = require("python.tokenizer")
-local optimizer = require("python.optimizer")
 
 local python = {}
 
@@ -24,11 +24,11 @@ end
 
 function python.run(source, opts)
   local lua_code = python.transpile(source, opts)
-  local fn, err = load(lua_code, "=python")
-  if not fn then
+  local chunk, err = load(lua_code, "=python")
+  if not chunk then
     error("Python runtime error: " .. tostring(err))
   end
-  return fn()
+  return chunk()
 end
 
 function python.transpile_file(path, opts)

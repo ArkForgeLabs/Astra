@@ -146,6 +146,8 @@ function parser.parse(tokens)
     end
   end
 
+  -- Parses a block of statements, skipping blank lines and
+  -- dispatching to the statement handler table
   parse_statements = function()
     local body = {}
     while peek_not(TK.DEDENT) and peek_token().kind ~= TK.EOF do
@@ -400,17 +402,17 @@ function parser.parse(tokens)
     local finally_body = nil
     while peek_is(TK.EXCEPT) do
       advance_token()
-      local exc_type = nil
-      local exc_var = nil
+      local exception_type = nil
+      local exception_var = nil
       if peek_not(TK.COLON) then
-        exc_type = parse_expr()
+        exception_type = parse_expr()
         if peek_is(TK.AS) then
           advance_token()
-          exc_var = expect_token(TK.IDENTIFIER).value
+          exception_var = expect_token(TK.IDENTIFIER).value
         end
       end
-      local h_body = parse_block()
-      handlers[#handlers + 1] = { type = exc_type, name = exc_var, body = h_body }
+      local handler_body = parse_block()
+      handlers[#handlers + 1] = { type = exception_type, name = exception_var, body = handler_body }
     end
     if peek_is(TK.FINALLY) then
       advance_token()
@@ -554,13 +556,13 @@ function parser.parse(tokens)
         advance_token()
         op = "in"
       elseif not op and current_token.kind == TK.NOT then
-        local saved = pos
+        local saved_pos = pos
         advance_token()
         if peek_is(TK.IN) then
           advance_token()
           op = "not in"
         else
-          pos = saved
+          pos = saved_pos
           break
         end
       elseif op then
@@ -611,6 +613,7 @@ function parser.parse(tokens)
     return left
   end
 
+  -- Parses chained calls, subscripts, and attribute access after a primary expression
   parse_primary = function()
     local expr = parse_atom()
     while true do
@@ -679,6 +682,8 @@ function parser.parse(tokens)
     return expr
   end
 
+  -- Parses atomic expressions: literals, identifiers, containers (list/dict/set/tuple),
+  -- comprehensions, parenthesized expressions, and the super() pseudo-expression
   parse_atom = function()
     local current_token = peek_token()
     if not current_token then
