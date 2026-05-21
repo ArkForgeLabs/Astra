@@ -20,42 +20,47 @@ local function define_ast_node(name, constant, fields)
   end
 end
 
-define_ast_node("Program", "PROGRAM", { "body" })
-define_ast_node("FunctionDef", "FUNCTION_DEF", { "name", "args", "body", "decorators", "vararg", "kwarg", "defaults" })
-define_ast_node("If", "IF", { "test", "body", "elifs", "or_else" })
-define_ast_node("While", "WHILE", { "test", "body", "or_else" })
-define_ast_node("For", "FOR", { "targets", "iterator", "body", "or_else", "is_range", "range_args" })
-define_ast_node("Try", "TRY", { "body", "handlers", "finally_body" })
-define_ast_node("Return", "RETURN", { "value" })
-define_ast_node("Assign", "ASSIGN", { "targets", "value" })
-define_ast_node("AugAssign", "AUG_ASSIGN", { "target", "op", "value" })
-define_ast_node("ExprStmt", "EXPR_STMT", { "expr" })
-define_ast_node("Global", "GLOBAL", { "names" })
-define_ast_node("Pass", "PASS", {})
-define_ast_node("Break", "BREAK", {})
-define_ast_node("Continue", "CONTINUE", {})
-define_ast_node("Constant", "CONSTANT", { "value" })
-define_ast_node("Name", "NAME", { "id" })
-define_ast_node("BinOp", "BIN_OP", { "left", "op", "right" })
-define_ast_node("UnaryOp", "UNARY_OP", { "op", "operand" })
-define_ast_node("BoolOp", "BOOL_OP", { "op", "values" })
-define_ast_node("Compare", "COMPARE", { "left", "ops", "comparators" })
-define_ast_node("Call", "CALL", { "func", "args", "keywords" })
-define_ast_node("Subscript", "SUBSCRIPT", { "value", "index" })
-define_ast_node("Attribute", "ATTRIBUTE", { "value", "attr" })
-define_ast_node("List", "LIST", { "elements" })
-define_ast_node("Dict", "DICT", { "keys", "values" })
-define_ast_node("Set", "SET", { "elements" })
-define_ast_node("Tuple", "TUPLE", { "elements" })
-define_ast_node("Lambda", "LAMBDA", { "args", "body" })
-define_ast_node("Walrus", "WALRUS", { "target", "value" })
-define_ast_node("IfExpr", "IF_EXPR", { "test", "body", "or_else" })
-define_ast_node("ListComp", "LIST_COMP", { "element", "generators" })
-define_ast_node("SetComp", "SET_COMP", { "element", "generators" })
-define_ast_node("DictComp", "DICT_COMP", { "key", "value", "generators" })
-define_ast_node("Slice", "SLICE", { "lower", "upper", "step" })
-define_ast_node("ClassDef", "CLASS_DEF", { "name", "bases", "body", "decorators" })
-define_ast_node("Starred", "STARRED", { "value", "double_star" })
-define_ast_node("Super", "SUPER", {})
+local node_defs = {
+  { "Program", "PROGRAM", { "body" } },
+  { "FunctionDef", "FUNCTION_DEF", { "name", "args", "body", "decorators", "vararg", "kwarg", "defaults" } },
+  { "If", "IF", { "test", "body", "elifs", "or_else" } },
+  { "While", "WHILE", { "test", "body", "or_else" } },
+  { "For", "FOR", { "targets", "iterator", "body", "or_else", "is_range", "range_args" } },
+  { "Try", "TRY", { "body", "handlers", "finally_body" } },
+  { "Return", "RETURN", { "value" } },
+  { "Assign", "ASSIGN", { "targets", "value" } },
+  { "AugAssign", "AUG_ASSIGN", { "target", "op", "value" } },
+  { "ExprStmt", "EXPR_STMT", { "expr" } },
+  { "Global", "GLOBAL", { "names" } },
+  { "Pass", "PASS", {} },
+  { "Break", "BREAK", {} },
+  { "Continue", "CONTINUE", {} },
+  { "Constant", "CONSTANT", { "value" } },
+  { "Name", "NAME", { "id" } },
+  { "BinOp", "BIN_OP", { "left", "op", "right" } },
+  { "UnaryOp", "UNARY_OP", { "op", "operand" } },
+  { "BoolOp", "BOOL_OP", { "op", "values" } },
+  { "Compare", "COMPARE", { "left", "ops", "comparators" } },
+  { "Call", "CALL", { "func", "args", "keywords" } },
+  { "Subscript", "SUBSCRIPT", { "value", "index" } },
+  { "Attribute", "ATTRIBUTE", { "value", "attr" } },
+  { "List", "LIST", { "elements" } },
+  { "Dict", "DICT", { "keys", "values" } },
+  { "Set", "SET", { "elements" } },
+  { "Tuple", "TUPLE", { "elements" } },
+  { "Lambda", "LAMBDA", { "args", "body" } },
+  { "Walrus", "WALRUS", { "target", "value" } },
+  { "IfExpr", "IF_EXPR", { "test", "body", "or_else" } },
+  { "ListComp", "LIST_COMP", { "element", "generators" } },
+  { "SetComp", "SET_COMP", { "element", "generators" } },
+  { "DictComp", "DICT_COMP", { "key", "value", "generators" } },
+  { "Slice", "SLICE", { "lower", "upper", "step" } },
+  { "ClassDef", "CLASS_DEF", { "name", "bases", "body", "decorators" } },
+  { "Starred", "STARRED", { "value", "double_star" } },
+  { "Super", "SUPER", {} },
+}
+for _, def in ipairs(node_defs) do
+  define_ast_node(def[1], def[2], def[3])
+end
 
 return ast

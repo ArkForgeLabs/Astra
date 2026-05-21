@@ -684,131 +684,132 @@ function parser.parse(tokens)
 
   -- Parses atomic expressions: literals, identifiers, containers (list/dict/set/tuple),
   -- comprehensions, parenthesized expressions, and the super() pseudo-expression
+  local function parse_paren_expr()
+    advance_token()
+    skip_continuation_tokens()
+    local first = parse_expr()
+    skip_continuation_tokens()
+    if match_token(TK.COMMA) then
+      local elements = { first }
+      while peek_not(TK.RPAREN) do
+        elements[#elements + 1] = parse_expr()
+        skip_continuation_tokens()
+        match_token(TK.COMMA)
+        skip_continuation_tokens()
+      end
+      expect_token(TK.RPAREN)
+      return ast.Tuple(elements)
+    end
+    expect_token(TK.RPAREN)
+    return first
+  end
+
+  local function parse_bracket_expr()
+    advance_token()
+    local first = parse_expr()
+    if peek_is(TK.FOR) then
+      advance_token()
+      local generators = parse_comprehension_clauses()
+      expect_token(TK.RBRACKET)
+      return ast.ListComp(first, generators)
+    end
+    local elements = { first }
+    while match_token(TK.COMMA) do
+      elements[#elements + 1] = parse_expr()
+    end
+    expect_token(TK.RBRACKET)
+    return ast.List(elements)
+  end
+
+  local function parse_brace_expr()
+    advance_token()
+    skip_continuation_tokens()
+    if peek_not(TK.RBRACE) then
+      local first = parse_expr()
+      skip_continuation_tokens()
+      if peek_is(TK.COLON) then
+        advance_token()
+        local key = first
+        skip_continuation_tokens()
+        local val = parse_expr()
+        skip_continuation_tokens()
+        if peek_is(TK.FOR) then
+          advance_token()
+          local generators = parse_comprehension_clauses()
+          skip_continuation_tokens()
+          expect_token(TK.RBRACE)
+          return ast.DictComp(key, val, generators)
+        end
+        local keys = { key }
+        local vals = { val }
+        while match_token(TK.COMMA) do
+          skip_continuation_tokens()
+          if peek_is(TK.RBRACE) then break end
+          keys[#keys + 1] = parse_expr()
+          expect_token(TK.COLON)
+          skip_continuation_tokens()
+          if peek_is(TK.RBRACE) then break end
+          vals[#vals + 1] = parse_expr()
+          skip_continuation_tokens()
+        end
+        skip_continuation_tokens()
+        expect_token(TK.RBRACE)
+        return ast.Dict(keys, vals)
+      else
+        if peek_is(TK.FOR) then
+          advance_token()
+          local generators = parse_comprehension_clauses()
+          skip_continuation_tokens()
+          expect_token(TK.RBRACE)
+          return ast.SetComp(first, generators)
+        end
+        local elements = { first }
+        while match_token(TK.COMMA) do
+          skip_continuation_tokens()
+          elements[#elements + 1] = parse_expr()
+          skip_continuation_tokens()
+        end
+        skip_continuation_tokens()
+        expect_token(TK.RBRACE)
+        return ast.Set(elements)
+      end
+    else
+      skip_continuation_tokens()
+      expect_token(TK.RBRACE)
+      return ast.Dict({}, {})
+    end
+  end
+
   parse_atom = function()
     local current_token = peek_token()
     if not current_token then
       error("unexpected EOF")
     end
-    if current_token.kind == TK.NONE then
-      advance_token()
-      return ast.Constant(nil)
-    elseif current_token.kind == TK.TRUE then
-      advance_token()
-      return ast.Constant(true)
-    elseif current_token.kind == TK.FALSE then
-      advance_token()
-      return ast.Constant(false)
-    elseif current_token.kind == TK.ELLIPSIS then
-      advance_token()
-      return ast.Constant(nil)
-    elseif current_token.kind == TK.INTEGER or current_token.kind == TK.FLOAT then
-      advance_token()
-      return ast.Constant(tonumber(current_token.value))
-    elseif current_token.kind == TK.STRING then
-      advance_token()
-      local val = current_token.value:sub(2, #current_token.value - 1)
-      return ast.Constant(util.unescape(val))
-    elseif current_token.kind == TK.IDENTIFIER then
-      advance_token()
-      if current_token.value == "super" then
-        return ast.Super()
-      end
-      return ast.Name(current_token.value)
-    elseif current_token.kind == TK.LPAREN then
-      advance_token()
-      skip_continuation_tokens()
-      local first = parse_expr()
-      skip_continuation_tokens()
-      if match_token(TK.COMMA) then
-        local elements = { first }
-        while peek_not(TK.RPAREN) do
-          elements[#elements + 1] = parse_expr()
-          skip_continuation_tokens()
-          match_token(TK.COMMA)
-          skip_continuation_tokens()
-        end
-        expect_token(TK.RPAREN)
-        return ast.Tuple(elements)
-      end
-      expect_token(TK.RPAREN)
-      return first
-    elseif current_token.kind == TK.LBRACKET then
-      advance_token()
-      local first = parse_expr()
-      if peek_is(TK.FOR) then
+    local atom_handlers = {
+      [TK.NONE]     = function() advance_token(); return ast.Constant(nil) end,
+      [TK.TRUE]     = function() advance_token(); return ast.Constant(true) end,
+      [TK.FALSE]    = function() advance_token(); return ast.Constant(false) end,
+      [TK.ELLIPSIS] = function() advance_token(); return ast.Constant(nil) end,
+      [TK.INTEGER]  = function() advance_token(); return ast.Constant(tonumber(current_token.value)) end,
+      [TK.FLOAT]    = function() advance_token(); return ast.Constant(tonumber(current_token.value)) end,
+      [TK.STRING]   = function()
         advance_token()
-        local generators = parse_comprehension_clauses()
-        expect_token(TK.RBRACKET)
-        return ast.ListComp(first, generators)
-      end
-      local elements = { first }
-      while match_token(TK.COMMA) do
-        elements[#elements + 1] = parse_expr()
-      end
-      expect_token(TK.RBRACKET)
-      return ast.List(elements)
-    elseif current_token.kind == TK.LBRACE then
-      advance_token()
-      skip_continuation_tokens()
-      if peek_not(TK.RBRACE) then
-        local first = parse_expr()
-        skip_continuation_tokens()
-        if peek_is(TK.COLON) then
-          advance_token()
-          local key = first
-          skip_continuation_tokens()
-          local val = parse_expr()
-          skip_continuation_tokens()
-          if peek_is(TK.FOR) then
-            advance_token()
-            local generators = parse_comprehension_clauses()
-            skip_continuation_tokens()
-            expect_token(TK.RBRACE)
-            return ast.DictComp(key, val, generators)
-          end
-          local keys = { key }
-          local vals = { val }
-          while match_token(TK.COMMA) do
-            skip_continuation_tokens()
-            if peek_is(TK.RBRACE) then
-              break
-            end
-            keys[#keys + 1] = parse_expr()
-            expect_token(TK.COLON)
-            skip_continuation_tokens()
-            if peek_is(TK.RBRACE) then
-              break
-            end
-            vals[#vals + 1] = parse_expr()
-            skip_continuation_tokens()
-          end
-          skip_continuation_tokens()
-          expect_token(TK.RBRACE)
-          return ast.Dict(keys, vals)
-        else
-          if peek_is(TK.FOR) then
-            advance_token()
-            local generators = parse_comprehension_clauses()
-            skip_continuation_tokens()
-            expect_token(TK.RBRACE)
-            return ast.SetComp(first, generators)
-          end
-          local elements = { first }
-          while match_token(TK.COMMA) do
-            skip_continuation_tokens()
-            elements[#elements + 1] = parse_expr()
-            skip_continuation_tokens()
-          end
-          skip_continuation_tokens()
-          expect_token(TK.RBRACE)
-          return ast.Set(elements)
+        local val = current_token.value:sub(2, #current_token.value - 1)
+        return ast.Constant(util.unescape(val))
+      end,
+      [TK.IDENTIFIER] = function()
+        advance_token()
+        if current_token.value == "super" then
+          return ast.Super()
         end
-      else
-        skip_continuation_tokens()
-        expect_token(TK.RBRACE)
-        return ast.Dict({}, {})
-      end
-    end
+        return ast.Name(current_token.value)
+      end,
+      [TK.LPAREN]   = parse_paren_expr,
+      [TK.LBRACKET] = parse_bracket_expr,
+      [TK.LBRACE]   = parse_brace_expr,
+    }
+    local handler = atom_handlers[current_token.kind]
+    if handler then return handler() end
     error(
       "unexpected token "
         .. (token_names[current_token.kind] or current_token.kind)

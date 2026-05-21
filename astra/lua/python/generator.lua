@@ -205,6 +205,31 @@ local function __py_call(func, args, kwargs, params)
 end
 ]====]
 
+local binop_gen = {
+  ["**"] = function(l, r) return "(" .. l .. " ^ " .. r .. ")" end,
+  ["//"] = function(l, r) return "math.floor(" .. l .. " / " .. r .. ")" end,
+  ["+"]  = function(l, r, ln, rn)
+    if (ln.type == ast.CONSTANT and type(ln.value) == "string")
+    or (rn.type == ast.CONSTANT and type(rn.value) == "string") then
+      return "(" .. l .. " .. " .. r .. ")"
+    end
+    return "(" .. l .. " + " .. r .. ")"
+  end,
+  ["*"]  = function(l, r, ln, rn)
+    if ln.type == ast.CONSTANT and type(ln.value) == "string" then
+      return "string.rep(" .. l .. ", " .. r .. ")"
+    end
+    if rn.type == ast.CONSTANT and type(rn.value) == "string" then
+      return "string.rep(" .. r .. ", " .. l .. ")"
+    end
+    if ln.type == ast.LIST or ln.type == ast.SET
+    or rn.type == ast.LIST or rn.type == ast.SET then
+      return "__py_repeat(" .. l .. ", " .. r .. ")"
+    end
+    return "(" .. l .. " * " .. r .. ")"
+  end,
+}
+
 function generator.generate(prog, analysis)
   analysis = analysis or {}
   local indent_level = 0
@@ -325,39 +350,11 @@ function generator.generate(prog, analysis)
       return expr.id
     end,
     [ast.BIN_OP] = function(expr)
-      local left = gen_expr(expr.left)
-      local right = gen_expr(expr.right)
-      if expr.op == "**" then
-        return "(" .. left .. " ^ " .. right .. ")"
-      elseif expr.op == "//" then
-        return "math.floor(" .. left .. " / " .. right .. ")"
-      elseif
-        expr.op == "+"
-        and (
-          (expr.left.type == ast.CONSTANT and type(expr.left.value) == "string")
-          or (expr.right.type == ast.CONSTANT and type(expr.right.value) == "string")
-        )
-      then
-        return "(" .. left .. " .. " .. right .. ")"
-      elseif expr.op == "*" then
-        if expr.left.type == ast.CONSTANT and type(expr.left.value) == "string" then
-          return "string.rep(" .. left .. ", " .. right .. ")"
-        end
-        if expr.right.type == ast.CONSTANT and type(expr.right.value) == "string" then
-          return "string.rep(" .. right .. ", " .. lefteft .. ")"
-        end
-        if
-          expr.left.type == ast.LIST
-          or expr.left.type == ast.SET
-          or expr.right.type == ast.LIST
-          or expr.right.type == ast.SET
-        then
-          return "__py_repeat(" .. left .. ", " .. right .. ")"
-        end
-        return "(" .. left .. " * " .. right .. ")"
-      else
-        return "(" .. left .. " " .. expr.op .. " " .. right .. ")"
+      local handler = binop_gen[expr.op]
+      if handler then
+        return handler(gen_expr(expr.left), gen_expr(expr.right), expr.left, expr.right)
       end
+      return "(" .. gen_expr(expr.left) .. " " .. expr.op .. " " .. gen_expr(expr.right) .. ")"
     end,
     [ast.UNARY_OP] = function(expr)
       return "(" .. expr.op .. " " .. gen_expr(expr.operand) .. ")"
@@ -626,8 +623,8 @@ function generator.generate(prog, analysis)
       local function emit_body()
         for i, d in ipairs(stmt.args) do
           local default_val = stmt.defaults[i]
-          if def then
-            push(indent() .. "if " .. d .. " == nil then " .. d .. " = " .. gen_expr(def) .. " end")
+          if default_val then
+            push(indent() .. "if " .. d .. " == nil then " .. d .. " = " .. gen_expr(default_val) .. " end")
           end
         end
         if stmt.vararg then

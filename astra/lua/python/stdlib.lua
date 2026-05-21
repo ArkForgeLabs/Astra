@@ -11,15 +11,15 @@ _G.ord = string.byte
 _G.str = tostring
 
 function stdlib.__py_len(value)
-  local mt = getmetatable(x)
+  local mt = getmetatable(value)
   if mt and mt.__len then
-    return mt.__len(x)
+    return mt.__len(value)
   end
-  return #x
+  return #value
 end
 
 function stdlib.__py_int(value)
-  return type(x) == "number" and math.floor(x) or tonumber(x)
+  return type(value) == "number" and math.floor(value) or tonumber(value)
 end
 
 function stdlib.__py_slice(tbl, start_val, end_val, step_val)
@@ -30,7 +30,7 @@ function stdlib.__py_slice(tbl, start_val, end_val, step_val)
       s = 0
     end
     if e == nil then
-      e = n
+      e = length
     end
     s = s + 1
     local result = {}
@@ -40,7 +40,7 @@ function stdlib.__py_slice(tbl, start_val, end_val, step_val)
     return result
   elseif st < 0 then
     if s == nil then
-      s = n - 1
+      s = length - 1
     end
     if e == nil then
       e = -1
@@ -70,7 +70,7 @@ function stdlib.__py_in(container, item)
   return false
 end
 
-function stdlib.__py_repeat(val, n)
+function stdlib.__py_repeat(val, count)
   local result = {}
   if type(val) == "table" then
     for _ = 1, count do
@@ -83,7 +83,7 @@ function stdlib.__py_repeat(val, n)
       result[#result + 1] = val
     end
   end
-  return res
+  return result
 end
 
 function stdlib.__py_range(...)
@@ -195,7 +195,7 @@ function stdlib.__py_call(func, args, kwargs, params)
   if not params then
     local all_args = {}
     for _, arg in ipairs(args) do
-      all_args[#all_args + 1] = a
+      all_args[#all_args + 1] = arg
     end
     for _, kw in ipairs(kwargs) do
       all_args[#all_args + 1] = kw.value
