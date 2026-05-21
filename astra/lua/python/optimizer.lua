@@ -1,3 +1,5 @@
+---@diagnostic disable: undefined-field, inject-field
+
 local ast = require("python.ast")
 
 local optimizer = {}
@@ -299,6 +301,9 @@ local function stdlib_usage_pass(program, analysis)
   })
 end
 
+---@param program ast.Program
+---@param options? transpile_opts
+---@return {used_stdlib?: table<string,boolean>, has_kwargs?: boolean}
 function optimizer.analyze(program, options)
   options = options or {}
   local analysis = {}

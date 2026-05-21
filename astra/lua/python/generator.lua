@@ -204,7 +204,6 @@ local function __py_call(func, args, kwargs, params)
   return func(table.unpack(merged, 1, #params))
 end
 ]====]
-
 local binop_gen = {
   ["**"] = function(l, r) return "(" .. l .. " ^ " .. r .. ")" end,
   ["//"] = function(l, r) return "math.floor(" .. l .. " / " .. r .. ")" end,
@@ -230,6 +229,9 @@ local binop_gen = {
   end,
 }
 
+---@param prog ast.Program
+---@param analysis? {used_stdlib?: table<string,boolean>, has_kwargs?: boolean}
+---@return string
 function generator.generate(prog, analysis)
   analysis = analysis or {}
   local indent_level = 0

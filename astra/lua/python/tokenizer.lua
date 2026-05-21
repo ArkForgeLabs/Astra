@@ -5,6 +5,8 @@ local multi_character_tokens = token.multi_character_tokens
 local single_character_tokens = token.single_character_tokens
 
 local tokenizer = {}
+---@param source string
+---@return token_obj[]
 function tokenizer.tokenize(source)
   local tokens = {}
   local line = 1

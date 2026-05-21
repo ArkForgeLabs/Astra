@@ -1,12 +1,17 @@
+---@diagnostic disable: undefined-field
+
 local ast = require("python.ast")
+
+---@class walker_opts
+---@field early_expr? fun(expr: ast_node): (string|nil)
+---@field on_expr? fun(expr: ast_node)
+---@field early_stmt? fun(stmt: ast_node): (string|nil)
+---@field on_stmt? fun(stmt: ast_node)
 
 local walker = {}
 
--- Walks the entire program AST, calling callbacks for each node.
--- opts.early_expr(expr) -- called before children; return "skip" to skip children
--- opts.on_expr(expr)    -- called after children
--- opts.early_stmt(stmt) -- called before children; return "skip" to skip children
--- opts.on_stmt(stmt)    -- called after children
+---@param program ast.Program
+---@param opts? walker_opts
 function walker.walk_program(program, opts)
   opts = opts or {}
 
@@ -109,9 +114,8 @@ function walker.walk_program(program, opts)
   end
 end
 
--- Walks into nested statement bodies without walking expressions
--- Used by pruning passes that only modify statement lists in-place
--- fn(body) is called for each nested body found
+---@param body ast_node[]?
+---@param fn fun(body: ast_node[]?)
 function walker.walk_stmt_bodies(body, fn)
   if not body then return end
   for _, stmt in ipairs(body) do

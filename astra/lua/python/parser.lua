@@ -6,6 +6,8 @@ local token_names = token.token_names
 local multiplicative_operators = token.multiplicative_operators
 
 local parser = {}
+---@param tokens token_obj[]
+---@return ast.Program
 function parser.parse(tokens)
   local pos = 1
 

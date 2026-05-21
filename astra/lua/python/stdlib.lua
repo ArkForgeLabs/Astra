@@ -1,7 +1,8 @@
 local stdlib = {}
 
--- Platform compatibility
+-- Platform compatibility (Lua 5.1 fallback)
 if not table.unpack then
+  ---@diagnostic disable-next-line: deprecated
   table.unpack = unpack
 end
 
@@ -10,6 +11,8 @@ _G.chr = string.char
 _G.ord = string.byte
 _G.str = tostring
 
+---@param value any
+---@return integer
 function stdlib.__py_len(value)
   local mt = getmetatable(value)
   if mt and mt.__len then
@@ -18,10 +21,17 @@ function stdlib.__py_len(value)
   return #value
 end
 
+---@param value any
+---@return integer?
 function stdlib.__py_int(value)
   return type(value) == "number" and math.floor(value) or tonumber(value)
 end
 
+---@param tbl any[]
+---@param start_val integer?
+---@param end_val integer?
+---@param step_val integer?
+---@return any[]
 function stdlib.__py_slice(tbl, start_val, end_val, step_val)
   local s, e, st = start_val, end_val, step_val or 1
   local length = #tbl
@@ -56,6 +66,9 @@ function stdlib.__py_slice(tbl, start_val, end_val, step_val)
   return {}
 end
 
+---@param container any[]|string
+---@param item any
+---@return boolean
 function stdlib.__py_in(container, item)
   if type(container) == "table" then
     for _, __elem in ipairs(container) do
@@ -70,6 +83,9 @@ function stdlib.__py_in(container, item)
   return false
 end
 
+---@param val any
+---@param count integer
+---@return any[]
 function stdlib.__py_repeat(val, count)
   local result = {}
   if type(val) == "table" then
@@ -86,6 +102,8 @@ function stdlib.__py_repeat(val, count)
   return result
 end
 
+---@param ... integer
+---@return integer[]
 function stdlib.__py_range(...)
   local start, stop, step
   if select("#", ...) == 1 then
@@ -109,6 +127,9 @@ function stdlib.__py_range(...)
   return result
 end
 
+---@param container any[]|string
+---@param index integer
+---@return any
 function stdlib.__py_getitem(container, index)
   if type(container) == "string" then
     return string.sub(container, index, index)
@@ -116,6 +137,8 @@ function stdlib.__py_getitem(container, index)
   return container[index]
 end
 
+---@param container table
+---@return any[][]
 function stdlib.__py_items(container)
   local result = {}
   for k, v in pairs(container) do
@@ -124,10 +147,16 @@ function stdlib.__py_items(container)
   return result
 end
 
+---@param str string
+---@param suffix string
+---@return boolean
 function stdlib.__py_endswith(str, suffix)
   return string.sub(str, -#suffix) == suffix
 end
 
+---@param cls table
+---@param self table
+---@return table
 function stdlib.__py_super(cls, self)
   local base = cls.__py_base
   if not base then
@@ -145,6 +174,9 @@ function stdlib.__py_super(cls, self)
   })
 end
 
+---@param obj any
+---@param cls table|function
+---@return boolean
 function stdlib.__py_isinstance(obj, cls)
   if type(cls) == "table" then
     local mt = getmetatable(obj)
@@ -177,6 +209,9 @@ function stdlib.__py_isinstance(obj, cls)
   return false
 end
 
+---@param child table?
+---@param parent table
+---@return boolean
 function stdlib.__py_issubclass(child, parent)
   if type(child) ~= "table" then
     return false
@@ -191,6 +226,11 @@ function stdlib.__py_issubclass(child, parent)
   return false
 end
 
+---@param func function
+---@param args any[]
+---@param kwargs {arg:string, value:any}[]
+---@param params? string[]
+---@return any
 function stdlib.__py_call(func, args, kwargs, params)
   if not params then
     local all_args = {}

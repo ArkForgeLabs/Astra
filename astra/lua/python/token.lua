@@ -1,3 +1,7 @@
+
+---@alias tk_kind integer
+---@class token_obj: {kind: integer, value: any, line: integer, col: integer}
+
 local TK = {
   NEWLINE = 1,
   INDENT = 2,
