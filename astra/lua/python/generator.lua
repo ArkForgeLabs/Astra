@@ -215,13 +215,25 @@ function generator.generate(prog, analysis)
         for _, kw in ipairs(expr.keywords) do
           kw_parts[#kw_parts + 1] = "{arg=" .. util.escape(kw.arg) .. ", value=" .. gen_expr(kw.value) .. "}"
         end
+        local params = expr._resolved_params
+        if params and #params > 0 then
+          return "__py_call("
+            .. gen_expr(expr.func)
+            .. ", {"
+            .. table.concat(args, ", ")
+            .. "}, {"
+            .. table.concat(kw_parts, ", ")
+            .. "}, {\""
+            .. table.concat(params, '", "')
+            .. "\"})"
+        end
         return "__py_call("
           .. gen_expr(expr.func)
           .. ", {"
           .. table.concat(args, ", ")
           .. "}, {"
           .. table.concat(kw_parts, ", ")
-          .. "})"
+          .. "}, nil)"
       end
       return gen_expr(expr.func) .. "(" .. table.concat(args, ", ") .. ")"
     end,
@@ -397,9 +409,6 @@ function generator.generate(prog, analysis)
             emit_body()
           end)
           push(indent() .. "end")
-          if analysis.has_kwargs and #stmt.args > 0 then
-            push(indent() .. '__py_fn_params[__fn] = {"' .. table.concat(stmt.args, '", "') .. '"}')
-          end
           push(indent() .. stmt.name .. " = __fn")
         end)
         push(indent() .. "end")
@@ -410,9 +419,6 @@ function generator.generate(prog, analysis)
           emit_body()
         end)
         push(indent() .. "end")
-        if analysis.has_kwargs and #stmt.args > 0 then
-          push(indent() .. "__py_fn_params[" .. stmt.name .. '] = {"' .. table.concat(stmt.args, '", "') .. '"}')
-        end
       end
     end,
     [ast.CLASS_DEF] = function(stmt)

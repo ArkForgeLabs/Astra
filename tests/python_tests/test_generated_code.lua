@@ -34,6 +34,7 @@ end)
 test.it("generates __py_call for keyword args", function()
   local body = strip_preamble(python.transpile("f(a=1)"))
   test.expect(body).to.match("__py_call%(")
+  test.expect(body).to.match('"a"')
 end)
 
 test.it("generates table.unpack for starred args", function()

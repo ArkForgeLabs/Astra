@@ -191,10 +191,7 @@ function stdlib.__py_issubclass(child, parent)
   return false
 end
 
-_G.__py_fn_params = {}
-
-function stdlib.__py_call(func, args, kwargs)
-  local params = __py_fn_params[func]
+function stdlib.__py_call(func, args, kwargs, params)
   if not params then
     local all = {}
     for _, a in ipairs(args) do
