@@ -227,6 +227,12 @@ local binop_gen = {
     end
     return "(" .. l .. " * " .. r .. ")"
   end,
+  ["%"]  = function(l, r, ln, rn)
+    if ln.type == ast.CONSTANT and type(ln.value) == "string" then
+      return "string.format(" .. l .. ", " .. r .. ")"
+    end
+    return "(" .. l .. " % " .. r .. ")"
+  end,
 }
 
 ---@param prog ast.Program
