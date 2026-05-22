@@ -294,7 +294,9 @@ function parser.parse(tokens)
     end
     if match_token(TK.EQ) then
       local values = { parse_expr() }
+      local chain = false
       while match_token(TK.EQ) do
+        chain = true
         for _, v in ipairs(values) do
           targets[#targets + 1] = v
         end
@@ -303,11 +305,14 @@ function parser.parse(tokens)
       while match_token(TK.COMMA) do
         values[#values + 1] = parse_expr()
       end
+      local assign
       if #values == 1 then
-        return ast.Assign(targets, values[1])
+        assign = ast.Assign(targets, values[1])
       else
-        return ast.Assign(targets, ast.Tuple(values))
+        assign = ast.Assign(targets, ast.Tuple(values))
       end
+      assign.chain = chain
+      return assign
     end
     local aug_ops =
       { [TK.PLUSEQ] = "+", [TK.MINUSEQ] = "-", [TK.STAREQ] = "*", [TK.SLASHEQ] = "/", [TK.PERCENTEQ] = "%" }
@@ -936,9 +941,6 @@ function parser.parse(tokens)
           end
         end
         advance_token()
-        if #values == 1 then
-          return values[1]
-        end
         return ast.JoinedStr(values)
       end,
       [TK.LPAREN]   = parse_paren_expr,

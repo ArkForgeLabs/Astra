@@ -128,6 +128,15 @@ local function __py_super(cls, self)
 end
 ]====]
 
+stdlib_inline.__py_getitem = [====[
+local function __py_getitem(container, index)
+  if type(container) == "string" then
+    return string.sub(container, index, index)
+  end
+  return container[index]
+end
+]====]
+
 stdlib_inline.__py_isinstance = [====[
 local function __py_isinstance(obj, cls)
   if type(cls) == "table" then
@@ -486,9 +495,6 @@ function generator.generate(prog, analysis)
       end
       local idx = gen_index(expr)
       if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
-        return target_obj .. "[" .. idx .. "]"
-      end
-      if analysis and analysis.used_stdlib then
         return target_obj .. "[" .. idx .. "]"
       end
       return "__py_getitem(" .. target_obj .. ", " .. idx .. ")"
@@ -897,7 +903,19 @@ function generator.generate(prog, analysis)
         push(indent() .. "end")
         return
       end
-      push(indent() .. table.concat(flatten_targets(stmt.targets), ", ") .. " = " .. gen_expr(stmt.value))
+      if #stmt.targets > 1 and stmt.chain then
+        local val = gen_expr(stmt.value)
+        push(indent() .. "do")
+        with_indent(function()
+          push(indent() .. "local __tmp = " .. val)
+          for _, target in ipairs(stmt.targets) do
+            push(indent() .. gen_subscript_target(target) .. " = __tmp")
+          end
+        end)
+        push(indent() .. "end")
+      else
+        push(indent() .. table.concat(flatten_targets(stmt.targets), ", ") .. " = " .. gen_expr(stmt.value))
+      end
     end,
     [ast.AUG_ASSIGN] = function(stmt)
       local t = gen_subscript_target(stmt.target)
@@ -1018,6 +1036,7 @@ function generator.generate(prog, analysis)
     "__py_range",
     "__py_items",
     "__py_super",
+    "__py_getitem",
     "__py_isinstance",
     "__py_issubclass",
     "__py_call",

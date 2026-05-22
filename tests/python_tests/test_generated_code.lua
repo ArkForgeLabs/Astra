@@ -12,7 +12,7 @@ end
 return function(test)
   test.it("generates inline subscript for list access", function()
     local lua = python.transpile("items[0]")
-    test.expect(lua).to.match("items%[0 %+ 1%]")
+    test.expect(lua).to.match("__py_getitem%(items, 0 %+ 1%)")
   end)
 
   test.it("generates __py_slice for slice access", function()
@@ -137,8 +137,8 @@ return function(test)
 
   test.it("generates multi-name from import", function()
     local body = strip_preamble(python.transpile("from sys import argv, exit"))
-    test.expect(body).to.match('local argv = require%("sys"%).argv')
-    test.expect(body).to.match('local exit = require%("sys"%).exit')
+    test.expect(body).to.match("argv = setmetatable")
+    test.expect(body).to.match("exit = os%.exit")
   end)
 
   test.it("generates from import *", function()
