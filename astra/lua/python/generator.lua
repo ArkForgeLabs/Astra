@@ -922,7 +922,9 @@ function generator.generate(prog, analysis)
     -- and binds the error message to the exception variable on match
     [ast.COMMENT] = function(stmt)
       local text = stmt.value
-      if text:find("\n") then
+      if text == "" then
+        push("")
+      elseif text:find("\n") then
         local safe = text:gsub("]]", "] ]")
         push(indent() .. "--[[ " .. safe .. " ]]")
       else

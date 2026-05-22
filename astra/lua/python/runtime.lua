@@ -11,14 +11,6 @@ local python = {}
 ---@param opts? transpile_opts
 ---@return string
 function python.transpile(source, opts)
-  local lines = {}
-  for line in source:gmatch("[^\n]+") do
-    line = line:match("^(.-)%s*$")
-    if line ~= "" then
-      lines[#lines + 1] = line
-    end
-  end
-  source = table.concat(lines, "\n")
   local tokens = tokenizer.tokenize(source)
   local ast = parser.parse(tokens)
   local analysis = optimizer.analyze(ast, opts)

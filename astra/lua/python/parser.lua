@@ -166,13 +166,20 @@ function parser.parse(tokens)
       end
       if peek_is(TK.COMMENT) then
         local comment_lines = {}
+        local blank_count = 0
         while peek_is(TK.COMMENT) do
           comment_lines[#comment_lines + 1] = advance_token().value
           while peek_is(TK.NEWLINE) do
             advance_token()
+            blank_count = blank_count + 1
           end
         end
         body[#body + 1] = ast.Comment(table.concat(comment_lines, "\n"))
+        if blank_count > #comment_lines then
+          for _ = 1, blank_count - #comment_lines do
+            body[#body + 1] = ast.Comment("")
+          end
+        end
       else
         local stmts = parse_stmt()
         if stmts then
@@ -183,9 +190,16 @@ function parser.parse(tokens)
         while peek_is(TK.COMMENT) do
           body[#body + 1] = ast.Comment(advance_token().value)
         end
-      end
-      while peek_is(TK.NEWLINE) do
-        advance_token()
+        local blank_count = 0
+        while peek_is(TK.NEWLINE) do
+          advance_token()
+          blank_count = blank_count + 1
+        end
+        if blank_count > 1 then
+          for _ = 1, blank_count - 1 do
+            body[#body + 1] = ast.Comment("")
+          end
+        end
       end
     end
     return body
