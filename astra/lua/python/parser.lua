@@ -879,7 +879,12 @@ function parser.parse(tokens)
       [TK.FLOAT]    = function() advance_token(); return ast.Constant(tonumber(current_token.value)) end,
       [TK.STRING]   = function()
         advance_token()
-        local val = current_token.value:sub(2, #current_token.value - 1)
+        local val = current_token.value
+        if val:sub(1, 3) == '"""' or val:sub(1, 3) == "'''" then
+          val = val:sub(4, #val - 3)
+        else
+          val = val:sub(2, #val - 1)
+        end
         return ast.Constant(util.unescape(val))
       end,
       [TK.IDENTIFIER] = function()

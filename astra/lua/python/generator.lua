@@ -897,10 +897,15 @@ function generator.generate(prog, analysis)
       push(indent() .. t .. " = " .. gen_expr(stmt.target) .. " " .. stmt.op .. " " .. gen_expr(stmt.value))
     end,
     [ast.EXPR_STMT] = function(stmt)
-      if
-        not (stmt.expr.type == ast.CONSTANT and type(stmt.expr.value) == "string")
-        and not (stmt.expr.type == ast.NAME)
-      then
+      if stmt.expr.type == ast.CONSTANT and type(stmt.expr.value) == "string" then
+        local text = stmt.expr.value
+        if text:find("\n") then
+          local safe = text:gsub("]]", "] ]")
+          push(indent() .. "--[[ " .. safe .. " ]]")
+        else
+          push(indent() .. "-- " .. text)
+        end
+      elseif stmt.expr.type ~= ast.NAME then
         push(indent() .. gen_expr(stmt.expr))
       end
     end,
