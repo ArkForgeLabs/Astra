@@ -1,5 +1,6 @@
 local ast = require("python.ast")
 local util = require("python.util")
+local stdlib_map = require("python.stdlib_map")
 local generator = {}
 local stdlib_inline = {}
 
@@ -940,7 +941,16 @@ function generator.generate(prog, analysis)
     [ast.IMPORT] = function(stmt)
       for _, entry in ipairs(stmt.names) do
         local local_name = entry.as_name or entry.name
-        push(indent() .. "local " .. local_name .. " = require(" .. util.escape(entry.name) .. ")")
+        local mapped = stdlib_map[entry.name]
+        if mapped then
+          local fields = {}
+          for name, expr in pairs(mapped) do
+            fields[#fields + 1] = "  " .. name .. " = " .. expr
+          end
+          push(indent() .. "local " .. local_name .. " = {\n" .. table.concat(fields, ",\n") .. "\n" .. indent() .. "}")
+        else
+          push(indent() .. "local " .. local_name .. " = require(" .. util.escape(entry.name) .. ")")
+        end
       end
     end,
     [ast.IMPORT_FROM] = function(stmt)
@@ -949,7 +959,12 @@ function generator.generate(prog, analysis)
           push(indent() .. "do local _m = require(" .. util.escape(stmt.module) .. "); for _k,_v in pairs(_m) do _G[_k] = _v end end")
         else
           local local_name = entry.as_name or entry.name
-          push(indent() .. "local " .. local_name .. " = require(" .. util.escape(stmt.module) .. ")." .. entry.name)
+          local mapped = stdlib_map[stmt.module]
+          if mapped and mapped[entry.name] then
+            push(indent() .. "local " .. local_name .. " = " .. mapped[entry.name])
+          else
+            push(indent() .. "local " .. local_name .. " = require(" .. util.escape(stmt.module) .. ")." .. entry.name)
+          end
         end
       end
     end,
