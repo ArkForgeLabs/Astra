@@ -4,7 +4,7 @@ local generator = {}
 local stdlib_inline = {}
 
 stdlib_inline.__py_slice = [====[
-__py_slice = function(tbl, start, stop, step)
+local function __py_slice(tbl, start, stop, step)
   local s, e, st = start, stop, step or 1
   local n = #tbl
   if st > 0 then
@@ -40,7 +40,7 @@ end
 ]====]
 
 stdlib_inline.__py_in = [====[
-__py_in = function(container, item)
+local function __py_in(container, item)
   if type(container) == "table" then
     for _, __v in ipairs(container) do
       if __v == item then
@@ -56,7 +56,7 @@ end
 ]====]
 
 stdlib_inline.__py_repeat = [====[
-__py_repeat = function(val, n)
+local function __py_repeat(val, n)
   local res = {}
   if type(val) == "table" then
     for _ = 1, n do
@@ -74,7 +74,7 @@ end
 ]====]
 
 stdlib_inline.__py_range = [====[
-__py_range = function(...)
+local function __py_range(...)
   local start, stop, step
   if select("#", ...) == 1 then
     start, stop, step = 0, (...), 1
@@ -99,7 +99,7 @@ end
 ]====]
 
 stdlib_inline.__py_items = [====[
-__py_items = function(container)
+local function __py_items(container)
   local result = {}
   for k, v in pairs(container) do
     result[#result + 1] = { k, v }
@@ -109,7 +109,7 @@ end
 ]====]
 
 stdlib_inline.__py_super = [====[
-__py_super = function(cls, self)
+local function __py_super(cls, self)
   local base = cls.__py_base
   if not base then
     error("super(): no base class")
@@ -128,7 +128,7 @@ end
 ]====]
 
 stdlib_inline.__py_isinstance = [====[
-__py_isinstance = function(obj, cls)
+local function __py_isinstance(obj, cls)
   if type(cls) == "table" then
     local mt = getmetatable(obj)
     while mt do
@@ -162,7 +162,7 @@ end
 ]====]
 
 stdlib_inline.__py_issubclass = [====[
-__py_issubclass = function(child, parent)
+local function __py_issubclass(child, parent)
   if type(child) ~= "table" then
     return false
   end
@@ -178,7 +178,7 @@ end
 ]====]
 
 stdlib_inline.__py_call = [====[
-__py_call = function(func, args, kwargs, params)
+local function __py_call(func, args, kwargs, params)
   if not params then
     local all = {}
     for _, a in ipairs(args) do
@@ -981,15 +981,12 @@ function generator.generate(prog, analysis)
     end
   end
 
-  -- generate user code with indentation for _main wrapping
-  indent_level = 1
+  -- generate user code first
   gen_body(prog.body)
-  indent_level = 0
   local user_body = table.concat(parts, "\n")
 
-  -- runtime helpers preamble (placed after user code so error line numbers align)
+  -- runtime helpers preamble
   local used = (analysis or {}).used_stdlib
-  local fwd_parts = {}
   local preamble_parts = {}
   local stdlib_order = {
     "__py_slice",
@@ -1003,13 +1000,8 @@ function generator.generate(prog, analysis)
     "__py_call",
   }
   if used then
-    fwd_parts[#fwd_parts + 1] = "local chr, ord, str, int = string.char, string.byte, tostring, tonumber"
-    fwd_parts[#fwd_parts + 1] = "if not table.unpack then table.unpack = unpack end"
-    for _, name in ipairs(stdlib_order) do
-      if used[name] then
-        fwd_parts[#fwd_parts + 1] = "local " .. name
-      end
-    end
+    preamble_parts[#preamble_parts + 1] = "local chr, ord, str, int = string.char, string.byte, tostring, tonumber"
+    preamble_parts[#preamble_parts + 1] = "if not table.unpack then table.unpack = unpack end"
     for _, name in ipairs(stdlib_order) do
       if used[name] then
         preamble_parts[#preamble_parts + 1] = stdlib_inline[name]
@@ -1019,18 +1011,8 @@ function generator.generate(prog, analysis)
     preamble_parts[#preamble_parts + 1] = "require('python.stdlib')"
   end
 
-  local fwd = #fwd_parts > 0 and table.concat(fwd_parts, "\n") or nil
   local preamble = table.concat(preamble_parts, "\n")
-  if #user_body > 0 then
-    local result = ""
-    if fwd then
-      result = result .. fwd .. "\n\n"
-    end
-    result = result .. "local _main\nfunction _main()\n" .. user_body .. "\nend\n\n" .. preamble .. "\n\nreturn _main()"
-    return result
-  else
-    return preamble
-  end
+  return preamble .. "\n" .. user_body
 end
 
 -- ============================================================
