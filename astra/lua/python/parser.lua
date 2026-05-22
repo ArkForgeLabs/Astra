@@ -92,6 +92,7 @@ function parser.parse(tokens)
   -- declare parser functions for Lua 5.1
   local parse_program, parse_stmt, parse_simple_stmt
   local parse_func_def, parse_class_def, parse_if, parse_while, parse_for, parse_return, parse_try
+  local parse_import_stmt, parse_import_name
   local parse_expr, parse_lambda, parse_walrus, parse_if_expr, parse_or, parse_and, parse_not, parse_comparison
   local parse_term, parse_factor, parse_unary, parse_power, parse_primary, parse_atom
   local parse_comprehension_clauses, parse_decorators
@@ -120,7 +121,7 @@ function parser.parse(tokens)
   local function skip_continuation_tokens()
     while
       peek_token()
-      and (peek_token().kind == TK.NEWLINE or peek_token().kind == TK.INDENT or peek_token().kind == TK.DEDENT)
+      and (peek_token().kind == TK.NEWLINE or peek_token().kind == TK.INDENT or peek_token().kind == TK.DEDENT or peek_token().kind == TK.COMMENT)
     do
       advance_token()
     end
@@ -159,10 +160,24 @@ function parser.parse(tokens)
       if peek_one_of(TK.DEDENT, TK.EOF) then
         break
       end
-      local stmts = parse_stmt()
-      if stmts then
-        for _, s in ipairs(stmts) do
-          body[#body + 1] = s
+      if peek_is(TK.COMMENT) then
+        local comment_lines = {}
+        while peek_is(TK.COMMENT) do
+          comment_lines[#comment_lines + 1] = advance_token().value
+          while peek_is(TK.NEWLINE) do
+            advance_token()
+          end
+        end
+        body[#body + 1] = ast.Comment(table.concat(comment_lines, "\n"))
+      else
+        local stmts = parse_stmt()
+        if stmts then
+          for _, s in ipairs(stmts) do
+            body[#body + 1] = s
+          end
+        end
+        while peek_is(TK.COMMENT) do
+          body[#body + 1] = ast.Comment(advance_token().value)
         end
       end
       while peek_is(TK.NEWLINE) do
@@ -213,6 +228,12 @@ function parser.parse(tokens)
     [TK.TRY] = function()
       return { parse_try() }
     end,
+    [TK.IMPORT] = function()
+      return parse_import_stmt()
+    end,
+    [TK.FROM] = function()
+      return parse_import_stmt()
+    end,
   }
 
   parse_stmt = function()
@@ -255,6 +276,12 @@ function parser.parse(tokens)
     end
     if match_token(TK.EQ) then
       local values = { parse_expr() }
+      while match_token(TK.EQ) do
+        for _, v in ipairs(values) do
+          targets[#targets + 1] = v
+        end
+        values = { parse_expr() }
+      end
       while match_token(TK.COMMA) do
         values[#values + 1] = parse_expr()
       end
@@ -423,6 +450,49 @@ function parser.parse(tokens)
     return ast.Try(body, handlers, finally_body)
   end
 
+  parse_import_name = function()
+    local name_parts = { expect_token(TK.IDENTIFIER).value }
+    while match_token(TK.DOT) do
+      name_parts[#name_parts + 1] = expect_token(TK.IDENTIFIER).value
+    end
+    local name = table.concat(name_parts, ".")
+    local as_name = nil
+    if match_token(TK.AS) then
+      as_name = expect_token(TK.IDENTIFIER).value
+    end
+    return { name = name, as_name = as_name }
+  end
+
+  parse_import_stmt = function()
+    if peek_is(TK.IMPORT) then
+      advance_token()
+      local names = { parse_import_name() }
+      while match_token(TK.COMMA) do
+        names[#names + 1] = parse_import_name()
+      end
+      return { ast.Import(names) }
+    else
+      advance_token()
+      local module_parts = { expect_token(TK.IDENTIFIER).value }
+      while match_token(TK.DOT) do
+        module_parts[#module_parts + 1] = expect_token(TK.IDENTIFIER).value
+      end
+      local module_name = table.concat(module_parts, ".")
+      expect_token(TK.IMPORT)
+      local names = {}
+      if peek_is(TK.STAR) then
+        advance_token()
+        names = { { name = "*", as_name = nil } }
+      else
+        names[#names + 1] = parse_import_name()
+        while match_token(TK.COMMA) do
+          names[#names + 1] = parse_import_name()
+        end
+      end
+      return { ast.ImportFrom(module_name, names) }
+    end
+  end
+
   parse_return = function()
     advance_token()
     if
@@ -431,7 +501,16 @@ function parser.parse(tokens)
       and peek_token().kind ~= TK.DEDENT
       and peek_token().kind ~= TK.EOF
     then
-      return ast.Return(parse_expr())
+      local first = parse_expr()
+      if peek_is(TK.COMMA) then
+        local elements = { first }
+        while peek_is(TK.COMMA) do
+          advance_token()
+          elements[#elements + 1] = parse_expr()
+        end
+        return ast.Return(ast.Tuple(elements))
+      end
+      return ast.Return(first)
     else
       return ast.Return(nil)
     end

@@ -904,6 +904,31 @@ function generator.generate(prog, analysis)
     -- Simulates Python try/except via pcall:
     -- wraps the try body in a pcall, checks for errors via __py_ok,
     -- and binds the error message to the exception variable on match
+    [ast.COMMENT] = function(stmt)
+      local text = stmt.value
+      if text:find("\n") then
+        local safe = text:gsub("]]", "] ]")
+        push(indent() .. "--[[ " .. safe .. " ]]")
+      else
+        push(indent() .. "-- " .. text)
+      end
+    end,
+    [ast.IMPORT] = function(stmt)
+      for _, entry in ipairs(stmt.names) do
+        local local_name = entry.as_name or entry.name
+        push(indent() .. "local " .. local_name .. " = require(" .. util.escape(entry.name) .. ")")
+      end
+    end,
+    [ast.IMPORT_FROM] = function(stmt)
+      for _, entry in ipairs(stmt.names) do
+        if entry.name == "*" then
+          push(indent() .. "do local _m = require(" .. util.escape(stmt.module) .. "); for _k,_v in pairs(_m) do _G[_k] = _v end end")
+        else
+          local local_name = entry.as_name or entry.name
+          push(indent() .. "local " .. local_name .. " = require(" .. util.escape(stmt.module) .. ")." .. entry.name)
+        end
+      end
+    end,
     [ast.TRY] = function(stmt)
       push(indent() .. "local __py_ok, __py_err = pcall(function()")
       with_indent(function()
@@ -940,11 +965,16 @@ function generator.generate(prog, analysis)
     end
   end
 
+  -- generate user code first, then prepend preamble after
+  gen_body(prog.body)
+  local user_body = table.concat(parts, "\n")
+
   -- runtime helpers preamble
   local used = (analysis or {}).used_stdlib
+  local preamble_parts = {}
   if used then
-    push("local chr, ord, str, int = string.char, string.byte, tostring, tonumber")
-    push("if not table.unpack then table.unpack = unpack end")
+    preamble_parts[#preamble_parts + 1] = "local chr, ord, str, int = string.char, string.byte, tostring, tonumber"
+    preamble_parts[#preamble_parts + 1] = "if not table.unpack then table.unpack = unpack end"
     local order = {
       "__py_slice",
       "__py_in",
@@ -958,15 +988,15 @@ function generator.generate(prog, analysis)
     }
     for _, name in ipairs(order) do
       if used[name] then
-        push(stdlib_inline[name])
+        preamble_parts[#preamble_parts + 1] = stdlib_inline[name]
       end
     end
   else
-    push("require('python.stdlib')")
+    preamble_parts[#preamble_parts + 1] = "require('python.stdlib')"
   end
 
-  gen_body(prog.body)
-  return table.concat(parts, "\n")
+  local preamble = table.concat(preamble_parts, "\n")
+  return preamble .. "\n" .. user_body
 end
 
 -- ============================================================

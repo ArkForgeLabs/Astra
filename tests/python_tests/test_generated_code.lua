@@ -96,4 +96,53 @@ return function(test)
     local body = strip_preamble(python.transpile("class X(Base):\n    pass"))
     test.expect(body).to.match("__py_base")
   end)
+
+  test.it("preserves single-line comments", function()
+    local lua = python.transpile("# hello world\nx = 1")
+    test.expect(lua).to.match("-- hello world")
+    test.expect(lua).to.match("x = 1")
+  end)
+
+  test.it("preserves inline comments", function()
+    local lua = python.transpile("x = 1  # inline")
+    test.expect(lua).to.match("x = 1")
+    test.expect(lua).to.match("-- inline")
+  end)
+
+  test.it("preserves multi-line comments as block", function()
+    local lua = python.transpile("# line 1\n# line 2\nx = 1")
+    test.expect(lua).to.match("%-%-%[%[ line 1.line 2 %]%]")
+    test.expect(lua).to.match("x = 1")
+  end)
+
+  test.it("generates import as require", function()
+    local body = strip_preamble(python.transpile("import math"))
+    test.expect(body).to.match('local math = require%("math"%)')
+  end)
+
+  test.it("generates import as require with alias", function()
+    local body = strip_preamble(python.transpile("import math as m"))
+    test.expect(body).to.match('local m = require%("math"%)')
+  end)
+
+  test.it("generates from import as require attr", function()
+    local body = strip_preamble(python.transpile("from math import sqrt"))
+    test.expect(body).to.match('local sqrt = require%("math"%).sqrt')
+  end)
+
+  test.it("generates from import with alias", function()
+    local body = strip_preamble(python.transpile("from math import sqrt as sq"))
+    test.expect(body).to.match('local sq = require%("math"%).sqrt')
+  end)
+
+  test.it("generates multi-name from import", function()
+    local body = strip_preamble(python.transpile("from sys import argv, exit"))
+    test.expect(body).to.match('local argv = require%("sys"%).argv')
+    test.expect(body).to.match('local exit = require%("sys"%).exit')
+  end)
+
+  test.it("generates from import *", function()
+    local body = strip_preamble(python.transpile("from math import *"))
+    test.expect(body).to.match("for _k,_v in pairs%(_m%) do _G%[_k%] = _v end")
+  end)
 end

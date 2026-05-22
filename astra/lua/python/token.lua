@@ -68,6 +68,9 @@ local TK = {
   AS = 64,
   CLASS = 65,
   AT = 66,
+  COMMENT = 67,
+  IMPORT = 68,
+  FROM = 69,
 }
 
 local token_names = {}
@@ -101,6 +104,8 @@ local keyword_token_map = {
   ["global"] = TK.GLOBAL,
   ["as"] = TK.AS,
   ["class"] = TK.CLASS,
+  ["import"] = TK.IMPORT,
+  ["from"] = TK.FROM,
 }
 
 local multi_character_tokens = {

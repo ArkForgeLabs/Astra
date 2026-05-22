@@ -57,6 +57,9 @@ end
 ---@class ast.ClassDef: {type: integer, name: string, bases: ast_node[], body: ast_node[], decorators: ast_node[]}
 ---@class ast.Starred: {type: integer, value: ast_node, double_star?: boolean}
 ---@class ast.Super: {type: integer}
+---@class ast.Comment: {type: integer, value: string}
+---@class ast.Import: {type: integer, names: {name:string, as_name:string?}[]}
+---@class ast.ImportFrom: {type: integer, module: string, names: {name:string, as_name:string?}[]}
 
 ---@alias ast_node
 ---| ast.Program | ast.FunctionDef | ast.If | ast.While | ast.For | ast.Try
@@ -66,6 +69,7 @@ end
 ---| ast.Subscript | ast.Attribute | ast.List | ast.Dict | ast.Set
 ---| ast.Tuple | ast.Lambda | ast.Walrus | ast.IfExpr | ast.ListComp
 ---| ast.SetComp | ast.DictComp | ast.Slice | ast.ClassDef | ast.Starred | ast.Super
+---| ast.Comment | ast.Import | ast.ImportFrom
 
 local node_defs = {
   { "Program", "PROGRAM", { "body" } },
@@ -105,6 +109,9 @@ local node_defs = {
   { "ClassDef", "CLASS_DEF", { "name", "bases", "body", "decorators" } },
   { "Starred", "STARRED", { "value", "double_star" } },
   { "Super", "SUPER", {} },
+  { "Comment", "COMMENT", { "value" } },
+  { "Import", "IMPORT", { "names" } },
+  { "ImportFrom", "IMPORT_FROM", { "module", "names" } },
 }
 for _, def in ipairs(node_defs) do
   define_ast_node(def[1], def[2], def[3])

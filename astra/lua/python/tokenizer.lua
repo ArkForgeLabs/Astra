@@ -106,9 +106,6 @@ function tokenizer.tokenize(source)
         source_pos = source_pos + 1
         at_line_start = true
       end
-    -- Indent/dedent tracking: counts leading whitespace (mixing tabs/spaces),
-    -- compares against the indent stack, and emits INDENT/DEDENT tokens.
-    -- Bracketed expressions suppress indent tracking (bracket_depth > 0).
     elseif at_line_start then
       if char == " " or char == "\t" then
         local indent_count = 0
@@ -144,9 +141,13 @@ function tokenizer.tokenize(source)
         at_line_start = false
       end
     elseif char == "#" then
+      local start = source_pos + 1
       while source_pos <= source_len and source:sub(source_pos, source_pos) ~= "\n" do
         advance_char()
       end
+      local text = source:sub(start, source_pos - 1)
+      text = text:match("^%s*(.-)%s*$") or ""
+      emit_token(TK.COMMENT, text)
     elseif char == '"' or char == "'" then
       read_quoted_string(source_pos, char)
     elseif char >= "0" and char <= "9" then

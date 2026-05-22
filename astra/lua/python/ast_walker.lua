@@ -105,6 +105,8 @@ function walker.walk_program(program, opts)
       walk_expr(stmt.target); walk_expr(stmt.value)
     elseif stmt.type == ast.EXPR_STMT then
       walk_expr(stmt.expr)
+    elseif stmt.type == ast.COMMENT or stmt.type == ast.IMPORT or stmt.type == ast.IMPORT_FROM then
+      -- leaf nodes, nothing to walk
     end
     if opts.on_stmt then opts.on_stmt(stmt) end
   end
