@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.48.0](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.47.0..0.48.0) - 2026-05-18
+
+### BREAKING
+
+- moved pprint to print - ([6433751](https://git.arkforge.net/ArkForgeLabs/Astra/commit/643375142ba8a1452518a25d37c10c5f9dd33c4b))
+
+### Documentation
+
+- updated the documentation - ([6f3244f](https://git.arkforge.net/ArkForgeLabs/Astra/commit/6f3244f084372e094deb621f5ec13b5e5144260c))
+
+### Features
+
+- added serde tests - ([8ed142f](https://git.arkforge.net/ArkForgeLabs/Astra/commit/8ed142fed97ab85bd4613d745cc1669716c42f78))
+- added tests (#166) - ([02ebad3](https://git.arkforge.net/ArkForgeLabs/Astra/commit/02ebad3c7462c9aa365932b1a39f625c22e1577b))
+- Merged the MadeWithAstra examples to here - ([2c322c1](https://git.arkforge.net/ArkForgeLabs/Astra/commit/2c322c12f07caab3e8abb2f9caa5b68d53bfa23d))
+- added luau types - ([5096461](https://git.arkforge.net/ArkForgeLabs/Astra/commit/50964611e65357fadf826fa1b573b6450fe9f3dc))
+- added Luau examples - ([4447374](https://git.arkforge.net/ArkForgeLabs/Astra/commit/444737485eae55f768b2fd297258da87b9548862))
+- validation types v2 - ([0ce0307](https://git.arkforge.net/ArkForgeLabs/Astra/commit/0ce03078d52049bda224ca2aa9ac9518a08ee21f))
+- new version of the validation types - ([34f72f5](https://git.arkforge.net/ArkForgeLabs/Astra/commit/34f72f5b6e7bc147480f93423e4f914642fbc516))
+- added validation default values and better errors - ([09b4406](https://git.arkforge.net/ArkForgeLabs/Astra/commit/09b4406fc1d6391264cd5c2f2f46ee8838ae614c))
+
+### Miscellaneous Chores
+
+- updated dependencies and cleaned tests - ([714f681](https://git.arkforge.net/ArkForgeLabs/Astra/commit/714f681c856cc211b810151ca2d094bf117f20a3))
+
+### Refactoring
+
+- removed teal examples - ([216a6af](https://git.arkforge.net/ArkForgeLabs/Astra/commit/216a6afcb9c83284437f6b7161ee128e05efc516))
+- added ability to load from Luau std as well as Lua std - ([f720c26](https://git.arkforge.net/ArkForgeLabs/Astra/commit/f720c2669b56f1ddd107417d8e6943e54fcbf4c6))
+- luau types are closer to lua types now - ([8ae4f35](https://git.arkforge.net/ArkForgeLabs/Astra/commit/8ae4f35f759dc4dba87f3623c3da1e3f1e48e1db))
+- Brought back MAIN_SCRIPT and others. - ([8ae4f35](https://git.arkforge.net/ArkForgeLabs/Astra/commit/8ae4f35f759dc4dba87f3623c3da1e3f1e48e1db))
+- renamed validation to types - ([a67410b](https://git.arkforge.net/ArkForgeLabs/Astra/commit/a67410b122b281dad9d41a569083502fbc8e73a0))
+
+### Reviewed-on
+
+- https://git.arkforge.net/ArkForgeLabs/Astra/pulls/169 - ([41c2265](https://git.arkforge.net/ArkForgeLabs/Astra/commit/41c2265bfb55444a125e000088f5b17ecadd508a))
+
+### Refaactor
+
+- [**breaking**] moved globals to utils instead. - ([6433751](https://git.arkforge.net/ArkForgeLabs/Astra/commit/643375142ba8a1452518a25d37c10c5f9dd33c4b))
+
 ## [0.47.0](https://github.com/ArkForgeLabs/Astra/compare/v0.46.0..v0.47.0) - 2026-05-03
 
 ### Bug Fixes
