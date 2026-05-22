@@ -71,6 +71,10 @@ local TK = {
   COMMENT = 67,
   IMPORT = 68,
   FROM = 69,
+  FSTRING_START = 75,
+  FSTRING_MIDDLE = 76,
+  FSTRING_END = 77,
+  FSTRING_EXPR = 78,
 }
 
 local token_names = {}

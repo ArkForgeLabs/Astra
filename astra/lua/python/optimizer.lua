@@ -81,7 +81,10 @@ local function if_false_pass(program)
               inline_stmts[#inline_stmts + 1] = s
             end
           end
-          body[i] = inline_stmts
+          table.remove(body, i)
+          for j = #inline_stmts, 1, -1 do
+            table.insert(body, i, inline_stmts[j])
+          end
         else
           i = i + 1
         end

@@ -509,5 +509,54 @@ return items
       local result = python.run("return isinstance('hello', str)")
       test.expect(result).to.equal(true)
     end)
+    test.it("TDD: f-string basic", function()
+      local result = python.run("return f'hello world'")
+      test.expect(result).to.equal("hello world")
+    end)
+    test.it("TDD: f-string with expression", function()
+      local code = "name = 'world'\nreturn f'hello {name}'"
+      local result = python.run(code)
+      test.expect(result).to.equal("hello world")
+    end)
+    test.it("TDD: f-string with arithmetic", function()
+      local result = python.run("return f'{1 + 2}'")
+      test.expect(result).to.equal("3")
+    end)
+    test.it("TDD: f-string with double quotes", function()
+      local result = python.run('name = "x"\nreturn f"value {name}"')
+      test.expect(result).to.equal("value x")
+    end)
+    test.it("TDD: f-string with escaped braces", function()
+      local result = python.run("return f'{{literal}}'")
+      test.expect(result).to.equal("{literal}")
+    end)
+    test.it("TDD: f-string with multiple expressions", function()
+      local code = "a, b = 1, 2\nreturn f'{a} + {b} = {a + b}'"
+      local result = python.run(code)
+      test.expect(result).to.equal("1 + 2 = 3")
+    end)
+    test.it("TDD: comment after colon", function()
+      local code = "if True: # comment\n    pass\nreturn 42"
+      local result = python.run(code)
+      test.expect(result).to.equal(42)
+    end)
+    test.it("TDD: comment after colon with else", function()
+      local code = "if False: # comment\n    pass\nelse: # other\n    return 42"
+      local result = python.run(code)
+      test.expect(result).to.equal(42)
+    end)
+    test.it("TDD: comment between decorator and def", function()
+      local code = [[
+def deco(f):
+    return lambda: 42
+@deco
+# a comment
+def foo():
+    return 0
+return foo()
+]]
+      local result = python.run(code)
+      test.expect(result).to.equal(42)
+    end)
   end)
 end

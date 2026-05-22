@@ -1,5 +1,6 @@
 local ast = require("python.ast")
 local token = require("python.token")
+local tokenizer = require("python.tokenizer")
 local util = require("python.util")
 local TK = token.TK
 local token_names = token.token_names
@@ -50,6 +51,9 @@ function parser.parse(tokens)
 
   local function expect_colon_newline()
     expect_token(TK.COLON)
+    while peek_is(TK.COMMENT) do
+      advance_token()
+    end
     if peek_is(TK.NEWLINE) then
       advance_token()
     end
@@ -364,7 +368,7 @@ function parser.parse(tokens)
     while peek_is(TK.AT) do
       advance_token()
       decorators[#decorators + 1] = parse_primary()
-      if peek_is(TK.NEWLINE) then
+      while peek_one_of(TK.NEWLINE, TK.COMMENT) do
         advance_token()
       end
     end
@@ -884,6 +888,39 @@ function parser.parse(tokens)
           return ast.Super()
         end
         return ast.Name(current_token.value)
+      end,
+      [TK.FSTRING_START] = function()
+        advance_token()
+        local values = {}
+        while peek_token() and peek_token().kind ~= TK.FSTRING_END do
+          if peek_is(TK.FSTRING_MIDDLE) then
+            local t = advance_token()
+            values[#values + 1] = ast.Constant(t.value)
+          elseif peek_is(TK.FSTRING_EXPR) then
+            local t = advance_token()
+            local info = t.value
+            local sub_tokens = tokenizer.tokenize(info.expr)
+            local sub_prog = parser.parse(sub_tokens)
+            local sub_expr = nil
+            if sub_prog and sub_prog.body and #sub_prog.body > 0 then
+              local first = sub_prog.body[1]
+              if first.type == ast.EXPR_STMT then
+                sub_expr = first.expr
+              end
+            end
+            if not sub_expr then
+              sub_expr = ast.Constant(nil)
+            end
+            values[#values + 1] = ast.FormattedValue(sub_expr, info.conversion, info.format_spec)
+          else
+            advance_token()
+          end
+        end
+        advance_token()
+        if #values == 1 then
+          return values[1]
+        end
+        return ast.JoinedStr(values)
       end,
       [TK.LPAREN]   = parse_paren_expr,
       [TK.LBRACKET] = parse_bracket_expr,

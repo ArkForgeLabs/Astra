@@ -59,6 +59,8 @@ end
 ---@class ast.Super: {type: integer}
 ---@class ast.Comment: {type: integer, value: string}
 ---@class ast.Import: {type: integer, names: {name:string, as_name:string?}[]}
+---@class ast.JoinedStr: {type: integer, values: ast_node[]}
+---@class ast.FormattedValue: {type: integer, value: ast_node, conversion: string?, format_spec: ast_node?}
 ---@class ast.ImportFrom: {type: integer, module: string, names: {name:string, as_name:string?}[]}
 
 ---@alias ast_node
@@ -109,6 +111,8 @@ local node_defs = {
   { "ClassDef", "CLASS_DEF", { "name", "bases", "body", "decorators" } },
   { "Starred", "STARRED", { "value", "double_star" } },
   { "Super", "SUPER", {} },
+  { "JoinedStr", "JOINED_STR", { "values" } },
+  { "FormattedValue", "FORMATTED_VALUE", { "value", "conversion", "format_spec" } },
   { "Comment", "COMMENT", { "value" } },
   { "Import", "IMPORT", { "names" } },
   { "ImportFrom", "IMPORT_FROM", { "module", "names" } },

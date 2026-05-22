@@ -1,12 +1,13 @@
 local python = require("python")
 
 local function strip_preamble(lua)
-  -- Remove everything up to and including the first "end" that closes the preamble
-  local i = lua:find("\nend\n")
-  if i then
-    return lua:sub(i + 5)
-  end
-  return lua
+  -- Extract the body of _main() (user code), discarding forward decls and preamble
+  local s = lua:find("function _main%(%)")
+  if not s then return lua end
+  s = lua:find("\n", s) + 1
+  local e = lua:find("\nend\n", s)
+  if not e then return lua end
+  return lua:sub(s, e + 4)
 end
 
 return function(test)

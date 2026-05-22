@@ -91,6 +91,125 @@ function tokenizer.tokenize(source)
     end
   end
 
+  local function read_fstring(quote_char)
+    advance_char()
+    emit_token(TK.FSTRING_START, "")
+    local function skip_string_in_expr(qc)
+      while source_pos <= source_len do
+        local c = source:sub(source_pos, source_pos)
+        if c == "\\" then
+          source_pos = source_pos + 2
+          col = col + 2
+        elseif c == qc then
+          advance_char()
+          return
+        else
+          advance_char()
+        end
+      end
+    end
+    local parts = {}
+    while source_pos <= source_len do
+      local c = source:sub(source_pos, source_pos)
+      if c == "\\" and source_pos + 1 <= source_len then
+        local n = source:sub(source_pos + 1, source_pos + 1)
+        if n == "{" or n == "}" then
+          parts[#parts + 1] = n
+          source_pos = source_pos + 2
+          col = col + 2
+        else
+          parts[#parts + 1] = c
+          advance_char()
+        end
+      elseif c == "{" and source_pos + 1 <= source_len and source:sub(source_pos + 1, source_pos + 1) == "{" then
+        parts[#parts + 1] = "{"
+        source_pos = source_pos + 2
+        col = col + 2
+      elseif c == "}" and source_pos + 1 <= source_len and source:sub(source_pos + 1, source_pos + 1) == "}" then
+        parts[#parts + 1] = "}"
+        source_pos = source_pos + 2
+        col = col + 2
+      elseif c == "{" then
+        advance_char()
+        local expr_text = ""
+        local depth = 1
+        while source_pos <= source_len and depth > 0 do
+          local ec = source:sub(source_pos, source_pos)
+          if ec == "\"" or ec == "'" then
+            skip_string_in_expr(ec)
+          elseif ec == "{" then
+            depth = depth + 1
+            expr_text = expr_text .. "{"
+            advance_char()
+          elseif ec == "}" then
+            depth = depth - 1
+            if depth > 0 then
+              expr_text = expr_text .. "}"
+            end
+            advance_char()
+          else
+            expr_text = expr_text .. ec
+            advance_char()
+          end
+        end
+        local conv = nil
+        local spec = nil
+        local e = #expr_text
+        while e > 0 do
+          local ch = expr_text:sub(e, e)
+          if ch ~= " " and ch ~= "\t" then break end
+          e = e - 1
+        end
+        if e >= 2 and expr_text:sub(e - 1, e) == "!r" then
+          conv = "r"
+          expr_text = expr_text:sub(1, e - 2):match("^%s*(.-)%s*$") or ""
+        elseif e >= 2 and expr_text:sub(e - 1, e) == "!s" then
+          conv = "s"
+          expr_text = expr_text:sub(1, e - 2):match("^%s*(.-)%s*$") or ""
+        elseif e >= 2 and expr_text:sub(e - 1, e) == "!a" then
+          conv = "a"
+          expr_text = expr_text:sub(1, e - 2):match("^%s*(.-)%s*$") or ""
+        end
+        local f_colon = nil
+        for i = #expr_text, 1, -1 do
+          if expr_text:sub(i, i) == ":" then f_colon = i break end
+        end
+        if f_colon then
+          spec = expr_text:sub(f_colon + 1)
+          expr_text = expr_text:sub(1, f_colon - 1)
+        end
+        local expr_info = {expr = expr_text:match("^%s*(.-)%s*$") or ""}
+        if conv then expr_info.conversion = conv end
+        if spec then expr_info.format_spec = spec end
+        parts[#parts + 1] = expr_info
+      elseif c == quote_char then
+        advance_char()
+        break
+      else
+        parts[#parts + 1] = c
+        advance_char()
+      end
+    end
+    if #parts > 0 then
+      local text_parts = {}
+      for i, p in ipairs(parts) do
+        if type(p) == "table" then
+          if #text_parts > 0 then
+            emit_token(TK.FSTRING_MIDDLE, table.concat(text_parts))
+            text_parts = {}
+          end
+          emit_token(TK.FSTRING_EXPR, p)
+        else
+          text_parts[#text_parts + 1] = p
+        end
+      end
+      if #text_parts > 0 then
+        emit_token(TK.FSTRING_MIDDLE, table.concat(text_parts))
+      end
+    end
+    emit_token(TK.FSTRING_END, "")
+  end
+
   while source_pos <= source_len do
     local char = source:sub(source_pos, source_pos)
 
@@ -183,7 +302,12 @@ function tokenizer.tokenize(source)
       local word = source:sub(start_index, source_pos - 1)
       local next_char = source_pos <= source_len and source:sub(source_pos, source_pos) or ""
       if (next_char == '"' or next_char == "'") and is_string_prefix(word) then
-        read_quoted_string(start_index + #word, next_char)
+        local lower = word:lower()
+        if lower == "f" or lower == "rf" or lower == "fr" then
+          read_fstring(next_char)
+        else
+          read_quoted_string(start_index + #word, next_char)
+        end
       else
         emit_token(keyword_token_map[word] or TK.IDENTIFIER, word)
       end
