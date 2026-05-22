@@ -29,7 +29,7 @@ pub async fn run_command(
     };
 
     run_command_prerequisite(lua, &actual_path_str, stdlib_path, extra_args).await;
-    spawn_termination_task(lua.clone());
+    spawn_termination_task();
 
     // Remove the Shebang lines
     let user_file = user_file
@@ -83,16 +83,16 @@ async fn run_command_prerequisite(
     }
 
     // Handle extra arguments.
-    if let Some(extra_args) = extra_args
-        && let Ok(args) = lua.create_table()
-    {
+    if let Ok(args) = lua.create_table() {
         if let Err(e) = args.set(0, file_path) {
             error!("Error adding arg to the args list: {e:?}");
         }
 
-        for (index, value) in extra_args.into_iter().enumerate() {
-            if let Err(e) = args.set((index + 1) as i32, value) {
-                error!("Error adding arg to the args list: {e:?}");
+        if let Some(extra_args) = extra_args {
+            for (index, value) in extra_args.into_iter().enumerate() {
+                if let Err(e) = args.set((index + 1) as i32, value) {
+                    error!("Error adding arg to the args list: {e:?}");
+                }
             }
         }
 
@@ -123,7 +123,7 @@ fn check_for_default_file(actual_path: &mut String, file_path: String) -> String
     result
 }
 
-fn spawn_termination_task(lua: mlua::Lua) {
+fn spawn_termination_task() {
     tokio::spawn(async move {
         let sigint = tokio::signal::ctrl_c();
 
@@ -145,12 +145,6 @@ fn spawn_termination_task(lua: mlua::Lua) {
             tokio::select! {
                 _ = sigint => {}
             }
-        }
-
-        if let Ok(exit_function) = lua.globals().get::<mlua::Function>("ASTRA_SHUTDOWN_CODE")
-            && let Err(e) = exit_function.call_async::<()>(()).await
-        {
-            error!("{e}");
         }
 
         let database_pools = DATABASE_POOLS.lock().await.clone();
