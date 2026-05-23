@@ -1,5 +1,6 @@
 local ast = require("python.ast")
 local util = require("python.util")
+local stdlib = require("python.stdlib")
 
 return function(ctx)
   local function gen_fn_sig(args, vararg, kwarg)
@@ -26,7 +27,9 @@ return function(ctx)
   local function flatten_targets(tt)
     local result = {}
     for _, t in ipairs(tt) do
-      if t.type == ast.LIST or t.type == ast.TUPLE then
+      if type(t) == "string" then
+        result[#result + 1] = t
+      elseif t.type == ast.LIST or t.type == ast.TUPLE then
         for _, e in ipairs(t.elements) do
           result[#result + 1] = ctx.gen_subscript_target(e)
         end
@@ -225,11 +228,13 @@ return function(ctx)
         else
           ctx.push(ctx.indent() .. "for _, __py_for_vars in ipairs(" .. ctx.gen_expr(stmt.iterator) .. ") do")
           ctx.with_indent(function()
-            local unpack_parts = {}
+            local var_names = {}
+            local val_parts = {}
             for i, t in ipairs(targets) do
-              unpack_parts[#unpack_parts + 1] = t .. " = __py_for_vars[" .. i .. "]"
+              var_names[#var_names + 1] = t
+              val_parts[#val_parts + 1] = "__py_for_vars[" .. i .. "]"
             end
-            ctx.push(ctx.indent() .. "local " .. table.concat(unpack_parts, ", "))
+            ctx.push(ctx.indent() .. "local " .. table.concat(var_names, ", ") .. " = " .. table.concat(val_parts, ", "))
           end)
         end
       end
@@ -311,15 +316,17 @@ return function(ctx)
       ctx.push(ctx.indent() .. ctx.gen_subscript_target(stmt.target) .. " = " .. ctx.gen_subscript_target(stmt.target) .. " " .. stmt.op .. " " .. ctx.gen_expr(stmt.value))
     end,
     [ast.EXPR_STMT] = function(stmt)
-      ctx.push(ctx.indent() .. ctx.gen_expr(stmt.expr))
+      if stmt.expr.type ~= ast.CONSTANT then
+        ctx.push(ctx.indent() .. ctx.gen_expr(stmt.expr))
+      end
     end,
     [ast.COMMENT] = function(stmt)
       local text = stmt.value
       if text == "" then
         ctx.push("")
       else
-        for _, line in ipairs(text:split("\n")) do
-          ctx.push(ctx.indent() .. "--[[" .. line .. "]]")
+        for line in text:gmatch("[^\n]+") do
+          ctx.push(ctx.indent() .. "-- " .. line)
         end
       end
     end,
@@ -328,6 +335,20 @@ return function(ctx)
         local parts = {}
         if name.name == "*" then
           parts[#parts + 1] = ctx.indent() .. "package.preload['" .. stmt.module .. "'] = function() end"
+        else
+          local alias = name.as_name or name.name
+          local module_map = stdlib.map[name.name]
+          if module_map then
+            local fields = {}
+            for k, v in pairs(module_map) do
+              if k ~= "__module" then
+                fields[#fields + 1] = "[" .. util.escape(k) .. "] = " .. v
+              end
+            end
+            parts[#parts + 1] = ctx.indent() .. "local " .. alias .. " = {" .. table.concat(fields, ", ") .. "}"
+          else
+            parts[#parts + 1] = ctx.indent() .. "local " .. alias .. " = require('" .. name.name .. "')"
+          end
         end
         ctx.push(table.concat(parts, "\n"))
       end
@@ -336,22 +357,30 @@ return function(ctx)
       local target = stmt.module
       for _, name in ipairs(stmt.names) do
         if name.name == "*" then
-          ctx.push(ctx.indent() .. "for k, v in pairs(require('" .. stmt.module .. "')) do _ENV[k] = v end")
+          ctx.push(ctx.indent() .. "for k, v in pairs(require('" .. (stdlib.map[stmt.module] and stdlib.map[stmt.module].__module or stmt.module) .. "')) do _ENV[k] = v end")
         else
           local alias = name.as_name or name.name
-          ctx.push(ctx.indent() .. "local " .. alias .. " = require('" .. stmt.module .. "')." .. name.name)
+          local inline = stdlib.map[stmt.module] and stdlib.map[stmt.module][name.name]
+          if inline then
+            ctx.push(ctx.indent() .. "local " .. alias .. " = " .. inline)
+          else
+            ctx.push(ctx.indent() .. "local " .. alias .. " = require('" .. (stdlib.map[stmt.module] and stdlib.map[stmt.module].__module or stmt.module) .. "')." .. name.name)
+          end
         end
       end
+    end,
+    [ast.BREAK] = function(_)
+      ctx.push(ctx.indent() .. "break")
+    end,
+    [ast.CONTINUE] = function(_)
+      ctx.push(ctx.indent() .. "goto __continue")
     end,
     [ast.PASS] = function(_)
       ctx.push(ctx.indent() .. "-- pass")
     end,
-    [ast.GLOBAL] = function(stmt)
-      local names = {}
-      for _, n in ipairs(stmt.names) do
-        names[#names + 1] = n
-      end
-      ctx.push(ctx.indent() .. "local " .. table.concat(names, ", "))
+    [ast.GLOBAL] = function(_)
+      -- Python's global declaration means "use the module-level variable".
+      -- In Lua, globals are the default, so this is a no-op.
     end,
   }
 

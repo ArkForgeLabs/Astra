@@ -124,6 +124,9 @@ function generator.generate(prog, analysis)
 
   ctx.gen_subscript_target = function(expr)
     if expr.type == ast.SUBSCRIPT then
+      if expr.index.type == ast.SLICE then
+        return ctx.gen_expr(expr)
+      end
       local idx = gen_index(expr)
       if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
         return ctx.gen_expr(expr.value) .. "[" .. idx .. "]"
