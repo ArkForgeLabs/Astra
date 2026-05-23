@@ -1,17 +1,10 @@
----@diagnostic disable: undefined-field
-
 local ast = require("python.ast")
-
----@class walker_opts
----@field early_expr? fun(expr: ast_node): (string|nil)
----@field on_expr? fun(expr: ast_node)
----@field early_stmt? fun(stmt: ast_node): (string|nil)
----@field on_stmt? fun(stmt: ast_node)
-
 local walker = {}
 
+--- Walks an AST program tree with optional callbacks for expressions and statements.
+--- early_expr/early_stmt can return "skip" to prune subtree traversal.
 ---@param program ast.Program
----@param opts? walker_opts
+---@param opts? {early_expr?: fun(expr): string?, on_expr?: fun(expr), early_stmt?: fun(stmt): string?, on_stmt?: fun(stmt)}
 function walker.walk_program(program, opts)
   opts = opts or {}
 
@@ -55,6 +48,13 @@ function walker.walk_program(program, opts)
         for _, if_expr in ipairs(gen.ifs or {}) do walk_expr(if_expr) end
       end
     elseif expr.type == ast.STARRED then walk_expr(expr.value)
+    elseif expr.type == ast.SLICE then
+      walk_expr(expr.lower); walk_expr(expr.upper); walk_expr(expr.step)
+    elseif expr.type == ast.JOINED_STR then
+      for _, v in ipairs(expr.values or {}) do walk_expr(v) end
+    elseif expr.type == ast.FORMATTED_VALUE then
+      walk_expr(expr.value)
+      if expr.format_spec then walk_expr(expr.format_spec) end
     end
     if opts.on_expr then opts.on_expr(expr) end
   end
@@ -105,7 +105,9 @@ function walker.walk_program(program, opts)
       walk_expr(stmt.target); walk_expr(stmt.value)
     elseif stmt.type == ast.EXPR_STMT then
       walk_expr(stmt.expr)
-    elseif stmt.type == ast.COMMENT or stmt.type == ast.IMPORT or stmt.type == ast.IMPORT_FROM then
+    elseif stmt.type == ast.COMMENT or stmt.type == ast.IMPORT or stmt.type == ast.IMPORT_FROM
+        or stmt.type == ast.GLOBAL or stmt.type == ast.PASS
+        or stmt.type == ast.BREAK or stmt.type == ast.CONTINUE then
       -- leaf nodes, nothing to walk
     end
     if opts.on_stmt then opts.on_stmt(stmt) end
@@ -116,26 +118,47 @@ function walker.walk_program(program, opts)
   end
 end
 
----@param body ast_node[]?
----@param fn fun(body: ast_node[]?)
-function walker.walk_stmt_bodies(body, fn)
-  if not body then return end
-  for _, stmt in ipairs(body) do
-    if stmt.type == ast.FUNCTION_DEF or stmt.type == ast.CLASS_DEF then
-      fn(stmt.body)
-    elseif stmt.type == ast.IF then
-      fn(stmt.body)
-      for _, elif in ipairs(stmt.elifs or {}) do fn(elif.body) end
-      fn(stmt.or_else)
-    elseif stmt.type == ast.WHILE or stmt.type == ast.FOR then
-      fn(stmt.body)
-      fn(stmt.or_else)
-    elseif stmt.type == ast.TRY then
-      fn(stmt.body)
-      for _, handler in ipairs(stmt.handlers or {}) do fn(handler.body) end
-      fn(stmt.finally_body)
+--- Walks all nested statement bodies (function/class/if/while/for/try).
+--- Accepts a visitors table with optional callbacks:
+---   visit_before(body, parent_type) — called pre-order (before children)
+---   visit_after(body, parent_type)  — called post-order (after children)
+---   visit_node(stmt, parent_type)   — called for each statement in a body
+--- Useful for optimizer passes that need to scan or mutate bodies.
+---@param program ast.Program
+---@param visitors? {visit_before?: fun(body: ast_node[], parent_type: integer), visit_after?: fun(body: ast_node[], parent_type: integer), visit_node?: fun(stmt: ast_node, parent_type: integer)}
+function walker.walk_all_bodies(program, visitors)
+  visitors = visitors or {}
+  local function recurse(body, parent_type)
+    if not body then return end
+    if visitors.visit_before then visitors.visit_before(body, parent_type) end
+    for _, stmt in ipairs(body) do
+      if visitors.visit_node then visitors.visit_node(stmt, parent_type) end
+      if stmt.type == ast.FUNCTION_DEF or stmt.type == ast.CLASS_DEF then
+        recurse(stmt.body, stmt.type)
+      elseif stmt.type == ast.IF then
+        recurse(stmt.body, ast.IF)
+        for _, elif in ipairs(stmt.elifs or {}) do recurse(elif.body, ast.IF) end
+        recurse(stmt.or_else, ast.IF)
+      elseif stmt.type == ast.WHILE or stmt.type == ast.FOR then
+        recurse(stmt.body, stmt.type)
+        recurse(stmt.or_else, stmt.type)
+      elseif stmt.type == ast.TRY then
+        recurse(stmt.body, ast.TRY)
+        for _, handler in ipairs(stmt.handlers or {}) do recurse(handler.body, ast.TRY) end
+        recurse(stmt.finally_body, ast.TRY)
+      end
     end
+    if visitors.visit_after then visitors.visit_after(body, parent_type) end
   end
+  recurse(program.body, nil)
+end
+
+---@deprecated Use walker.walk_all_bodies with visitors table instead
+function walker.walk_stmt_bodies(body, enter_fn, leave_fn)
+  walker.walk_all_bodies({ body = body }, {
+    visit_before = enter_fn,
+    visit_after = leave_fn,
+  })
 end
 
 return walker
