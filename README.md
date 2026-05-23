@@ -6,6 +6,7 @@
 [![Publish the crate](https://github.com/ArkForgeLabs/Astra/actions/workflows/crates_io_publish.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/crates_io_publish.yml)
 [![Static Badge](https://img.shields.io/badge/Read_The_Docs-blue?style=flat&logo=docsdotrs&color=%23000000)](https://astra.arkforge.net/docs/latest)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Matrix Chat](https://img.shields.io/badge/Chat-Matrix-blue.svg)](https://matrix.to/#/#Astra:matrix.org)
 
 Astra is a Rust based runtime environment for Lua (5.1-5.5), Luau and LuaJIT. The goal is to get as much performance as possible while writing the logic in Lua instead for faster iteration, fault-tolerance, all the batteries included, and complete customization. This project is internally used here at [ArkForge](https://arkforge.net), by universities, research labs, and many large organizations.
 
