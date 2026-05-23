@@ -1,8 +1,8 @@
 local ast = require("python.ast")
 local TK = require("python.token").TK
-local parser_context = require("python.parser_context")
-local expression_parser = require("python.expression_parser")
-local statement_parser = require("python.statement_parser")
+local parser_context = require("python.parser.context")
+local expression_parser = require("python.parser.expression")
+local statement_parser = require("python.parser.statement")
 
 local parser = {}
 

@@ -56,7 +56,7 @@ return function(state, top_parse)
       return
     end
     local current_token = state:peek_token()
-    local next_token = state.position + 1 > #state.tokens and nil or state.tokens[state.position]
+    local next_token = state.position + 1 > #state.tokens and nil or state.tokens[state.position + 1]
     if current_token and current_token.kind == TK.IDENTIFIER and next_token and next_token.kind == TK.EQ then
       state:advance_token()
       state:advance_token()

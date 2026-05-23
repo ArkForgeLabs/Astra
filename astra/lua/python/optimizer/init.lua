@@ -1,9 +1,18 @@
 local ast = require("python.ast")
-local walker = require("python.ast_walker")
+local stdlib = require("python.stdlib")
+local walker = require("python.optimizer.ast_walker")
 local optimizer = {}
 
 local function is_constant(expr, value)
   return expr and expr.type == ast.CONSTANT and expr.value == value
+end
+
+local function replace_with_else(body, i, stmt)
+  local else_stmts = stmt.or_else or {}
+  table.remove(body, i)
+  for j = #else_stmts, 1, -1 do
+    table.insert(body, i, else_stmts[j])
+  end
 end
 
 function optimizer.call_resolution_pass(program)
@@ -61,11 +70,7 @@ function optimizer.if_false_pass(program)
         local stmt = body[i]
         if stmt.type == ast.IF then
           if is_constant(stmt.test, false) then
-            local else_stmts = stmt.or_else or {}
-            table.remove(body, i)
-            for j = #else_stmts, 1, -1 do
-              table.insert(body, i, else_stmts[j])
-            end
+            replace_with_else(body, i, stmt)
           elseif is_constant(stmt.test, true) then
             local inline_stmts = stmt.body or {}
             if stmt.or_else then
@@ -96,11 +101,7 @@ function optimizer.while_false_pass(program)
       while i <= #body do
         local stmt = body[i]
         if stmt.type == ast.WHILE and is_constant(stmt.test, false) then
-          local else_stmts = stmt.or_else or {}
-          table.remove(body, i)
-          for j = #else_stmts, 1, -1 do
-            table.insert(body, i, else_stmts[j])
-          end
+          replace_with_else(body, i, stmt)
         else
           i = i + 1
         end
@@ -128,17 +129,13 @@ end
 function optimizer.stdlib_usage_pass(program, analysis)
   analysis.used_stdlib = {}
   local used = analysis.used_stdlib
-  local alias_names = {
-    len = "__py_len", int = "__py_int", range = "__py_range",
-    isinstance = "__py_isinstance", issubclass = "__py_issubclass",
-  }
   walker.walk_program(program, {
     early_expr = function(expr)
       if expr.type == ast.CALL then
         if expr.keywords and #expr.keywords > 0 then used.__py_call = true end
         if expr.func.type == ast.SUPER then used.__py_super = true end
         if expr.func.type == ast.NAME then
-          local alias = alias_names[expr.func.id]
+          local alias = stdlib.aliases[expr.func.id]
           if alias then expr.func.id = alias; used[alias] = true end
         end
         if expr.func.type == ast.ATTRIBUTE and not (expr.keywords and #expr.keywords > 0) then
