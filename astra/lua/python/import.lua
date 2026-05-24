@@ -5,15 +5,10 @@ local optimizer = require("python.optimizer")
 local parser = require("python.parser")
 local stdlib = require("python.stdlib")
 local tokenizer = require("python.tokenizer")
+local util = require("python.util")
 
-local python = {}
-
+local import = {}
 local processed_modules
-
-local function dirname(path)
-  local dir = path:match("^(.*/)") or path:match("^(.*\\)")
-  return (dir and dir:sub(1, -2)) or "."
-end
 
 local function add_to_path(dir)
   local sep = fs.get_separator()
@@ -24,14 +19,22 @@ local function add_to_path(dir)
   end
 end
 
+local function is_builtin(name)
+  local top = util.get_top_level(name)
+  if not top then return false end
+  local lua_modules = {
+    math = true, string = true, table = true, io = true, os = true,
+    debug = true, coroutine = true, utf8 = true,
+  }
+  return stdlib.map[top] ~= nil or lua_modules[top]
+end
+
 local function resolve_module(name, search_dirs)
   local parts = {}
   for part in name:gmatch("[^.]+") do
     parts[#parts + 1] = part
   end
-  if #parts == 0 then
-    return nil
-  end
+  if #parts == 0 then return nil end
 
   for _, dir in ipairs(search_dirs) do
     local subpath = table.concat(parts, "/")
@@ -68,57 +71,23 @@ local function collect_import_names(prog)
         walk_body(stmt.body)
       elseif stmt.type == ast.IF then
         walk_body(stmt.body)
-        for _, elif in ipairs(stmt.elifs) do
-          walk_body(elif.body)
-        end
-        if stmt.or_else then
-          walk_body(stmt.or_else)
-        end
+        for _, elif in ipairs(stmt.elifs) do walk_body(elif.body) end
+        if stmt.or_else then walk_body(stmt.or_else) end
       elseif stmt.type == ast.WHILE then
         walk_body(stmt.body)
-        if stmt.or_else then
-          walk_body(stmt.or_else)
-        end
+        if stmt.or_else then walk_body(stmt.or_else) end
       elseif stmt.type == ast.FOR then
         walk_body(stmt.body)
-        if stmt.or_else then
-          walk_body(stmt.or_else)
-        end
+        if stmt.or_else then walk_body(stmt.or_else) end
       elseif stmt.type == ast.TRY then
         walk_body(stmt.body)
-        for _, handler in ipairs(stmt.handlers) do
-          walk_body(handler.body)
-        end
-        if stmt.finally_body then
-          walk_body(stmt.finally_body)
-        end
+        for _, handler in ipairs(stmt.handlers) do walk_body(handler.body) end
+        if stmt.finally_body then walk_body(stmt.finally_body) end
       end
     end
   end
   walk_body(prog.body)
   return names
-end
-
-local function get_top_level(name)
-  return name:match("^([^.]+)")
-end
-
-local function is_builtin(name)
-  local top = get_top_level(name)
-  if not top then
-    return false
-  end
-  local lua_modules = {
-    math = true,
-    string = true,
-    table = true,
-    io = true,
-    os = true,
-    debug = true,
-    coroutine = true,
-    utf8 = true,
-  }
-  return stdlib.map[top] ~= nil or lua_modules[top]
 end
 
 local function resolve_package_chain(name, search_dirs)
@@ -142,7 +111,6 @@ local function resolve_package_chain(name, search_dirs)
       end
     end
   end
-
   return results
 end
 
@@ -162,17 +130,14 @@ local function collect_module_exports(prog)
     elseif stmt.type == ast.IMPORT then
       for _, n in ipairs(stmt.names) do
         if n.name ~= "*" then
-          local alias = n.as_name or get_top_level(n.name)
-          if alias then
-            exports[alias] = true
-          end
+          local alias = n.as_name or util.get_top_level(n.name)
+          if alias then exports[alias] = true end
         end
       end
     elseif stmt.type == ast.IMPORT_FROM then
       for _, n in ipairs(stmt.names) do
         if n.name ~= "*" then
-          local alias = n.as_name or n.name
-          exports[alias] = true
+          exports[n.as_name or n.name] = true
         end
       end
     end
@@ -201,7 +166,7 @@ local function transpile_module(py_path, lua_path, opts)
     lua_code = lua_code .. "\nreturn { " .. table.concat(parts, ", ") .. " }\n"
   end
 
-  local out_dir = dirname(lua_path)
+  local out_dir = util.dirname(lua_path)
   if not fs.exists(out_dir) then
     fs.create_dir_all(out_dir)
   end
@@ -211,7 +176,7 @@ local function transpile_module(py_path, lua_path, opts)
   local import_names = collect_import_names(prog)
   for name in pairs(import_names) do
     if not is_builtin(name) then
-      local chain = resolve_package_chain(name, { dirname(py_path) })
+      local chain = resolve_package_chain(name, { util.dirname(py_path) })
       for _, item in ipairs(chain) do
         transpile_module(item.py_path, item.lua_path, opts)
       end
@@ -219,7 +184,7 @@ local function transpile_module(py_path, lua_path, opts)
   end
 end
 
-local function resolve_dependencies(prog, cwd, opts)
+function import.resolve(prog, cwd, opts)
   opts = opts or {}
   processed_modules = {}
   local search_dirs = {}
@@ -243,52 +208,4 @@ local function resolve_dependencies(prog, cwd, opts)
   end
 end
 
-function python.transpile(source, opts)
-  opts = opts or {}
-  local tokens = tokenizer.tokenize(source)
-  local prog = parser.parse(tokens)
-  local analysis = optimizer.analyze(prog, opts)
-  local lua_code = generator.generate(prog, analysis)
-
-  local cwd = opts.cwd
-  if not cwd and MAIN_SCRIPT then
-    cwd = dirname(MAIN_SCRIPT)
-  end
-  if cwd then
-    resolve_dependencies(prog, cwd, opts)
-  end
-
-  python.last_code = lua_code
-  return lua_code
-end
-
-function python.eval(source, opts)
-  local lua_code = python.transpile(source, opts)
-  local chunk, err = load(lua_code, "=python")
-  if not chunk then
-    error("Python runtime error: " .. tostring(err))
-  end
-  return chunk()
-end
-python.run = python.eval
-
-function python.transpile_file(path, opts)
-  opts = opts or {}
-  local merged = { cwd = dirname(path) }
-  if opts.path then
-    merged.path = opts.path
-  end
-  return python.transpile(fs.read_file(path), merged)
-end
-
-function python.eval_file(path, opts)
-  opts = opts or {}
-  local merged = { cwd = dirname(path) }
-  if opts.path then
-    merged.path = opts.path
-  end
-  return python.eval(fs.read_file(path), merged)
-end
-python.run_file = python.eval_file
-
-return python
+return import

@@ -22,4 +22,17 @@ function util.unescape(input_str)
   return input_str
 end
 
+---@param path string
+---@return string
+function util.dirname(path)
+  local dir = path:match("^(.*/)") or path:match("^(.*\\)")
+  return (dir and dir:sub(1, -2)) or "."
+end
+
+---@param name string
+---@return string?
+function util.get_top_level(name)
+  return name:match("^([^.]+)")
+end
+
 return util
