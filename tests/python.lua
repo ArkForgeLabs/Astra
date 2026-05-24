@@ -558,5 +558,79 @@ return foo()
       local result = python.run(code)
       test.expect(result).to.equal(42)
     end)
+
+    -- ============================================================
+    -- Multi-file transpilation tests
+    -- ============================================================
+
+    test.it("run_file resolves simple import", function()
+      local dir = "tests/python_tests/multi_file/"
+      local ok, err = pcall(python.run_file, dir .. "test_simple_import.py", {
+        path = { dir },
+      })
+      test.expect(ok).to.equal(true, tostring(err))
+    end)
+
+    test.it("run_file resolves from-import", function()
+      local dir = "tests/python_tests/multi_file/"
+      local ok, err = pcall(python.run_file, dir .. "test_from_import.py", {
+        path = { dir },
+      })
+      test.expect(ok).to.equal(true, tostring(err))
+    end)
+
+    test.it("run_file resolves import chain (A imports B)", function()
+      local dir = "tests/python_tests/multi_file/"
+      local ok, err = pcall(python.run_file, dir .. "test_import_chain.py", {
+        path = { dir },
+      })
+      test.expect(ok).to.equal(true, tostring(err))
+    end)
+
+    test.it("run_file resolves dotted package import", function()
+      local dir = "tests/python_tests/multi_file/"
+      local ok, err = pcall(python.run_file, dir .. "test_package_import.py", {
+        path = { dir },
+      })
+      test.expect(ok).to.equal(true, tostring(err))
+    end)
+
+    test.it("run_file resolves dotted submodule import", function()
+      local dir = "tests/python_tests/multi_file/"
+      local ok, err = pcall(python.run_file, dir .. "test_submodule_import.py", {
+        path = { dir },
+      })
+      test.expect(ok).to.equal(true, tostring(err))
+    end)
+
+    test.it("transpile_file writes .lua files for dependencies", function()
+      local path = "tests/python_tests/multi_file/"
+      python.transpile_file(path .. "test_simple_import.py", { path = { path } })
+      local f = io.open(path .. "mylib.lua", "r")
+      test.expect(f ~= nil).to.equal(true, "mylib.lua not found")
+      if f then f:close() end
+    end)
+
+    test.it("transpile_file writes .lua for dotted submodule", function()
+      local path = "tests/python_tests/multi_file/"
+      python.transpile_file(path .. "test_submodule_import.py", { path = { path } })
+      local f1 = io.open(path .. "utils/init.lua", "r")
+      test.expect(f1 ~= nil).to.equal(true, "utils/init.lua not found")
+      if f1 then f1:close() end
+      local f2 = io.open(path .. "utils/strings.lua", "r")
+      test.expect(f2 ~= nil).to.equal(true, "utils/strings.lua not found")
+      if f2 then f2:close() end
+    end)
+
+    test.it("transpile_file writes .lua for import chain", function()
+      local path = "tests/python_tests/multi_file/"
+      python.transpile_file(path .. "test_import_chain.py", { path = { path } })
+      local f1 = io.open(path .. "chain_a.lua", "r")
+      test.expect(f1 ~= nil).to.equal(true, "chain_a.lua not found")
+      if f1 then f1:close() end
+      local f2 = io.open(path .. "chain_b.lua", "r")
+      test.expect(f2 ~= nil).to.equal(true, "chain_b.lua not found")
+      if f2 then f2:close() end
+    end)
   end)
 end
