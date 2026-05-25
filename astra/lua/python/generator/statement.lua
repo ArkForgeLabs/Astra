@@ -257,21 +257,43 @@ return function(ctx)
         ctx.gen_body(stmt.body)
       end)
       ctx.push(ctx.indent() .. "end)")
+      ctx.push(ctx.indent() .. "local __caught = false")
       for _, handler in ipairs(stmt.handlers) do
-        if handler.name then
-          ctx.push(ctx.indent() .. "if not __ok then")
+        if handler.type then
+          local type_check
+          if handler.type.type == ast.TUPLE then
+            local checks = {}
+            for _, t in ipairs(handler.type.elements) do
+              checks[#checks + 1] = "__py_exception_match(__err, " .. ctx.gen_expr(t) .. ")"
+            end
+            type_check = "(" .. table.concat(checks, " or ") .. ")"
+          else
+            type_check = "__py_exception_match(__err, " .. ctx.gen_expr(handler.type) .. ")"
+          end
+          ctx.push(ctx.indent() .. "if not __ok and not __caught and type(__err) == \"table\" and " .. type_check .. " then")
           ctx.with_indent(function()
-            ctx.push(ctx.indent() .. "local " .. handler.name .. " = __err")
+            if handler.name then
+              ctx.push(ctx.indent() .. "local " .. handler.name .. " = __err")
+            end
+            ctx.push(ctx.indent() .. "__caught = true")
             ctx.gen_body(handler.body)
           end)
           ctx.push(ctx.indent() .. "end")
         else
-          ctx.push(ctx.indent() .. "if not __ok then")
+          ctx.push(ctx.indent() .. "if not __ok and not __caught then")
           ctx.with_indent(function()
+            ctx.push(ctx.indent() .. "__caught = true")
             ctx.gen_body(handler.body)
           end)
           ctx.push(ctx.indent() .. "end")
         end
+      end
+      if stmt.or_else then
+        ctx.push(ctx.indent() .. "if __ok then")
+        ctx.with_indent(function()
+          ctx.gen_body(stmt.or_else)
+        end)
+        ctx.push(ctx.indent() .. "end")
       end
       if stmt.finally_body then
         ctx.push(ctx.indent() .. "do")
@@ -280,6 +302,11 @@ return function(ctx)
         end)
         ctx.push(ctx.indent() .. "end")
       end
+      ctx.push(ctx.indent() .. "if not __ok and not __caught then")
+      ctx.with_indent(function()
+        ctx.push(ctx.indent() .. "error(__err)")
+      end)
+      ctx.push(ctx.indent() .. "end")
     end,
     [ast.RETURN] = function(stmt)
       if stmt.value then

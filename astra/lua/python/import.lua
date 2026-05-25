@@ -82,6 +82,7 @@ local function collect_import_names(prog)
       elseif stmt.type == ast.TRY then
         walk_body(stmt.body)
         for _, handler in ipairs(stmt.handlers) do walk_body(handler.body) end
+        if stmt.or_else then walk_body(stmt.or_else) end
         if stmt.finally_body then walk_body(stmt.finally_body) end
       end
     end

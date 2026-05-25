@@ -168,11 +168,16 @@ return function(state, expr)
       local handler_body = parse_block(parse_block_body)
       handlers[#handlers + 1] = { type = exception_type, name = exception_var, body = handler_body }
     end
+    local or_else = nil
+    if state:peek_is(TK.ELSE) then
+      state:advance_token()
+      or_else = parse_block(parse_block_body)
+    end
     if state:peek_is(TK.FINALLY) then
       state:advance_token()
       finally_body = parse_block(parse_block_body)
     end
-    return ast.Try(body, handlers, finally_body)
+    return ast.Try(body, handlers, finally_body, or_else)
   end
 
   stmt.parse_import_name = function()

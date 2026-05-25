@@ -25,7 +25,7 @@ end
 ---@class ast.If: {type: integer, test: ast_node, body: ast_node[], elifs: {test: ast_node, body: ast_node[]}[], or_else: ast_node[]?}
 ---@class ast.While: {type: integer, test: ast_node, body: ast_node[], or_else: ast_node[]?}
 ---@class ast.For: {type: integer, targets: string[], iterator: ast_node?, body: ast_node[], or_else: ast_node[]?, is_range: boolean, range_args: ast_node[]}
----@class ast.Try: {type: integer, body: ast_node[], handlers: {type: ast_node?, name: string?, body: ast_node[]}[], finally_body: ast_node[]?}
+---@class ast.Try: {type: integer, body: ast_node[], handlers: {type: ast_node?, name: string?, body: ast_node[]}[], finally_body: ast_node[]?, or_else: ast_node[]?}
 ---@class ast.Return: {type: integer, value: ast_node?}
 ---@class ast.Assign: {type: integer, targets: ast_node[], value: ast_node}
 ---@class ast.AugAssign: {type: integer, target: ast_node, op: string, value: ast_node}
@@ -80,7 +80,7 @@ local node_defs = {
   { "If", "IF", { "test", "body", "elifs", "or_else" } },
   { "While", "WHILE", { "test", "body", "or_else" } },
   { "For", "FOR", { "targets", "iterator", "body", "or_else", "is_range", "range_args" } },
-  { "Try", "TRY", { "body", "handlers", "finally_body" } },
+  { "Try", "TRY", { "body", "handlers", "finally_body", "or_else" } },
   { "Return", "RETURN", { "value" } },
   { "Assign", "ASSIGN", { "targets", "value" } },
   { "AugAssign", "AUG_ASSIGN", { "target", "op", "value" } },

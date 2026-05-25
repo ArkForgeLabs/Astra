@@ -161,6 +161,20 @@ function optimizer.stdlib_usage_pass(program, analysis)
         end
       end
     end,
+    early_stmt = function(stmt)
+      if stmt.type == ast.TRY then
+        for _, handler in ipairs(stmt.handlers or {}) do
+          if handler.type then
+            used.__py_exception_match = true
+            used.__py_exception_classes = true
+            break
+          end
+        end
+      elseif stmt.type == ast.RAISE and stmt.exc then
+        used.__py_exception_match = true
+        used.__py_exception_classes = true
+      end
+    end,
   })
 end
 

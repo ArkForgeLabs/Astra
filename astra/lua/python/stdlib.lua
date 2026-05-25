@@ -277,6 +277,45 @@ function stdlib.__py_call(func, args, kwargs, params)
   return func(table.unpack(merged, 1, #params))
 end
 
+function stdlib.__py_exception_match(err, cls)
+  if type(err) ~= "table" then return false end
+  local mt = getmetatable(err)
+  while mt do
+    if mt.__index == cls then return true end
+    local base = mt.__index
+    while base do
+      if base == cls then return true end
+      base = base.__py_base
+    end
+    mt = getmetatable(mt)
+  end
+  return false
+end
+
+local function __py_make_exc(name, base)
+  local cls = {}
+  cls.__name = name
+  cls.__py_base = base
+  local mt = {__index = base}
+  mt.__call = function(self, msg)
+    local inst = {message = msg or ""}
+    return setmetatable(inst, {__index = self})
+  end
+  return setmetatable(cls, mt)
+end
+
+stdlib.BaseException = __py_make_exc("BaseException", nil)
+stdlib.Exception = __py_make_exc("Exception", stdlib.BaseException)
+stdlib.ValueError = __py_make_exc("ValueError", stdlib.Exception)
+stdlib.TypeError = __py_make_exc("TypeError", stdlib.Exception)
+stdlib.KeyError = __py_make_exc("KeyError", stdlib.Exception)
+stdlib.IndexError = __py_make_exc("IndexError", stdlib.Exception)
+stdlib.RuntimeError = __py_make_exc("RuntimeError", stdlib.Exception)
+stdlib.AttributeError = __py_make_exc("AttributeError", stdlib.Exception)
+stdlib.StopIteration = __py_make_exc("StopIteration", stdlib.Exception)
+stdlib.NotImplementedError = __py_make_exc("NotImplementedError", stdlib.Exception)
+stdlib.OSError = __py_make_exc("OSError", stdlib.Exception)
+
 local aliases = {
   len = "__py_len",
   int = "__py_int",
@@ -302,8 +341,17 @@ for _, k in ipairs({
   "__py_isinstance",
   "__py_issubclass",
   "__py_call",
+  "__py_exception_match",
 }) do
   _G[k] = stdlib[k]
+end
+
+for _, name in ipairs({
+  "BaseException", "Exception", "ValueError", "TypeError", "KeyError",
+  "IndexError", "RuntimeError", "AttributeError", "StopIteration",
+  "NotImplementedError", "OSError",
+}) do
+  _G[name] = stdlib[name]
 end
 
 -- Inline function bodies for the generator (single source of truth)
@@ -531,6 +579,50 @@ local function __py_call(func, args, kwargs, params)
     end
   end
   return func(table.unpack(merged, 1, #params))
+end
+]====]
+
+stdlib.__inline_functions.__py_exception_match = [====[
+local function __py_exception_match(err, cls)
+  if type(err) ~= "table" then return false end
+  local mt = getmetatable(err)
+  while mt do
+    if mt.__index == cls then return true end
+    local base = mt.__index
+    while base do
+      if base == cls then return true end
+      base = base.__py_base
+    end
+    mt = getmetatable(mt)
+  end
+  return false
+end
+]====]
+
+stdlib.__inline_functions.__py_exception_classes = [====[
+do
+  local function __py_make_exc(name, base)
+    local cls = {}
+    cls.__name = name
+    cls.__py_base = base
+    local mt = {__index = base}
+    mt.__call = function(self, msg)
+      local inst = {message = msg or ""}
+      return setmetatable(inst, {__index = self})
+    end
+    return setmetatable(cls, mt)
+  end
+  BaseException = __py_make_exc("BaseException", nil)
+  Exception = __py_make_exc("Exception", BaseException)
+  ValueError = __py_make_exc("ValueError", Exception)
+  TypeError = __py_make_exc("TypeError", Exception)
+  KeyError = __py_make_exc("KeyError", Exception)
+  IndexError = __py_make_exc("IndexError", Exception)
+  RuntimeError = __py_make_exc("RuntimeError", Exception)
+  AttributeError = __py_make_exc("AttributeError", Exception)
+  StopIteration = __py_make_exc("StopIteration", Exception)
+  NotImplementedError = __py_make_exc("NotImplementedError", Exception)
+  OSError = __py_make_exc("OSError", Exception)
 end
 ]====]
 

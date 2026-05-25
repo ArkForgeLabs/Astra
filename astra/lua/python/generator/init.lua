@@ -177,6 +177,7 @@ function generator.generate(prog, analysis)
       "__py_slice", "__py_slice_assign", "__py_in", "__py_repeat", "__py_range",
       "__py_items", "__py_super", "__py_getitem",
       "__py_isinstance", "__py_issubclass", "__py_call",
+      "__py_exception_classes", "__py_exception_match",
     }) do
       if used[name] then
         preamble_parts[#preamble_parts + 1] = stdlib.__inline_functions[name]

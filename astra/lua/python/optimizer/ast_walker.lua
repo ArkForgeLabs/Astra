@@ -91,7 +91,11 @@ function walker.walk_program(program, opts)
     elseif stmt.type == ast.TRY then
       for _, s in ipairs(stmt.body or {}) do walk_stmt(s) end
       for _, handler in ipairs(stmt.handlers or {}) do
+        if handler.type then walk_expr(handler.type) end
         for _, s in ipairs(handler.body or {}) do walk_stmt(s) end
+      end
+      if stmt.or_else then
+        for _, s in ipairs(stmt.or_else) do walk_stmt(s) end
       end
       if stmt.finally_body then
         for _, s in ipairs(stmt.finally_body) do walk_stmt(s) end
@@ -145,6 +149,7 @@ function walker.walk_all_bodies(program, visitors)
       elseif stmt.type == ast.TRY then
         recurse(stmt.body, ast.TRY)
         for _, handler in ipairs(stmt.handlers or {}) do recurse(handler.body, ast.TRY) end
+        recurse(stmt.or_else, ast.TRY)
         recurse(stmt.finally_body, ast.TRY)
       end
     end
