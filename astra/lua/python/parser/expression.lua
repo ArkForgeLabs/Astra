@@ -329,6 +329,11 @@ return function(state, top_parse)
 
   local function parse_bracket_expr()
     state:advance_token()
+    skip_continuation_tokens()
+    if state:peek_is(TK.RBRACKET) then
+      state:expect_token(TK.RBRACKET)
+      return ast.List({})
+    end
     local first = expr.parse_expr()
     if state:peek_is(TK.FOR) then
       state:advance_token()
