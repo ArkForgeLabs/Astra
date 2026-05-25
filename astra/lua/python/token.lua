@@ -76,6 +76,8 @@ local TK = {
   FSTRING_END = 77,
   FSTRING_EXPR = 78,
   RAISE = 79,
+  ASSERT = 80,
+  DEL = 81,
 }
 
 local token_names = {}
@@ -112,6 +114,8 @@ local keyword_token_map = {
   ["import"] = TK.IMPORT,
   ["from"] = TK.FROM,
   ["raise"] = TK.RAISE,
+  ["assert"] = TK.ASSERT,
+  ["del"] = TK.DEL,
 }
 
 local multi_character_tokens = {

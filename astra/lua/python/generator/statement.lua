@@ -421,6 +421,36 @@ return function(ctx)
         ctx.push(ctx.indent() .. "error(\"\")")
       end
     end,
+    [ast.ASSERT] = function(stmt)
+      local test = ctx.gen_expr(stmt.test)
+      if stmt.message then
+        ctx.push(ctx.indent() .. "if not (" .. test .. ") then error(" .. ctx.gen_expr(stmt.message) .. ") end")
+      else
+        ctx.push(ctx.indent() .. "if not (" .. test .. ") then error(\"assertion failed\") end")
+      end
+    end,
+    [ast.DEL] = function(stmt)
+      local function gen_del(target)
+        if target.type == ast.NAME then
+          ctx.push(ctx.indent() .. target.id .. " = nil")
+        elseif target.type == ast.SUBSCRIPT then
+          local obj = ctx.gen_expr(target.value)
+          local idx = ctx.gen_expr(target.index)
+          if target.index.type == ast.CONSTANT and type(target.index.value) == "string" then
+            ctx.push(ctx.indent() .. obj .. "[" .. idx .. "] = nil")
+          else
+            ctx.push(ctx.indent() .. "table.remove(" .. obj .. ", " .. idx .. " + 1)")
+          end
+        elseif target.type == ast.ATTRIBUTE then
+          ctx.push(ctx.indent() .. ctx.gen_expr(target.value) .. "." .. target.attr .. " = nil")
+        elseif target.type == ast.TUPLE then
+          for _, e in ipairs(target.elements) do
+            gen_del(e)
+          end
+        end
+      end
+      gen_del(stmt.target)
+    end,
     [ast.GLOBAL] = function(_)
       -- Python's global declaration means "use the module-level variable".
       -- In Lua, globals are the default, so this is a no-op.

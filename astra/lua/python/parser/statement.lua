@@ -261,6 +261,23 @@ return function(state, expr)
     end
   end
 
+  stmt.parse_assert = function()
+    state:advance_token()
+    local test = expr.parse_expr()
+    local message = nil
+    if state:peek_is(TK.COMMA) then
+      state:advance_token()
+      message = expr.parse_expr()
+    end
+    return ast.Assert(test, message)
+  end
+
+  stmt.parse_del = function()
+    state:advance_token()
+    local target = expr.parse_expr()
+    return ast.Del(target)
+  end
+
   stmt.parse_simple_stmt = function()
     if state:peek_is(TK.GLOBAL) then
       state:advance_token()
@@ -345,6 +362,12 @@ return function(state, expr)
     end,
     [TK.RAISE] = function()
       return { stmt.parse_raise() }
+    end,
+    [TK.ASSERT] = function()
+      return { stmt.parse_assert() }
+    end,
+    [TK.DEL] = function()
+      return { stmt.parse_del() }
     end,
     [TK.IMPORT] = function()
       return stmt.parse_import_stmt()

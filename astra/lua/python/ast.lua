@@ -62,6 +62,8 @@ end
 ---@class ast.JoinedStr: {type: integer, values: ast_node[]}
 ---@class ast.FormattedValue: {type: integer, value: ast_node, conversion: string?, format_spec: ast_node?}
 ---@class ast.Raise: {type: integer, exc: ast_node?}
+---@class ast.Assert: {type: integer, test: ast_node, message: ast_node?}
+---@class ast.Del: {type: integer, target: ast_node}
 ---@class ast.ImportFrom: {type: integer, module: string, names: {name:string, as_name:string?}[]}
 
 ---@alias ast_node
@@ -72,7 +74,7 @@ end
 ---| ast.Subscript | ast.Attribute | ast.List | ast.Dict | ast.Set
 ---| ast.Tuple | ast.Lambda | ast.Walrus | ast.IfExpr | ast.ListComp
 ---| ast.SetComp | ast.DictComp | ast.Slice | ast.ClassDef | ast.Starred | ast.Super
----| ast.Comment | ast.Import | ast.ImportFrom | ast.Raise
+---| ast.Comment | ast.Import | ast.ImportFrom | ast.Raise | ast.Assert | ast.Del
 
 local node_defs = {
   { "Program", "PROGRAM", { "body" } },
@@ -118,6 +120,8 @@ local node_defs = {
   { "Import", "IMPORT", { "names" } },
   { "ImportFrom", "IMPORT_FROM", { "module", "names" } },
   { "Raise", "RAISE", { "exc" } },
+  { "Assert", "ASSERT", { "test", "message" } },
+  { "Del", "DEL", { "target" } },
 }
 for _, def in ipairs(node_defs) do
   define_ast_node(def[1], def[2], def[3])
