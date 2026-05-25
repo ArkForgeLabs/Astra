@@ -110,9 +110,17 @@ function walker.walk_program(program, opts)
     elseif stmt.type == ast.EXPR_STMT then
       walk_expr(stmt.expr)
     elseif stmt.type == ast.COMMENT or stmt.type == ast.IMPORT or stmt.type == ast.IMPORT_FROM
-        or stmt.type == ast.GLOBAL or stmt.type == ast.PASS
+        or stmt.type == ast.GLOBAL or stmt.type == ast.NONLOCAL or stmt.type == ast.PASS
         or stmt.type == ast.BREAK or stmt.type == ast.CONTINUE then
       -- leaf nodes, nothing to walk
+    elseif stmt.type == ast.WITH then
+      for _, item in ipairs(stmt.items or {}) do
+        walk_expr(item.context_expr)
+        if item.optional_vars then walk_expr(item.optional_vars) end
+      end
+      for _, s in ipairs(stmt.body or {}) do walk_stmt(s) end
+    elseif stmt.type == ast.YIELD then
+      if stmt.value then walk_expr(stmt.value) end
     end
     if opts.on_stmt then opts.on_stmt(stmt) end
   end
@@ -151,6 +159,10 @@ function walker.walk_all_bodies(program, visitors)
         for _, handler in ipairs(stmt.handlers or {}) do recurse(handler.body, ast.TRY) end
         recurse(stmt.or_else, ast.TRY)
         recurse(stmt.finally_body, ast.TRY)
+      elseif stmt.type == ast.ASYNC_FUNCTION_DEF then
+        recurse(stmt.body, stmt.type)
+      elseif stmt.type == ast.WITH then
+        recurse(stmt.body, stmt.type)
       end
     end
     if visitors.visit_after then visitors.visit_after(body, parent_type) end

@@ -632,5 +632,79 @@ return foo()
       test.expect(f2 ~= nil).to.equal(true, "chain_b.lua not found")
       if f2 then f2:close() end
     end)
+
+    test.it("TDD: nonlocal", function()
+      local ok, result = pcall(python.run, [[
+def outer():
+    x = 1
+    def inner():
+        nonlocal x
+        x = 2
+    inner()
+    return x
+return outer()
+]])
+      test.expect(ok).to.equal(true)
+      test.expect(result).to.equal(2)
+    end)
+
+    test.it("TDD: raise from", function()
+      local code = python.transpile([[
+try:
+    raise ValueError("original")
+except Exception as e:
+    raise RuntimeError("wrapper") from e
+]])
+      test.expect(code).to.be.a("string")
+    end)
+
+    test.it("TDD: async def", function()
+      local code = python.transpile([[
+async def fetch():
+    return 42
+print(fetch())
+]])
+      test.expect(code).to.be.a("string")
+      local f = load(code)
+      test.expect(f).to.be.a("function")
+    end)
+
+    test.it("TDD: await expression", function()
+      local code = python.transpile([[
+async def fetch():
+    return 42
+
+async def main():
+    result = await fetch()
+    return result
+]])
+      test.expect(code).to.be.a("string")
+    end)
+
+    test.it("TDD: with statement", function()
+      local code = python.transpile([[
+class CM:
+    def __enter__(self):
+        return self
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+with CM() as cm:
+    print("ok")
+]])
+      test.expect(code).to.be.a("string")
+    end)
+
+    test.it("TDD: yield generator", function()
+      local code = python.transpile([[
+def count(n):
+    i = 0
+    while i < n:
+        yield i
+        i += 1
+print(list(count(3)))
+]])
+      test.expect(code).to.be.a("string")
+    end)
   end)
 end

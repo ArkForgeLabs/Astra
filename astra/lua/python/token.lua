@@ -91,6 +91,11 @@ local TK = {
   AMPERSANDEQ = 92,
   LEFTSHIFTEQ = 93,
   RIGHTSHIFTEQ = 94,
+  NONLOCAL = 95,
+  ASYNC = 96,
+  AWAIT = 97,
+  WITH = 98,
+  YIELD = 99,
 }
 
 local token_names = {}
@@ -129,6 +134,11 @@ local keyword_token_map = {
   ["raise"] = TK.RAISE,
   ["assert"] = TK.ASSERT,
   ["del"] = TK.DEL,
+  ["nonlocal"] = TK.NONLOCAL,
+  ["async"] = TK.ASYNC,
+  ["await"] = TK.AWAIT,
+  ["with"] = TK.WITH,
+  ["yield"] = TK.YIELD,
 }
 
 local multi_character_tokens = {

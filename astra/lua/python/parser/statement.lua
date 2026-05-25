@@ -255,9 +255,14 @@ return function(state, expr)
       and state:peek_token().kind ~= TK.EOF
     then
       local exc = expr.parse_expr()
-      return ast.Raise(exc)
+      local cause = nil
+      if state:peek_is(TK.FROM) then
+        state:advance_token()
+        cause = expr.parse_expr()
+      end
+      return ast.Raise(exc, cause)
     else
-      return ast.Raise(nil)
+      return ast.Raise(nil, nil)
     end
   end
 
@@ -276,6 +281,58 @@ return function(state, expr)
     state:advance_token()
     local target = expr.parse_expr()
     return ast.Del(target)
+  end
+
+  stmt.parse_nonlocal = function()
+    state:advance_token()
+    local names = { state:expect_token(TK.IDENTIFIER).value }
+    while state:match_token(TK.COMMA) do
+      names[#names + 1] = state:expect_token(TK.IDENTIFIER).value
+    end
+    return ast.Nonlocal(names)
+  end
+
+  stmt.parse_with = function(parse_block_body)
+    state:advance_token()
+    local items = {}
+    local context_expr = expr.parse_expr()
+    local optional_vars = nil
+    if state:peek_is(TK.AS) then
+      state:advance_token()
+      optional_vars = expr.parse_expr()
+    end
+    items[1] = { context_expr = context_expr, optional_vars = optional_vars }
+    while state:match_token(TK.COMMA) do
+      context_expr = expr.parse_expr()
+      optional_vars = nil
+      if state:peek_is(TK.AS) then
+        state:advance_token()
+        optional_vars = expr.parse_expr()
+      end
+      items[#items + 1] = { context_expr = context_expr, optional_vars = optional_vars }
+    end
+    local body = parse_block(parse_block_body)
+    return ast.With(items, body)
+  end
+
+  stmt.parse_yield = function()
+    state:advance_token()
+    if
+      state:peek_token()
+      and state:peek_token().kind ~= TK.NEWLINE
+      and state:peek_token().kind ~= TK.DEDENT
+      and state:peek_token().kind ~= TK.EOF
+    then
+      return ast.Yield(expr.parse_expr())
+    else
+      return ast.Yield(nil)
+    end
+  end
+
+  stmt.parse_async_function_def = function(decorators, parse_block_body)
+    state:advance_token()
+    local func = stmt.parse_func_def(decorators, parse_block_body)
+    return ast.AsyncFunctionDef(func.name, func.args, func.body, func.decorators, func.vararg, func.kwarg, func.defaults)
   end
 
   stmt.parse_simple_stmt = function()
@@ -371,6 +428,21 @@ return function(state, expr)
     end,
     [TK.DEL] = function()
       return { stmt.parse_del() }
+    end,
+    [TK.NONLOCAL] = function()
+      return { stmt.parse_nonlocal() }
+    end,
+    [TK.WITH] = function(parse_block_body)
+      return { stmt.parse_with(parse_block_body) }
+    end,
+    [TK.ASYNC] = function(parse_block_body)
+      if state.tokens[state.position + 1] and state.tokens[state.position + 1].kind == TK.DEF then
+        return { stmt.parse_async_function_def(nil, parse_block_body) }
+      end
+      error("async can only precede def")
+    end,
+    [TK.YIELD] = function()
+      return { stmt.parse_yield() }
     end,
     [TK.IMPORT] = function()
       return stmt.parse_import_stmt()

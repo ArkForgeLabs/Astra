@@ -2,6 +2,31 @@ local ast = require("python.ast")
 local util = require("python.util")
 local stdlib = require("python.stdlib")
 
+local function has_yield(body)
+  for _, stmt in ipairs(body or {}) do
+    if stmt.type == ast.YIELD then
+      return true
+    end
+    if stmt.body and has_yield(stmt.body) then return true end
+    if stmt.type == ast.IF then
+      if has_yield(stmt.body) then return true end
+      for _, elif in ipairs(stmt.elifs or {}) do
+        if has_yield(elif.body) then return true end
+      end
+      if has_yield(stmt.or_else) then return true end
+    end
+    if (stmt.type == ast.WHILE or stmt.type == ast.FOR) and has_yield(stmt.body) then return true end
+    if stmt.type == ast.TRY then
+      if has_yield(stmt.body) then return true end
+      for _, handler in ipairs(stmt.handlers or {}) do
+        if has_yield(handler.body) then return true end
+      end
+      if has_yield(stmt.finally_body) then return true end
+    end
+  end
+  return false
+end
+
 return function(ctx)
   local function gen_fn_sig(args, vararg, kwarg)
     local parts = {}
@@ -44,6 +69,7 @@ return function(ctx)
     [ast.FUNCTION_DEF] = function(stmt)
       local has_decos = stmt.decorators and #stmt.decorators > 0
       local signature = gen_fn_sig(stmt.args, stmt.vararg, stmt.kwarg)
+      local is_gen = has_yield(stmt.body)
       local function emit_body()
         for i, d in ipairs(stmt.args) do
           local default_val = stmt.defaults[i]
@@ -57,7 +83,15 @@ return function(ctx)
         if stmt.kwarg then
           ctx.push(ctx.indent() .. "local " .. stmt.kwarg .. " = {...}")
         end
-        ctx.gen_body(stmt.body)
+        if is_gen then
+          ctx.push(ctx.indent() .. "return coroutine.wrap(function()")
+          ctx.with_indent(function()
+            ctx.gen_body(stmt.body)
+          end)
+          ctx.push(ctx.indent() .. "end)")
+        else
+          ctx.gen_body(stmt.body)
+        end
       end
       if has_decos then
         ctx.push(ctx.indent() .. "do")
@@ -432,7 +466,12 @@ return function(ctx)
     end,
     [ast.RAISE] = function(stmt)
       if stmt.exc then
-        ctx.push(ctx.indent() .. "error(" .. ctx.gen_expr(stmt.exc) .. ")")
+        local exc_code = ctx.gen_expr(stmt.exc)
+        if stmt.cause then
+          ctx.push(ctx.indent() .. "local __exc = " .. exc_code .. "; __exc.__cause = " .. ctx.gen_expr(stmt.cause) .. "; error(__exc)")
+        else
+          ctx.push(ctx.indent() .. "error(" .. exc_code .. ")")
+        end
       else
         ctx.push(ctx.indent() .. "error(\"\")")
       end
@@ -466,6 +505,65 @@ return function(ctx)
         end
       end
       gen_del(stmt.target)
+    end,
+    [ast.NONLOCAL] = function(_)
+      -- Lua upvalues handle this automatically.
+    end,
+    [ast.YIELD] = function(stmt)
+      if stmt.value then
+        ctx.push(ctx.indent() .. "coroutine.yield(" .. ctx.gen_expr(stmt.value) .. ")")
+      else
+        ctx.push(ctx.indent() .. "coroutine.yield()")
+      end
+    end,
+    [ast.WITH] = function(stmt)
+      for i, item in ipairs(stmt.items) do
+        local ctx_var = "__ctx" .. i
+        ctx.push(ctx.indent() .. "local " .. ctx_var .. " = " .. ctx.gen_expr(item.context_expr))
+        if item.optional_vars then
+          ctx.push(ctx.indent() .. "local " .. ctx.gen_expr(item.optional_vars) .. " = " .. ctx_var .. ":__enter__()")
+        else
+          ctx.push(ctx.indent() .. ctx_var .. ":__enter__()")
+        end
+      end
+      ctx.push(ctx.indent() .. "local __ok, __err = pcall(function()")
+      ctx.with_indent(function()
+        ctx.gen_body(stmt.body)
+      end)
+      ctx.push(ctx.indent() .. "end)")
+      for i = #stmt.items, 1, -1 do
+        local ctx_var = "__ctx" .. i
+        ctx.push(ctx.indent() .. "pcall(" .. ctx_var .. ".__exit__, " .. ctx_var .. ", __ok and nil or __err, nil, nil)")
+      end
+      ctx.push(ctx.indent() .. "if not __ok then")
+      ctx.with_indent(function()
+        ctx.push(ctx.indent() .. "error(__err)")
+      end)
+      ctx.push(ctx.indent() .. "end")
+    end,
+    [ast.ASYNC_FUNCTION_DEF] = function(stmt)
+      local signature = gen_fn_sig(stmt.args, stmt.vararg, stmt.kwarg)
+      ctx.push(ctx.indent() .. "function " .. stmt.name .. "(" .. signature .. ")")
+      ctx.with_indent(function()
+        for i, d in ipairs(stmt.args) do
+          local default_val = stmt.defaults[i]
+          if default_val then
+            ctx.push(ctx.indent() .. "if " .. d .. " == nil then " .. d .. " = " .. ctx.gen_expr(default_val) .. " end")
+          end
+        end
+        if stmt.vararg then
+          ctx.push(ctx.indent() .. "local " .. stmt.vararg .. " = {...}")
+        end
+        if stmt.kwarg then
+          ctx.push(ctx.indent() .. "local " .. stmt.kwarg .. " = {...}")
+        end
+        ctx.push(ctx.indent() .. "return spawn_task(function()")
+        ctx.with_indent(function()
+          ctx.gen_body(stmt.body)
+        end)
+        ctx.push(ctx.indent() .. "end)")
+      end)
+      ctx.push(ctx.indent() .. "end")
     end,
     [ast.GLOBAL] = function(_)
       -- Python's global declaration means "use the module-level variable".

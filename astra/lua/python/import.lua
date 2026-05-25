@@ -65,7 +65,7 @@ local function collect_import_names(prog)
         end
       elseif stmt.type == ast.IMPORT_FROM then
         names[stmt.module] = true
-      elseif stmt.type == ast.FUNCTION_DEF then
+      elseif stmt.type == ast.FUNCTION_DEF or stmt.type == ast.ASYNC_FUNCTION_DEF then
         walk_body(stmt.body)
       elseif stmt.type == ast.CLASS_DEF then
         walk_body(stmt.body)
@@ -84,6 +84,8 @@ local function collect_import_names(prog)
         for _, handler in ipairs(stmt.handlers) do walk_body(handler.body) end
         if stmt.or_else then walk_body(stmt.or_else) end
         if stmt.finally_body then walk_body(stmt.finally_body) end
+      elseif stmt.type == ast.WITH then
+        walk_body(stmt.body)
       end
     end
   end
@@ -118,7 +120,7 @@ end
 local function collect_module_exports(prog)
   local exports = {}
   for _, stmt in ipairs(prog.body) do
-    if stmt.type == ast.FUNCTION_DEF then
+    if stmt.type == ast.FUNCTION_DEF or stmt.type == ast.ASYNC_FUNCTION_DEF then
       exports[stmt.name] = true
     elseif stmt.type == ast.CLASS_DEF then
       exports[stmt.name] = true

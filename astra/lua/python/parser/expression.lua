@@ -506,6 +506,17 @@ return function(state, top_parse)
       [TK.LPAREN]   = parse_paren_expr,
       [TK.LBRACKET] = parse_bracket_expr,
       [TK.LBRACE]   = parse_brace_expr,
+      [TK.AWAIT] = function()
+        state:advance_token()
+        return ast.Await(expr.parse_expr())
+      end,
+      [TK.YIELD] = function()
+        state:advance_token()
+        if state:peek_token() and state:peek_token().kind ~= TK.NEWLINE and state:peek_token().kind ~= TK.RPAREN then
+          return ast.Yield(expr.parse_expr())
+        end
+        return ast.Yield(nil)
+      end,
     }
     local handler = atom_handlers[current_token.kind]
     if handler then return handler() end

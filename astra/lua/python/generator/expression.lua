@@ -316,6 +316,15 @@ return function(ctx)
       local val = ctx.gen_expr(expr.value)
       return "tostring(" .. val .. ")"
     end,
+    [ast.AWAIT] = function(expr)
+      return "(" .. ctx.gen_expr(expr.value) .. "):await()"
+    end,
+    [ast.YIELD] = function(expr)
+      if expr.value then
+        return "coroutine.yield(" .. ctx.gen_expr(expr.value) .. ")"
+      end
+      return "coroutine.yield()"
+    end,
   }
 
   return expr_handlers
