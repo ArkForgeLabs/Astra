@@ -1,5 +1,9 @@
 local test = require("test")
 
+-- Override to match -e mode behavior and prevent stack overflow.
+MAIN_SCRIPT = "<test>"
+CURRENT_SCRIPT = "<test>"
+
 print([[
     _    ____ _____ ____      _
    / \  / ___|_   _|  _ \    / \

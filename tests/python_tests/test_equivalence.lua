@@ -24,6 +24,10 @@ return function(test)
     "slice_assign.py",
     "super_calls.py",
     "variables.py",
+    "raise.py",
+    "assert_del.py",
+    "fstrings.py",
+    "bitwise.py",
   }
 
   -- Check if python3 is available

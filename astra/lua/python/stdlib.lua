@@ -299,7 +299,7 @@ local function __py_make_exc(name, base)
   local mt = {__index = base}
   mt.__call = function(self, msg)
     local inst = {message = msg or ""}
-    return setmetatable(inst, {__index = self})
+    return setmetatable(inst, {__index = self, __tostring = function(i) return i.message end})
   end
   return setmetatable(cls, mt)
 end
@@ -625,10 +625,10 @@ do
     cls.__name = name
     cls.__py_base = base
     local mt = {__index = base}
-    mt.__call = function(self, msg)
-      local inst = {message = msg or ""}
-      return setmetatable(inst, {__index = self})
-    end
+  mt.__call = function(self, msg)
+    local inst = {message = msg or ""}
+    return setmetatable(inst, {__index = self, __tostring = function(i) return i.message end})
+  end
     return setmetatable(cls, mt)
   end
   BaseException = __py_make_exc("BaseException", nil)
@@ -646,17 +646,15 @@ end
 ]====]
 
 stdlib.__inline_functions.__py_bitwise_ops = [====[
-do
-  local __py_band, __py_bor, __py_bxor, __py_bnot, __py_lshift, __py_rshift
-  if bit then
-    __py_band, __py_bor, __py_bxor, __py_bnot = bit.band, bit.bor, bit.bxor, bit.bnot
-    __py_lshift, __py_rshift = bit.lshift, bit.rshift
-  elseif bit32 then
-    __py_band, __py_bor, __py_bxor, __py_bnot = bit32.band, bit32.bor, bit32.bxor, bit32.bnot
-    __py_lshift, __py_rshift = bit32.lshift, bit32.rshift
-  else
-    error("bitwise operations require bit or bit32 library")
-  end
+local __py_band, __py_bor, __py_bxor, __py_bnot, __py_lshift, __py_rshift
+if bit then
+  __py_band, __py_bor, __py_bxor, __py_bnot = bit.band, bit.bor, bit.bxor, bit.bnot
+  __py_lshift, __py_rshift = bit.lshift, bit.rshift
+elseif bit32 then
+  __py_band, __py_bor, __py_bxor, __py_bnot = bit32.band, bit32.bor, bit32.bxor, bit32.bnot
+  __py_lshift, __py_rshift = bit32.lshift, bit32.rshift
+else
+  error("bitwise operations require bit or bit32 library")
 end
 ]====]
 

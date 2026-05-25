@@ -145,4 +145,103 @@ return function(test)
     local body = strip_preamble(python.transpile("from math import *"))
     test.expect(body).to.match("for k, v in pairs%(require%('math'%)%) do _ENV%[k%] = v end")
   end)
+
+  test.it("raises error with error()", function()
+    local lua = python.transpile('raise ValueError("bad")')
+    test.expect(lua).to.match("error%(ValueError%(.")
+  end)
+
+  test.it("raise from generates cause chain", function()
+    local lua = python.transpile("raise X from Y")
+    test.expect(lua).to.match("__cause")
+  end)
+
+  test.it("assert generates conditional error", function()
+    local lua = python.transpile("assert x > 0")
+    test.expect(lua).to.match("if not %(")
+    test.expect(lua).to.match("error%(\"assertion failed\"%)")
+  end)
+
+  test.it("assert with message includes it", function()
+    local lua = python.transpile('assert x > 0, "bad x"')
+    test.expect(lua).to.match('"bad x"')
+  end)
+
+  test.it("del name generates nil assignment", function()
+    local body = strip_preamble(python.transpile("del x"))
+    test.expect(body).to.match("x = nil")
+  end)
+
+  test.it("del subscript generates table.remove", function()
+    local body = strip_preamble(python.transpile("del items[0]"))
+    test.expect(body).to.match("table%.remove%(items,")
+  end)
+
+  test.it("del attribute generates nil", function()
+    local body = strip_preamble(python.transpile("del obj.attr"))
+    test.expect(body).to.match("obj%.attr = nil")
+  end)
+
+  test.it("bitwise AND generates __py_band", function()
+    local lua = python.transpile("x = a & b")
+    test.expect(lua).to.match("__py_band")
+  end)
+
+  test.it("bitwise OR generates __py_bor", function()
+    local lua = python.transpile("x = a | b")
+    test.expect(lua).to.match("__py_bor")
+  end)
+
+  test.it("bitwise XOR generates __py_bxor", function()
+    local lua = python.transpile("x = a ^ b")
+    test.expect(lua).to.match("__py_bxor")
+  end)
+
+  test.it("left shift generates __py_lshift", function()
+    local lua = python.transpile("x = a << 2")
+    test.expect(lua).to.match("__py_lshift")
+  end)
+
+  test.it("bitwise NOT generates __py_bnot", function()
+    local lua = python.transpile("x = ~a")
+    test.expect(lua).to.match("__py_bnot")
+  end)
+
+  test.it("generates nonlocal as no-op", function()
+    local lua = python.transpile("def f():\n    nonlocal x")
+    test.expect(type(lua)).to.equal("string")
+  end)
+
+  test.it("async def wraps in spawn_task", function()
+    local lua = python.transpile("async def f():\n    return 42")
+    test.expect(lua).to.match("spawn_task")
+  end)
+
+  test.it("await generates :await() call", function()
+    local lua = python.transpile("async def f():\n    await x\n    return 1")
+    test.expect(lua).to.match(":await%(%)")
+  end)
+
+  test.it("with statement generates __enter__ and __exit__", function()
+    local lua = python.transpile("with x as y:\n    pass")
+    test.expect(lua).to.match("__enter__")
+    test.expect(lua).to.match("__exit__")
+    test.expect(lua).to.match("pcall")
+  end)
+
+  test.it("yield generates coroutine.yield", function()
+    local lua = python.transpile("def g():\n    yield 42")
+    test.expect(lua).to.match("coroutine%.yield")
+  end)
+
+  test.it("generator function wraps in coroutine.wrap", function()
+    local lua = python.transpile("def g():\n    yield 42")
+    test.expect(lua).to.match("coroutine%.wrap")
+  end)
+
+  test.it("for/else generates do block after loop", function()
+    local body = strip_preamble(python.transpile("for i in range(5):\n    pass\nelse:\n    print('done')"))
+    test.expect(body).to.match("^do")
+    test.expect(body).to.match("end$")
+  end)
 end
