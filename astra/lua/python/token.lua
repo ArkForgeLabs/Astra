@@ -78,6 +78,19 @@ local TK = {
   RAISE = 79,
   ASSERT = 80,
   DEL = 81,
+  TILDE = 82,
+  PIPE = 83,
+  AMPERSAND = 84,
+  CARET = 85,
+  LEFTSHIFT = 86,
+  RIGHTSHIFT = 87,
+  DOUBLESTAREQ = 88,
+  DOUBLESLASHEQ = 89,
+  PIPEEQ = 90,
+  CARETEQ = 91,
+  AMPERSANDEQ = 92,
+  LEFTSHIFTEQ = 93,
+  RIGHTSHIFTEQ = 94,
 }
 
 local token_names = {}
@@ -132,6 +145,15 @@ local multi_character_tokens = {
   ["%="] = TK.PERCENTEQ,
   [":="] = TK.WALRUS,
   ["..."] = TK.ELLIPSIS,
+  ["<<="] = TK.LEFTSHIFTEQ,
+  [">>="] = TK.RIGHTSHIFTEQ,
+  ["**="] = TK.DOUBLESTAREQ,
+  ["//="] = TK.DOUBLESLASHEQ,
+  ["|="] = TK.PIPEEQ,
+  ["^="] = TK.CARETEQ,
+  ["&="] = TK.AMPERSANDEQ,
+  ["<<"] = TK.LEFTSHIFT,
+  [">>"] = TK.RIGHTSHIFT,
 }
 
 local single_character_tokens = {
@@ -154,6 +176,10 @@ local single_character_tokens = {
   ["."] = TK.DOT,
   [";"] = TK.SEMI,
   ["@"] = TK.AT,
+  ["~"] = TK.TILDE,
+  ["|"] = TK.PIPE,
+  ["&"] = TK.AMPERSAND,
+  ["^"] = TK.CARET,
 }
 
 local multiplicative_operators = {

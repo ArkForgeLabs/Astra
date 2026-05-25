@@ -156,7 +156,7 @@ return function(state, top_parse)
   end
 
   expr.parse_comparison = function()
-    local left = expr.parse_term()
+    local left = expr.parse_bit_or()
     local comparison_ops = {
       [TK.EQEQ] = "==",
       [TK.NOTEQ] = "!=",
@@ -205,6 +205,42 @@ return function(state, top_parse)
     return ast.Compare(left, cmp_ops, cmp_rights)
   end
 
+  expr.parse_bit_or = function()
+    local left = expr.parse_bit_xor()
+    while state:peek_is(TK.PIPE) do
+      state:advance_token()
+      left = ast.BinOp(left, "|", expr.parse_bit_xor())
+    end
+    return left
+  end
+
+  expr.parse_bit_xor = function()
+    local left = expr.parse_bit_and()
+    while state:peek_is(TK.CARET) do
+      state:advance_token()
+      left = ast.BinOp(left, "^", expr.parse_bit_and())
+    end
+    return left
+  end
+
+  expr.parse_bit_and = function()
+    local left = expr.parse_shift()
+    while state:peek_is(TK.AMPERSAND) do
+      state:advance_token()
+      left = ast.BinOp(left, "&", expr.parse_shift())
+    end
+    return left
+  end
+
+  expr.parse_shift = function()
+    local left = expr.parse_term()
+    while state:peek_one_of(TK.LEFTSHIFT, TK.RIGHTSHIFT) do
+      local op = state:advance_token()
+      left = ast.BinOp(left, op.value, expr.parse_term())
+    end
+    return left
+  end
+
   expr.parse_term = function()
     local left = expr.parse_factor()
     while state:peek_one_of(TK.PLUS, TK.MINUS) do
@@ -224,7 +260,7 @@ return function(state, top_parse)
   end
 
   expr.parse_unary = function()
-    if state:peek_one_of(TK.PLUS, TK.MINUS) then
+    if state:peek_one_of(TK.PLUS, TK.MINUS, TK.TILDE) then
       return ast.UnaryOp(state:advance_token().value, expr.parse_unary())
     end
     return expr.parse_power()

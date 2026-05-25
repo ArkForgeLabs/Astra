@@ -159,6 +159,13 @@ function optimizer.stdlib_usage_pass(program, analysis)
           or expr.right.type == ast.LIST or expr.right.type == ast.SET then
           used.__py_repeat = true
         end
+      elseif expr.type == ast.BIN_OP then
+        local bitwise_ops = { ["|"] = true, ["^"] = true, ["&"] = true, ["<<"] = true, [">>"] = true }
+        if bitwise_ops[expr.op] then
+          used.__py_bitwise_ops = true
+        end
+      elseif expr.type == ast.UNARY_OP and expr.op == "~" then
+        used.__py_bitwise_ops = true
       end
     end,
     early_stmt = function(stmt)

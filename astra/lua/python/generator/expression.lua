@@ -31,6 +31,11 @@ return function(ctx)
       end
       return "(" .. l .. " % " .. r .. ")"
     end,
+    ["|"]  = function(l, r) return "__py_bor(" .. l .. ", " .. r .. ")" end,
+    ["^"]  = function(l, r) return "__py_bxor(" .. l .. ", " .. r .. ")" end,
+    ["&"]  = function(l, r) return "__py_band(" .. l .. ", " .. r .. ")" end,
+    ["<<"] = function(l, r) return "__py_lshift(" .. l .. ", " .. r .. ")" end,
+    [">>"] = function(l, r) return "__py_rshift(" .. l .. ", " .. r .. ")" end,
   }
 
   local compare_handlers = {
@@ -98,6 +103,9 @@ return function(ctx)
       return "(" .. ctx.gen_expr(expr.left) .. " " .. expr.op .. " " .. ctx.gen_expr(expr.right) .. ")"
     end,
     [ast.UNARY_OP] = function(expr)
+      if expr.op == "~" then
+        return "__py_bnot(" .. ctx.gen_expr(expr.operand) .. ")"
+      end
       return "(" .. expr.op .. " " .. ctx.gen_expr(expr.operand) .. ")"
     end,
     [ast.BOOL_OP] = function(expr)

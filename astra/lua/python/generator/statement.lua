@@ -349,7 +349,23 @@ return function(ctx)
       end
     end,
     [ast.AUG_ASSIGN] = function(stmt)
-      ctx.push(ctx.indent() .. ctx.gen_subscript_target(stmt.target) .. " = " .. ctx.gen_subscript_target(stmt.target) .. " " .. stmt.op .. " " .. ctx.gen_expr(stmt.value))
+      local target = ctx.gen_subscript_target(stmt.target)
+      local value = ctx.gen_expr(stmt.value)
+      local special = {
+        ["**"] = function() return target .. " = (" .. target .. " ^ " .. value .. ")" end,
+        ["//"] = function() return target .. " = math.floor(" .. target .. " / " .. value .. ")" end,
+        ["|"] = function() return target .. " = __py_bor(" .. target .. ", " .. value .. ")" end,
+        ["^"] = function() return target .. " = __py_bxor(" .. target .. ", " .. value .. ")" end,
+        ["&"] = function() return target .. " = __py_band(" .. target .. ", " .. value .. ")" end,
+        ["<<"] = function() return target .. " = __py_lshift(" .. target .. ", " .. value .. ")" end,
+        [">>"] = function() return target .. " = __py_rshift(" .. target .. ", " .. value .. ")" end,
+      }
+      local gen = special[stmt.op]
+      if gen then
+        ctx.push(ctx.indent() .. gen())
+      else
+        ctx.push(ctx.indent() .. target .. " = " .. target .. " " .. stmt.op .. " " .. value)
+      end
     end,
     [ast.EXPR_STMT] = function(stmt)
       if stmt.expr.type ~= ast.CONSTANT then

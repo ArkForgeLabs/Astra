@@ -316,6 +316,19 @@ stdlib.StopIteration = __py_make_exc("StopIteration", stdlib.Exception)
 stdlib.NotImplementedError = __py_make_exc("NotImplementedError", stdlib.Exception)
 stdlib.OSError = __py_make_exc("OSError", stdlib.Exception)
 
+local function __py_bitwise_fallback()
+  if bit then
+    stdlib.__py_band, stdlib.__py_bor, stdlib.__py_bxor, stdlib.__py_bnot = bit.band, bit.bor, bit.bxor, bit.bnot
+    stdlib.__py_lshift, stdlib.__py_rshift = bit.lshift, bit.rshift
+  elseif bit32 then
+    stdlib.__py_band, stdlib.__py_bor, stdlib.__py_bxor, stdlib.__py_bnot = bit32.band, bit32.bor, bit32.bxor, bit32.bnot
+    stdlib.__py_lshift, stdlib.__py_rshift = bit32.lshift, bit32.rshift
+  else
+    error("bitwise operations require bit or bit32 library")
+  end
+end
+__py_bitwise_fallback()
+
 local aliases = {
   len = "__py_len",
   int = "__py_int",
@@ -342,6 +355,12 @@ for _, k in ipairs({
   "__py_issubclass",
   "__py_call",
   "__py_exception_match",
+  "__py_band",
+  "__py_bor",
+  "__py_bxor",
+  "__py_bnot",
+  "__py_lshift",
+  "__py_rshift",
 }) do
   _G[k] = stdlib[k]
 end
@@ -623,6 +642,21 @@ do
   StopIteration = __py_make_exc("StopIteration", Exception)
   NotImplementedError = __py_make_exc("NotImplementedError", Exception)
   OSError = __py_make_exc("OSError", Exception)
+end
+]====]
+
+stdlib.__inline_functions.__py_bitwise_ops = [====[
+do
+  local __py_band, __py_bor, __py_bxor, __py_bnot, __py_lshift, __py_rshift
+  if bit then
+    __py_band, __py_bor, __py_bxor, __py_bnot = bit.band, bit.bor, bit.bxor, bit.bnot
+    __py_lshift, __py_rshift = bit.lshift, bit.rshift
+  elseif bit32 then
+    __py_band, __py_bor, __py_bxor, __py_bnot = bit32.band, bit32.bor, bit32.bxor, bit32.bnot
+    __py_lshift, __py_rshift = bit32.lshift, bit32.rshift
+  else
+    error("bitwise operations require bit or bit32 library")
+  end
 end
 ]====]
 

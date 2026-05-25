@@ -316,7 +316,10 @@ return function(state, expr)
       return assign
     end
     local aug_ops =
-      { [TK.PLUSEQ] = "+", [TK.MINUSEQ] = "-", [TK.STAREQ] = "*", [TK.SLASHEQ] = "/", [TK.PERCENTEQ] = "%" }
+      { [TK.PLUSEQ] = "+", [TK.MINUSEQ] = "-", [TK.STAREQ] = "*", [TK.SLASHEQ] = "/", [TK.PERCENTEQ] = "%",
+        [TK.DOUBLESTAREQ] = "**", [TK.DOUBLESLASHEQ] = "//",
+        [TK.PIPEEQ] = "|", [TK.CARETEQ] = "^", [TK.AMPERSANDEQ] = "&",
+        [TK.LEFTSHIFTEQ] = "<<", [TK.RIGHTSHIFTEQ] = ">>" }
     local aug_kind = state:peek_token() and state:peek_token().kind
     if aug_ops[aug_kind] then
       state:advance_token()
