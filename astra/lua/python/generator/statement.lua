@@ -298,6 +298,15 @@ return function(ctx)
     end,
     [ast.ASSIGN] = function(stmt)
       local value = ctx.gen_expr(stmt.value)
+      local target = stmt.targets[1]
+      if target and target.type == ast.SUBSCRIPT and target.index.type == ast.SLICE then
+        local obj = ctx.gen_expr(target.value)
+        local lower = target.index.lower and ctx.gen_expr(target.index.lower) or "nil"
+        local upper = target.index.upper and ctx.gen_expr(target.index.upper) or "nil"
+        local step = target.index.step and ctx.gen_expr(target.index.step) or "nil"
+        ctx.push(ctx.indent() .. "__py_slice_assign(" .. obj .. ", " .. lower .. ", " .. upper .. ", " .. step .. ", " .. value .. ")")
+        return
+      end
       local targets = flatten_targets(stmt.targets)
       if #targets == 1 then
         ctx.push(ctx.indent() .. targets[1] .. " = " .. value)

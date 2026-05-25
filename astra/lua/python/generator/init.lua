@@ -71,8 +71,28 @@ function generator.generate(prog, analysis)
   end
 
   gen_body = function(body)
-    for _, s in ipairs(body) do
-      ctx.gen_stmt(s)
+    local i = 1
+    while i <= #body do
+      if body[i].type == ast.COMMENT then
+        local comment_lines = {}
+        while i <= #body and body[i].type == ast.COMMENT do
+          local text = body[i].value
+          if text ~= "" then
+            for line in text:gmatch("[^\n]+") do
+              comment_lines[#comment_lines + 1] = line
+            end
+          end
+          i = i + 1
+        end
+        if #comment_lines == 1 then
+          ctx.push(ctx.indent() .. "-- " .. comment_lines[1])
+        elseif #comment_lines > 1 then
+          ctx.push(ctx.indent() .. "--[[ " .. table.concat(comment_lines, " ") .. " ]]")
+        end
+      else
+        ctx.gen_stmt(body[i])
+        i = i + 1
+      end
     end
   end
 
@@ -154,7 +174,7 @@ function generator.generate(prog, analysis)
     preamble_parts[#preamble_parts + 1] = "local chr, ord, str, int = string.char, string.byte, tostring, tonumber"
     preamble_parts[#preamble_parts + 1] = "if not table.unpack then table.unpack = unpack end"
     for _, name in ipairs({
-      "__py_slice", "__py_in", "__py_repeat", "__py_range",
+      "__py_slice", "__py_slice_assign", "__py_in", "__py_repeat", "__py_range",
       "__py_items", "__py_super", "__py_getitem",
       "__py_isinstance", "__py_issubclass", "__py_call",
     }) do

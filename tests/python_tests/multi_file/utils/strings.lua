@@ -34,6 +34,19 @@ local function __py_slice(tbl, start, stop, step)
   return {}
 end
 
+local function __py_slice_assign(tbl, start, stop, step, values)
+  local s = (start or 0) + 1
+  local e = stop or #tbl
+  local num = e - (start or 0)
+  if num < 0 then num = 0 end
+  for _ = 1, num do
+    table.remove(tbl, s)
+  end
+  for i = #values, 1, -1 do
+    table.insert(tbl, s, values[i])
+  end
+end
+
 local function __py_getitem(container, index)
   if type(container) == "string" then
     return string.sub(container, index, index)

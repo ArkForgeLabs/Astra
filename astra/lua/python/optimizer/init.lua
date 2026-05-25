@@ -146,7 +146,7 @@ function optimizer.stdlib_usage_pass(program, analysis)
           end
         end
       elseif expr.type == ast.SUBSCRIPT then
-        if expr.index.type == ast.SLICE then used.__py_slice = true end
+        if expr.index.type == ast.SLICE then used.__py_slice = true; used.__py_slice_assign = true end
         if expr.index.type ~= ast.CONSTANT or type(expr.index.value) ~= "string" then
           used.__py_getitem = true
         end

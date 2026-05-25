@@ -66,6 +66,26 @@ function stdlib.__py_slice(tbl, start_val, end_val, step_val)
   return {}
 end
 
+---@param tbl any[]
+---@param start_val integer?
+---@param end_val integer?
+---@param step_val integer?
+---@param values any[]
+function stdlib.__py_slice_assign(tbl, start_val, end_val, step_val, values)
+  local s = (start_val or 0) + 1
+  local e = end_val or #tbl
+  local num = e - (start_val or 0)
+  if num < 0 then num = 0 end
+  for _ = 1, num do
+    table.remove(tbl, s)
+  end
+  for i = #values, 1, -1 do
+    table.insert(tbl, s, values[i])
+  end
+end
+
+---@param container any[]|string
+
 ---@param container any[]|string
 ---@param item any
 ---@return boolean
@@ -271,6 +291,7 @@ end
 
 for _, k in ipairs({
   "__py_slice",
+  "__py_slice_assign",
   "__py_in",
   "__py_repeat",
   "__py_range",
@@ -324,6 +345,20 @@ local function __py_slice(tbl, start, stop, step)
 end
 ]====]
 
+stdlib.__inline_functions.__py_slice_assign = [====[
+local function __py_slice_assign(tbl, start, stop, step, values)
+  local s = (start or 0) + 1
+  local e = stop or #tbl
+  local num = e - (start or 0)
+  if num < 0 then num = 0 end
+  for _ = 1, num do
+    table.remove(tbl, s)
+  end
+  for i = #values, 1, -1 do
+    table.insert(tbl, s, values[i])
+  end
+end
+]====]
 stdlib.__inline_functions.__py_in = [====[
 local function __py_in(container, item)
   if type(container) == "table" then
