@@ -241,6 +241,21 @@ return function(state, expr)
     end
   end
 
+  stmt.parse_raise = function()
+    state:advance_token()
+    if
+      state:peek_token()
+      and state:peek_token().kind ~= TK.NEWLINE
+      and state:peek_token().kind ~= TK.DEDENT
+      and state:peek_token().kind ~= TK.EOF
+    then
+      local exc = expr.parse_expr()
+      return ast.Raise(exc)
+    else
+      return ast.Raise(nil)
+    end
+  end
+
   stmt.parse_simple_stmt = function()
     if state:peek_is(TK.GLOBAL) then
       state:advance_token()
@@ -322,6 +337,9 @@ return function(state, expr)
     end,
     [TK.TRY] = function(parse_block_body)
       return { stmt.parse_try(parse_block_body) }
+    end,
+    [TK.RAISE] = function()
+      return { stmt.parse_raise() }
     end,
     [TK.IMPORT] = function()
       return stmt.parse_import_stmt()

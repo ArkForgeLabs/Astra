@@ -150,12 +150,17 @@ local function collect_module_exports(prog)
   return sorted
 end
 
-local function transpile_module(py_path, lua_path, opts)
-  local source = fs.read_file(py_path)
+function import.transpile_source(source, opts)
+  opts = opts or {}
   local tokens = tokenizer.tokenize(source)
   local prog = parser.parse(tokens)
   local analysis = optimizer.analyze(prog, opts)
-  local lua_code = generator.generate(prog, analysis)
+  return generator.generate(prog, analysis), prog
+end
+
+local function transpile_module(py_path, lua_path, opts)
+  local source = fs.read_file(py_path)
+  local lua_code, prog = import.transpile_source(source, opts)
 
   local exports = collect_module_exports(prog)
   if #exports > 0 then

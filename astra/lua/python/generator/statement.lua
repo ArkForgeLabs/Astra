@@ -387,6 +387,13 @@ return function(ctx)
     [ast.PASS] = function(_)
       ctx.push(ctx.indent() .. "-- pass")
     end,
+    [ast.RAISE] = function(stmt)
+      if stmt.exc then
+        ctx.push(ctx.indent() .. "error(" .. ctx.gen_expr(stmt.exc) .. ")")
+      else
+        ctx.push(ctx.indent() .. "error(\"\")")
+      end
+    end,
     [ast.GLOBAL] = function(_)
       -- Python's global declaration means "use the module-level variable".
       -- In Lua, globals are the default, so this is a no-op.

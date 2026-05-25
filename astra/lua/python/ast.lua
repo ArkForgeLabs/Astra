@@ -61,6 +61,7 @@ end
 ---@class ast.Import: {type: integer, names: {name:string, as_name:string?}[]}
 ---@class ast.JoinedStr: {type: integer, values: ast_node[]}
 ---@class ast.FormattedValue: {type: integer, value: ast_node, conversion: string?, format_spec: ast_node?}
+---@class ast.Raise: {type: integer, exc: ast_node?}
 ---@class ast.ImportFrom: {type: integer, module: string, names: {name:string, as_name:string?}[]}
 
 ---@alias ast_node
@@ -71,7 +72,7 @@ end
 ---| ast.Subscript | ast.Attribute | ast.List | ast.Dict | ast.Set
 ---| ast.Tuple | ast.Lambda | ast.Walrus | ast.IfExpr | ast.ListComp
 ---| ast.SetComp | ast.DictComp | ast.Slice | ast.ClassDef | ast.Starred | ast.Super
----| ast.Comment | ast.Import | ast.ImportFrom
+---| ast.Comment | ast.Import | ast.ImportFrom | ast.Raise
 
 local node_defs = {
   { "Program", "PROGRAM", { "body" } },
@@ -116,6 +117,7 @@ local node_defs = {
   { "Comment", "COMMENT", { "value" } },
   { "Import", "IMPORT", { "names" } },
   { "ImportFrom", "IMPORT_FROM", { "module", "names" } },
+  { "Raise", "RAISE", { "exc" } },
 }
 for _, def in ipairs(node_defs) do
   define_ast_node(def[1], def[2], def[3])
