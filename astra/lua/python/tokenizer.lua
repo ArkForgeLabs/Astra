@@ -112,9 +112,9 @@ function tokenizer.tokenize(source)
     while source_pos <= source_len do
       local c = source:sub(source_pos, source_pos)
       if c == "\\" and source_pos + 1 <= source_len then
-        local n = source:sub(source_pos + 1, source_pos + 1)
-        if n == "{" or n == "}" then
-          parts[#parts + 1] = n
+        local next_char = source:sub(source_pos + 1, source_pos + 1)
+        if next_char == "{" or next_char == "}" then
+          parts[#parts + 1] = next_char
           source_pos = source_pos + 2
           col = col + 2
         else
@@ -134,41 +134,41 @@ function tokenizer.tokenize(source)
         local expr_text = ""
         local depth = 1
         while source_pos <= source_len and depth > 0 do
-          local ec = source:sub(source_pos, source_pos)
-          if ec == "\"" or ec == "'" then
-            skip_string_in_expr(ec)
-          elseif ec == "{" then
+          local expr_char = source:sub(source_pos, source_pos)
+          if expr_char == "\"" or expr_char == "'" then
+            skip_string_in_expr(expr_char)
+          elseif expr_char == "{" then
             depth = depth + 1
             expr_text = expr_text .. "{"
             advance_char()
-          elseif ec == "}" then
+          elseif expr_char == "}" then
             depth = depth - 1
             if depth > 0 then
               expr_text = expr_text .. "}"
             end
             advance_char()
           else
-            expr_text = expr_text .. ec
+            expr_text = expr_text .. expr_char
             advance_char()
           end
         end
         local conv = nil
         local spec = nil
-        local e = #expr_text
-        while e > 0 do
-          local ch = expr_text:sub(e, e)
+        local expr_end = #expr_text
+        while expr_end > 0 do
+          local ch = expr_text:sub(expr_end, expr_end)
           if ch ~= " " and ch ~= "\t" then break end
-          e = e - 1
+          expr_end = expr_end - 1
         end
-        if e >= 2 and expr_text:sub(e - 1, e) == "!r" then
+        if expr_end >= 2 and expr_text:sub(expr_end - 1, expr_end) == "!r" then
           conv = "r"
-          expr_text = expr_text:sub(1, e - 2):match("^%s*(.-)%s*$") or ""
-        elseif e >= 2 and expr_text:sub(e - 1, e) == "!s" then
+          expr_text = expr_text:sub(1, expr_end - 2):match("^%s*(.-)%s*$") or ""
+        elseif expr_end >= 2 and expr_text:sub(expr_end - 1, expr_end) == "!s" then
           conv = "s"
-          expr_text = expr_text:sub(1, e - 2):match("^%s*(.-)%s*$") or ""
-        elseif e >= 2 and expr_text:sub(e - 1, e) == "!a" then
+          expr_text = expr_text:sub(1, expr_end - 2):match("^%s*(.-)%s*$") or ""
+        elseif expr_end >= 2 and expr_text:sub(expr_end - 1, expr_end) == "!a" then
           conv = "a"
-          expr_text = expr_text:sub(1, e - 2):match("^%s*(.-)%s*$") or ""
+          expr_text = expr_text:sub(1, expr_end - 2):match("^%s*(.-)%s*$") or ""
         end
         local f_colon = nil
         for i = #expr_text, 1, -1 do

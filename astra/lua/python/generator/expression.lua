@@ -38,6 +38,7 @@ return function(ctx)
     [">>"] = function(l, r) return "__py_rshift(" .. l .. ", " .. r .. ")" end,
   }
 
+  ---@type table<string, fun(left: string, right: string): string>
   local compare_handlers = {
     ["!="] = function(left, right)
       return "(" .. left .. " ~= " .. right .. ")"
@@ -56,14 +57,20 @@ return function(ctx)
     end,
   }
 
+  ---@param left string
+  ---@param op string
+  ---@param right string
+  ---@return string
   local function compare_values(left, op, right)
-    local h = compare_handlers[op]
-    if h then
-      return h(left, right)
+    local handler = compare_handlers[op]
+    if handler then
+      return handler(left, right)
     end
     return "(" .. left .. " " .. op .. " " .. right .. ")"
   end
 
+  ---@param expr ast_node
+  ---@return string
   local function gen_list(expr)
     local elements = {}
     for _, e in ipairs(expr.elements) do
@@ -72,14 +79,7 @@ return function(ctx)
     return "{" .. table.concat(elements, ", ") .. "}"
   end
 
-  local function gen_index(expr)
-    local idx = ctx.gen_expr(expr.index)
-    if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
-      return idx
-    end
-    return idx .. " + 1"
-  end
-
+  ---@type table<string, fun(expr: ast_node): string>
   local expr_handlers = {
     [ast.CONSTANT] = function(expr)
       local v = expr.value
@@ -142,17 +142,17 @@ return function(ctx)
       if expr.func.type == ast.NAME and ctx.analysis and ctx.analysis.used_stdlib then
         local id = expr.func.id
         if id == "len" or id == "__py_len" then
-          local a = ctx.gen_expr(expr.args[1])
+          local arg_expr = ctx.gen_expr(expr.args[1])
           return "(getmetatable("
-            .. a
+            .. arg_expr
             .. ") and getmetatable("
-            .. a
+            .. arg_expr
             .. ").__len and getmetatable("
-            .. a
+            .. arg_expr
             .. ").__len("
-            .. a
+            .. arg_expr
             .. ") or #"
-            .. a
+            .. arg_expr
             .. ")"
         end
         if id == "int" or id == "__py_int" then
@@ -192,24 +192,21 @@ return function(ctx)
           kw_parts[#kw_parts + 1] = "{arg=" .. util.escape(kw.arg) .. ", value=" .. ctx.gen_expr(kw.value) .. "}"
         end
         local params = expr._resolved_params
-        if params and #params > 0 then
-          return "__py_call("
-            .. ctx.gen_expr(expr.func)
-            .. ", {"
-            .. table.concat(args, ", ")
-            .. "}, {"
-            .. table.concat(kw_parts, ", ")
-            .. '}, {"'
-            .. table.concat(params, '", "')
-            .. '"})'
-        end
+        local params_str = (params and #params > 0)
+          and ('{"' .. table.concat(params, '", "') .. '"}')
+          or "nil"
+        -- Two code paths for __py_call:
+        -- - params table: known callee → keywords merged into positional slots by name (correct Python semantics)
+        -- - nil: unknown callee → all positional + keyword values passed in declaration order (conservative fallback)
         return "__py_call("
           .. ctx.gen_expr(expr.func)
           .. ", {"
           .. table.concat(args, ", ")
           .. "}, {"
           .. table.concat(kw_parts, ", ")
-          .. "}, nil)"
+          .. "}, "
+          .. params_str
+          .. ")"
       end
       if expr.func.type == ast.SUPER then
         return "__py_super(__class, self)"
@@ -224,7 +221,7 @@ return function(ctx)
         local step = expr.index.step and ctx.gen_expr(expr.index.step) or "nil"
         return "__py_slice(" .. target_obj .. ", " .. lower .. ", " .. upper .. ", " .. step .. ")"
       end
-      local idx = gen_index(expr)
+      local idx = ctx.gen_index(expr)
       if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
         return target_obj .. "[" .. idx .. "]"
       end
@@ -271,7 +268,7 @@ return function(ctx)
     [ast.WALRUS] = function(expr)
       local target = ctx.gen_expr(expr.target)
       local value = ctx.gen_expr(expr.value)
-      return "(function() local __w = " .. value .. "; " .. target .. " = __w; return __w end)()"
+      return "(function() local __walrus_value = " .. value .. "; " .. target .. " = __walrus_value; return __walrus_value end)()"
     end,
     [ast.IF_EXPR] = function(expr)
       return "(function(...) if "

@@ -9,15 +9,15 @@ function os_path:join(...)
   if #parts == 0 then return "" end
   local result = parts[1]
   for i = 2, #parts do
-    local p = parts[i]
-    if type(p) ~= "string" then p = tostring(p) end
-    if p:sub(1, 1) == sep then
-      result = p
+    local part = parts[i]
+    if type(part) ~= "string" then part = tostring(part) end
+    if part:sub(1, 1) == sep then
+      result = part
     else
       if result:sub(-1) ~= sep then
         result = result .. sep
       end
-      result = result .. p
+      result = result .. part
     end
   end
   return result

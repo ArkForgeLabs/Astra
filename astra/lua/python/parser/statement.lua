@@ -27,6 +27,9 @@ return function(state, expr)
     return nil
   end
 
+  ---@param decorators ast_node[]
+  ---@param parse_block_body function
+  ---@return ast_node[]
   stmt.parse_func_def = function(decorators, parse_block_body)
     state:advance_token()
     local name = state:expect_token(TK.IDENTIFIER)
@@ -67,6 +70,9 @@ return function(state, expr)
     return ast.FunctionDef(name.value, args, body, decorators, vararg, kwarg, defaults)
   end
 
+  ---@param decorators ast_node[]
+  ---@param parse_block_body function
+  ---@return ast_node
   stmt.parse_class_def = function(decorators, parse_block_body)
     state:advance_token()
     local name = state:expect_token(TK.IDENTIFIER).value
@@ -84,6 +90,7 @@ return function(state, expr)
     return ast.ClassDef(name, bases, body, decorators)
   end
 
+  ---@return ast_node[]
   stmt.parse_decorators = function()
     local decorators = {}
     while state:peek_is(TK.AT) do
@@ -96,6 +103,8 @@ return function(state, expr)
     return decorators
   end
 
+  ---@param parse_block_body function
+  ---@return ast_node
   stmt.parse_if = function(parse_block_body)
     state:advance_token()
     local test = expr.parse_expr()
@@ -104,14 +113,16 @@ return function(state, expr)
     local or_else = nil
     while state:peek_is(TK.ELIF) do
       state:advance_token()
-      local et = expr.parse_expr()
+      local elif_test = expr.parse_expr()
       local elif_body = parse_block(parse_block_body)
-      elifs[#elifs + 1] = { test = et, body = elif_body }
+      elifs[#elifs + 1] = { test = elif_test, body = elif_body }
     end
     or_else = parse_or_else_block(parse_block_body)
     return ast.If(test, body, elifs, or_else)
   end
 
+  ---@param parse_block_body function
+  ---@return ast_node
   stmt.parse_while = function(parse_block_body)
     state:advance_token()
     local test = expr.parse_expr()
@@ -120,6 +131,8 @@ return function(state, expr)
     return ast.While(test, body, or_else)
   end
 
+  ---@param parse_block_body function
+  ---@return ast_node
   stmt.parse_for = function(parse_block_body)
     state:advance_token()
     local targets = { state:expect_token(TK.IDENTIFIER).value }
@@ -149,6 +162,8 @@ return function(state, expr)
     return ast.For(targets, iterator, body, or_else, is_range, range_args)
   end
 
+  ---@param parse_block_body function
+  ---@return ast_node
   stmt.parse_try = function(parse_block_body)
     state:advance_token()
     local body = parse_block(parse_block_body)
@@ -180,6 +195,7 @@ return function(state, expr)
     return ast.Try(body, handlers, finally_body, or_else)
   end
 
+  ---@return {name:string, as_name:string?}[]
   stmt.parse_import_name = function()
     local name_parts = { state:expect_token(TK.IDENTIFIER).value }
     while state:match_token(TK.DOT) do
@@ -193,6 +209,7 @@ return function(state, expr)
     return { name = name, as_name = as_name }
   end
 
+  ---@return ast_node
   stmt.parse_import_stmt = function()
     if state:peek_is(TK.IMPORT) then
       state:advance_token()
@@ -223,6 +240,7 @@ return function(state, expr)
     end
   end
 
+  ---@return ast_node
   stmt.parse_return = function()
     state:advance_token()
     if
@@ -246,6 +264,7 @@ return function(state, expr)
     end
   end
 
+  ---@return ast_node
   stmt.parse_raise = function()
     state:advance_token()
     if
@@ -266,6 +285,7 @@ return function(state, expr)
     end
   end
 
+  ---@return ast_node
   stmt.parse_assert = function()
     state:advance_token()
     local test = expr.parse_expr()
@@ -277,12 +297,14 @@ return function(state, expr)
     return ast.Assert(test, message)
   end
 
+  ---@return ast_node
   stmt.parse_del = function()
     state:advance_token()
     local target = expr.parse_expr()
     return ast.Del(target)
   end
 
+  ---@return ast_node
   stmt.parse_nonlocal = function()
     state:advance_token()
     local names = { state:expect_token(TK.IDENTIFIER).value }
@@ -292,6 +314,8 @@ return function(state, expr)
     return ast.Nonlocal(names)
   end
 
+  ---@param parse_block_body function
+  ---@return ast_node
   stmt.parse_with = function(parse_block_body)
     state:advance_token()
     local items = {}
@@ -315,6 +339,7 @@ return function(state, expr)
     return ast.With(items, body)
   end
 
+  ---@return ast_node
   stmt.parse_yield = function()
     state:advance_token()
     if
@@ -329,12 +354,16 @@ return function(state, expr)
     end
   end
 
+  ---@param decorators ast_node[]
+  ---@param parse_block_body function
+  ---@return ast_node
   stmt.parse_async_function_def = function(decorators, parse_block_body)
     state:advance_token()
     local func = stmt.parse_func_def(decorators, parse_block_body)
     return ast.AsyncFunctionDef(func.name, func.args, func.body, func.decorators, func.vararg, func.kwarg, func.defaults)
   end
 
+  ---@return ast_node[]
   stmt.parse_simple_stmt = function()
     if state:peek_is(TK.GLOBAL) then
       state:advance_token()
@@ -452,6 +481,8 @@ return function(state, expr)
     end,
   }
 
+  ---@param parse_block_body function
+  ---@return ast_node[]
   stmt.parse_stmt = function(parse_block_body)
     local token = state:peek_token()
     if not token then
@@ -462,12 +493,12 @@ return function(state, expr)
       return handler(parse_block_body)
     end
     if token.kind == TK.AT then
-      local decos = stmt.parse_decorators()
+      local decorators = stmt.parse_decorators()
       local next_kind = state:peek_token() and state:peek_token().kind
       if next_kind == TK.DEF then
-        return { stmt.parse_func_def(decos, parse_block_body) }
+        return { stmt.parse_func_def(decorators, parse_block_body) }
       elseif next_kind == TK.CLASS then
-        return { stmt.parse_class_def(decos, parse_block_body) }
+        return { stmt.parse_class_def(decorators, parse_block_body) }
       else
         error("decorator must precede function or class definition")
       end

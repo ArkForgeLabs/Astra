@@ -66,6 +66,7 @@ return function(state, top_parse)
     end
   end
 
+  ---@return ast_node
   expr.parse_expr = function()
     return expr.parse_lambda()
   end
@@ -131,8 +132,8 @@ return function(state, top_parse)
     local left = expr.parse_and()
     while state:peek_is(TK.OR) do
       state:advance_token()
-      local r = expr.parse_and()
-      left = ast.BoolOp("or", { left, r })
+      local right_expr = expr.parse_and()
+      left = ast.BoolOp("or", { left, right_expr })
     end
     return left
   end
@@ -141,8 +142,8 @@ return function(state, top_parse)
     local left = expr.parse_not()
     while state:peek_is(TK.AND) do
       state:advance_token()
-      local r = expr.parse_not()
-      left = ast.BoolOp("and", { left, r })
+      local right_expr = expr.parse_not()
+      left = ast.BoolOp("and", { left, right_expr })
     end
     return left
   end
@@ -276,7 +277,7 @@ return function(state, top_parse)
   end
 
   expr.parse_primary = function()
-    local atm = expr.parse_atom()
+    local atom = expr.parse_atom()
     while true do
       if state:peek_is(TK.LPAREN) then
         state:advance_token()
@@ -292,9 +293,9 @@ return function(state, top_parse)
         skip_continuation_tokens()
         state:expect_token(TK.RPAREN)
         if #keywords > 0 then
-          atm = ast.Call(atm, args, keywords)
+          atom = ast.Call(atom, args, keywords)
         else
-          atm = ast.Call(atm, args)
+          atom = ast.Call(atom, args)
         end
       elseif state:peek_is(TK.LBRACKET) then
         state:advance_token()
@@ -311,7 +312,7 @@ return function(state, top_parse)
             end
           end
           state:expect_token(TK.RBRACKET)
-          atm = ast.Subscript(atm, ast.Slice(lower, upper, step))
+          atom = ast.Subscript(atom, ast.Slice(lower, upper, step))
         else
           local idx = expr.parse_expr()
           if state:peek_is(TK.COLON) then
@@ -327,20 +328,20 @@ return function(state, top_parse)
               end
             end
             state:expect_token(TK.RBRACKET)
-            atm = ast.Subscript(atm, ast.Slice(idx, upper, step))
+            atom = ast.Subscript(atom, ast.Slice(idx, upper, step))
           else
             state:expect_token(TK.RBRACKET)
-            atm = ast.Subscript(atm, idx)
+            atom = ast.Subscript(atom, idx)
           end
         end
       elseif state:peek_is(TK.DOT) then
         state:advance_token()
-        atm = ast.Attribute(atm, state:expect_token(TK.IDENTIFIER).value)
+        atom = ast.Attribute(atom, state:expect_token(TK.IDENTIFIER).value)
       else
         break
       end
     end
-    return atm
+    return atom
   end
 
   local function parse_paren_expr()
@@ -395,17 +396,17 @@ return function(state, top_parse)
         state:advance_token()
         local key = first
         skip_continuation_tokens()
-        local val = expr.parse_expr()
+        local dict_value = expr.parse_expr()
         skip_continuation_tokens()
         if state:peek_is(TK.FOR) then
           state:advance_token()
           local generators = parse_comprehension_clauses()
           skip_continuation_tokens()
           state:expect_token(TK.RBRACE)
-          return ast.DictComp(key, val, generators)
+          return ast.DictComp(key, dict_value, generators)
         end
         local keys = { key }
-        local vals = { val }
+        local dict_values = { dict_value }
         while state:match_token(TK.COMMA) do
           skip_continuation_tokens()
           if state:peek_is(TK.RBRACE) then break end
@@ -413,12 +414,12 @@ return function(state, top_parse)
           state:expect_token(TK.COLON)
           skip_continuation_tokens()
           if state:peek_is(TK.RBRACE) then break end
-          vals[#vals + 1] = expr.parse_expr()
+          dict_values[#dict_values + 1] = expr.parse_expr()
           skip_continuation_tokens()
         end
         skip_continuation_tokens()
         state:expect_token(TK.RBRACE)
-        return ast.Dict(keys, vals)
+        return ast.Dict(keys, dict_values)
       else
         if state:peek_is(TK.FOR) then
           state:advance_token()
@@ -444,6 +445,7 @@ return function(state, top_parse)
     end
   end
 
+  ---@return ast_node
   expr.parse_atom = function()
     local current_token = state:peek_token()
     if not current_token then
@@ -458,13 +460,13 @@ return function(state, top_parse)
       [TK.FLOAT]    = function() state:advance_token(); return ast.Constant(tonumber(current_token.value)) end,
       [TK.STRING]   = function()
         state:advance_token()
-        local val = current_token.value
-        if val:sub(1, 3) == '"""' or val:sub(1, 3) == "'''" then
-          val = val:sub(4, #val - 3)
+        local value = current_token.value
+        if value:sub(1, 3) == '"""' or value:sub(1, 3) == "'''" then
+          value = value:sub(4, #value - 3)
         else
-          val = val:sub(2, #val - 1)
+          value = value:sub(2, #value - 1)
         end
-        return ast.Constant(util.unescape(val))
+        return ast.Constant(util.unescape(value))
       end,
       [TK.IDENTIFIER] = function()
         state:advance_token()
@@ -478,11 +480,11 @@ return function(state, top_parse)
         local values = {}
         while state:peek_token() and state:peek_token().kind ~= TK.FSTRING_END do
           if state:peek_is(TK.FSTRING_MIDDLE) then
-            local t = state:advance_token()
-            values[#values + 1] = ast.Constant(t.value)
+            local tok = state:advance_token()
+            values[#values + 1] = ast.Constant(tok.value)
           elseif state:peek_is(TK.FSTRING_EXPR) then
-            local t = state:advance_token()
-            local info = t.value
+            local tok = state:advance_token()
+            local info = tok.value
             local sub_tokens = tokenizer.tokenize(info.expr)
             local sub_prog = top_parse(sub_tokens)
             local sub_expr = nil

@@ -5,37 +5,6 @@ local expression_gen = require("python.generator.expression")
 local statement_gen = require("python.generator.statement")
 local generator = {}
 
-local binop_gen = {
-  ["**"] = function(l, r) return "(" .. l .. " ^ " .. r .. ")" end,
-  ["//"] = function(l, r) return "math.floor(" .. l .. " / " .. r .. ")" end,
-  ["+"]  = function(l, r, ln, rn)
-    if (ln.type == ast.CONSTANT and type(ln.value) == "string")
-    or (rn.type == ast.CONSTANT and type(rn.value) == "string") then
-      return "(" .. l .. " .. " .. r .. ")"
-    end
-    return "(" .. l .. " + " .. r .. ")"
-  end,
-  ["*"]  = function(l, r, ln, rn)
-    if ln.type == ast.CONSTANT and type(ln.value) == "string" then
-      return "string.rep(" .. l .. ", " .. r .. ")"
-    end
-    if rn.type == ast.CONSTANT and type(rn.value) == "string" then
-      return "string.rep(" .. r .. ", " .. l .. ")"
-    end
-    if ln.type == ast.LIST or ln.type == ast.SET
-    or rn.type == ast.LIST or rn.type == ast.SET then
-      return "__py_repeat(" .. l .. ", " .. r .. ")"
-    end
-    return "(" .. l .. " * " .. r .. ")"
-  end,
-  ["%"]  = function(l, r, ln, rn)
-    if ln.type == ast.CONSTANT and type(ln.value) == "string" then
-      return "string.format(" .. l .. ", " .. r .. ")"
-    end
-    return "(" .. l .. " % " .. r .. ")"
-  end,
-}
-
 ---@param prog ast.Program
 ---@param analysis? {used_stdlib?: table, has_kwargs?: boolean}
 ---@return string

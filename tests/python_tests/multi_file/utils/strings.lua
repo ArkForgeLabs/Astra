@@ -1,32 +1,32 @@
 local chr, ord, str, int = string.char, string.byte, tostring, tonumber
 if not table.unpack then table.unpack = unpack end
-local function __py_slice(tbl, start, stop, step)
-  local s, e, st = start, stop, step or 1
+__py_slice = function(tbl, start, stop, step)
+  local start_pos, end_pos, step_val = start, stop, step or 1
   local n = #tbl
-  if st > 0 then
-    if s == nil then
-      s = 0
+  if step_val > 0 then
+    if start_pos == nil then
+      start_pos = 0
     end
-    if e == nil then
-      e = n
+    if end_pos == nil then
+      end_pos = n
     end
-    s = s + 1
+    start_pos = start_pos + 1
     local result = {}
-    for i = s, e, st do
+    for i = start_pos, end_pos, step_val do
       result[#result + 1] = tbl[i]
     end
     return result
-  elseif st < 0 then
-    if s == nil then
-      s = n - 1
+  elseif step_val < 0 then
+    if start_pos == nil then
+      start_pos = n - 1
     end
-    if e == nil then
-      e = -1
+    if end_pos == nil then
+      end_pos = -1
     end
-    s = s + 1
-    e = e + 1
+    start_pos = start_pos + 1
+    end_pos = end_pos + 1
     local result = {}
-    for i = s, e, st do
+    for i = start_pos, end_pos, step_val do
       result[#result + 1] = tbl[i]
     end
     return result
@@ -34,7 +34,7 @@ local function __py_slice(tbl, start, stop, step)
   return {}
 end
 
-local function __py_slice_assign(tbl, start, stop, step, values)
+__py_slice_assign = function(tbl, start, stop, step, values)
   local s = (start or 0) + 1
   local e = stop or #tbl
   local num = e - (start or 0)
@@ -47,7 +47,7 @@ local function __py_slice_assign(tbl, start, stop, step, values)
   end
 end
 
-local function __py_getitem(container, index)
+__py_getitem = function(container, index)
   if type(container) == "string" then
     return string.sub(container, index, index)
   end

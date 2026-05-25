@@ -44,14 +44,14 @@ return function(ctx)
       return
     end
     for i = #stmt.decorators, 1, -1 do
-      local d = stmt.decorators[i]
-      ctx.push(ctx.indent() .. stmt.name .. " = " .. ctx.gen_expr(d) .. "(" .. stmt.name .. ")")
+      local decorator = stmt.decorators[i]
+      ctx.push(ctx.indent() .. stmt.name .. " = " .. ctx.gen_expr(decorator) .. "(" .. stmt.name .. ")")
     end
   end
 
-  local function flatten_targets(tt)
+  local function flatten_targets(targets)
     local result = {}
-    for _, t in ipairs(tt) do
+    for _, t in ipairs(targets) do
       if type(t) == "string" then
         result[#result + 1] = t
       elseif t.type == ast.LIST or t.type == ast.TUPLE then
@@ -65,6 +65,7 @@ return function(ctx)
     return result
   end
 
+  ---@type table<string, fun(stmt: ast_node)>
   local stmt_handlers = {
     [ast.FUNCTION_DEF] = function(stmt)
       local has_decos = stmt.decorators and #stmt.decorators > 0
@@ -186,9 +187,9 @@ return function(ctx)
             end)
             ctx.push(ctx.indent() .. "end")
           elseif s.type == ast.ASSIGN and #s.targets == 1 and s.targets[1].type == ast.NAME then
-            local var = s.targets[1].id
-            if var:match("^(.+)%.setter$") then
-              local prop_name = var:match("^(.+)%.setter$")
+            local variable_name = s.targets[1].id
+            if variable_name:match("^(.+)%.setter$") then
+              local prop_name = variable_name:match("^(.+)%.setter$")
               ctx.push(ctx.indent() .. "function __mt.__newindex(t, k, v) if k == " .. util.escape(prop_name) .. " then __class." .. prop_name .. "(t, v) else rawset(t, k, v) end end")
             else
               ctx.push(ctx.indent() .. "__class." .. s.targets[1].id .. " = " .. ctx.gen_expr(s.value))
@@ -394,9 +395,9 @@ return function(ctx)
         ["<<"] = function() return target .. " = __py_lshift(" .. target .. ", " .. value .. ")" end,
         [">>"] = function() return target .. " = __py_rshift(" .. target .. ", " .. value .. ")" end,
       }
-      local gen = special[stmt.op]
-      if gen then
-        ctx.push(ctx.indent() .. gen())
+      local special_handler = special[stmt.op]
+      if special_handler then
+        ctx.push(ctx.indent() .. special_handler())
       else
         ctx.push(ctx.indent() .. target .. " = " .. target .. " " .. stmt.op .. " " .. value)
       end

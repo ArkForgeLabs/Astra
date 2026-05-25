@@ -20,56 +20,56 @@ local function define_ast_node(name, constant, fields)
   end
 end
 
----@class ast.Program: {type: integer, body: ast_node[]}
----@class ast.FunctionDef: {type: integer, name: string, args: string[], body: ast_node[], decorators: ast_node[], vararg: string?, kwarg: string?, defaults: ast_node[]?}
----@class ast.If: {type: integer, test: ast_node, body: ast_node[], elifs: {test: ast_node, body: ast_node[]}[], or_else: ast_node[]?}
----@class ast.While: {type: integer, test: ast_node, body: ast_node[], or_else: ast_node[]?}
----@class ast.For: {type: integer, targets: string[], iterator: ast_node?, body: ast_node[], or_else: ast_node[]?, is_range: boolean, range_args: ast_node[]}
----@class ast.Try: {type: integer, body: ast_node[], handlers: {type: ast_node?, name: string?, body: ast_node[]}[], finally_body: ast_node[]?, or_else: ast_node[]?}
----@class ast.Return: {type: integer, value: ast_node?}
----@class ast.Assign: {type: integer, targets: ast_node[], value: ast_node}
----@class ast.AugAssign: {type: integer, target: ast_node, op: string, value: ast_node}
----@class ast.ExprStmt: {type: integer, expr: ast_node}
----@class ast.Global: {type: integer, names: string[]}
----@class ast.Pass: {type: integer}
----@class ast.Break: {type: integer}
----@class ast.Continue: {type: integer}
----@class ast.Constant: {type: integer, value: any}
----@class ast.Name: {type: integer, id: string}
----@class ast.BinOp: {type: integer, left: ast_node, op: string, right: ast_node}
----@class ast.UnaryOp: {type: integer, op: string, operand: ast_node}
----@class ast.BoolOp: {type: integer, op: string, values: ast_node[]}
----@class ast.Compare: {type: integer, left: ast_node, ops: string[], comparators: ast_node[]}
----@class ast.Call: {type: integer, func: ast_node, args: ast_node[], keywords?: {arg:string, value:ast_node}[], _resolved_params?: string[], [any]: any}
----@class ast.Subscript: {type: integer, value: ast_node, index: ast_node}
----@class ast.Attribute: {type: integer, value: ast_node, attr: string}
----@class ast.List: {type: integer, elements: ast_node[]}
----@class ast.Dict: {type: integer, keys: ast_node[], values: ast_node[]}
----@class ast.Set: {type: integer, elements: ast_node[]}
----@class ast.Tuple: {type: integer, elements: ast_node[]}
----@class ast.Lambda: {type: integer, args: string[], body: ast_node, has_vararg?: boolean}
----@class ast.Walrus: {type: integer, target: ast_node, value: ast_node}
----@class ast.IfExpr: {type: integer, test: ast_node, body: ast_node, or_else: ast_node}
----@class ast.ListComp: {type: integer, element: ast_node, generators: {target:string, iterator:ast_node, ifs:ast_node[]}[]}
----@class ast.SetComp: {type: integer, element: ast_node, generators: {target:string, iterator:ast_node, ifs:ast_node[]}[]}
----@class ast.DictComp: {type: integer, key: ast_node, value: ast_node, generators: {target:string, iterator:ast_node, ifs:ast_node[]}[]}
----@class ast.Slice: {type: integer, lower: ast_node?, upper: ast_node?, step: ast_node?}
----@class ast.ClassDef: {type: integer, name: string, bases: ast_node[], body: ast_node[], decorators: ast_node[]}
----@class ast.Starred: {type: integer, value: ast_node, double_star?: boolean}
----@class ast.Super: {type: integer}
----@class ast.Comment: {type: integer, value: string}
----@class ast.Import: {type: integer, names: {name:string, as_name:string?}[]}
----@class ast.JoinedStr: {type: integer, values: ast_node[]}
----@class ast.FormattedValue: {type: integer, value: ast_node, conversion: string?, format_spec: ast_node?}
----@class ast.Raise: {type: integer, exc: ast_node?, cause: ast_node?}
----@class ast.Assert: {type: integer, test: ast_node, message: ast_node?}
----@class ast.Del: {type: integer, target: ast_node}
----@class ast.Nonlocal: {type: integer, names: string[]}
----@class ast.Await: {type: integer, value: ast_node}
----@class ast.AsyncFunctionDef: {type: integer, name: string, args: string[], body: ast_node[], decorators: ast_node[], vararg: string?, kwarg: string?, defaults: ast_node[]?}
----@class ast.With: {type: integer, items: {context_expr: ast_node, optional_vars: ast_node?}[], body: ast_node[]}
----@class ast.Yield: {type: integer, value: ast_node?}
----@class ast.ImportFrom: {type: integer, module: string, names: {name:string, as_name:string?}[]}
+---@class ast.Program: {type: string, body: ast_node[]}
+---@class ast.FunctionDef: {type: string, name: string, args: string[], body: ast_node[], decorators: ast_node[], vararg: string?, kwarg: string?, defaults: ast_node[]?}
+---@class ast.If: {type: string, test: ast_node, body: ast_node[], elifs: {test: ast_node, body: ast_node[]}[], or_else: ast_node[]?}
+---@class ast.While: {type: string, test: ast_node, body: ast_node[], or_else: ast_node[]?}
+---@class ast.For: {type: string, targets: string[], iterator: ast_node?, body: ast_node[], or_else: ast_node[]?, is_range: boolean, range_args: ast_node[]}
+---@class ast.Try: {type: string, body: ast_node[], handlers: {type: ast_node?, name: string?, body: ast_node[]}[], finally_body: ast_node[]?, or_else: ast_node[]?}
+---@class ast.Return: {type: string, value: ast_node?}
+---@class ast.Assign: {type: string, targets: ast_node[], value: ast_node}
+---@class ast.AugAssign: {type: string, target: ast_node, op: string, value: ast_node}
+---@class ast.ExprStmt: {type: string, expr: ast_node}
+---@class ast.Global: {type: string, names: string[]}
+---@class ast.Pass: {type: string}
+---@class ast.Break: {type: string}
+---@class ast.Continue: {type: string}
+---@class ast.Constant: {type: string, value: any}
+---@class ast.Name: {type: string, id: string}
+---@class ast.BinOp: {type: string, left: ast_node, op: string, right: ast_node}
+---@class ast.UnaryOp: {type: string, op: string, operand: ast_node}
+---@class ast.BoolOp: {type: string, op: string, values: ast_node[]}
+---@class ast.Compare: {type: string, left: ast_node, ops: string[], comparators: ast_node[]}
+---@class ast.Call: {type: string, func: ast_node, args: ast_node[], keywords?: {arg:string, value:ast_node}[], _resolved_params?: string[], [any]: any}
+---@class ast.Subscript: {type: string, value: ast_node, index: ast_node}
+---@class ast.Attribute: {type: string, value: ast_node, attr: string}
+---@class ast.List: {type: string, elements: ast_node[]}
+---@class ast.Dict: {type: string, keys: ast_node[], values: ast_node[]}
+---@class ast.Set: {type: string, elements: ast_node[]}
+---@class ast.Tuple: {type: string, elements: ast_node[]}
+---@class ast.Lambda: {type: string, args: string[], body: ast_node, has_vararg?: boolean}
+---@class ast.Walrus: {type: string, target: ast_node, value: ast_node}
+---@class ast.IfExpr: {type: string, test: ast_node, body: ast_node, or_else: ast_node}
+---@class ast.ListComp: {type: string, element: ast_node, generators: {target:string, iterator:ast_node, ifs:ast_node[]}[]}
+---@class ast.SetComp: {type: string, element: ast_node, generators: {target:string, iterator:ast_node, ifs:ast_node[]}[]}
+---@class ast.DictComp: {type: string, key: ast_node, value: ast_node, generators: {target:string, iterator:ast_node, ifs:ast_node[]}[]}
+---@class ast.Slice: {type: string, lower: ast_node?, upper: ast_node?, step: ast_node?}
+---@class ast.ClassDef: {type: string, name: string, bases: ast_node[], body: ast_node[], decorators: ast_node[]}
+---@class ast.Starred: {type: string, value: ast_node, double_star?: boolean}
+---@class ast.Super: {type: string}
+---@class ast.Comment: {type: string, value: string}
+---@class ast.Import: {type: string, names: {name:string, as_name:string?}[]}
+---@class ast.JoinedStr: {type: string, values: ast_node[]}
+---@class ast.FormattedValue: {type: string, value: ast_node, conversion: string?, format_spec: ast_node?}
+---@class ast.Raise: {type: string, exc: ast_node?, cause: ast_node?}
+---@class ast.Assert: {type: string, test: ast_node, message: ast_node?}
+---@class ast.Del: {type: string, target: ast_node}
+---@class ast.Nonlocal: {type: string, names: string[]}
+---@class ast.Await: {type: string, value: ast_node}
+---@class ast.AsyncFunctionDef: {type: string, name: string, args: string[], body: ast_node[], decorators: ast_node[], vararg: string?, kwarg: string?, defaults: ast_node[]?}
+---@class ast.With: {type: string, items: {context_expr: ast_node, optional_vars: ast_node?}[], body: ast_node[]}
+---@class ast.Yield: {type: string, value: ast_node?}
+---@class ast.ImportFrom: {type: string, module: string, names: {name:string, as_name:string?}[]}
 
 ---@alias ast_node
 ---| ast.Program | ast.FunctionDef | ast.If | ast.While | ast.For | ast.Try

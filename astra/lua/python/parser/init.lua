@@ -6,20 +6,12 @@ local statement_parser = require("python.parser.statement")
 
 local parser = {}
 
+---@param tokens token_obj[]
+---@return ast.Program
 function parser.parse(tokens)
   local state = parser_context.create_state(tokens)
   local parse_block_body, parse_statements
   local stmt
-
-  local function expect_colon_newline()
-    state:expect_token(TK.COLON)
-    while state:peek_is(TK.COMMENT) do
-      state:advance_token()
-    end
-    if state:peek_is(TK.NEWLINE) then
-      state:advance_token()
-    end
-  end
 
   local expr = expression_parser(state, parser.parse)
 

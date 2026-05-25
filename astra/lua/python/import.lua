@@ -153,6 +153,9 @@ local function collect_module_exports(prog)
   return sorted
 end
 
+---@param source string
+---@param opts? table
+---@return string, ast.Program
 function import.transpile_source(source, opts)
   opts = opts or {}
   local tokens = tokenizer.tokenize(source)
@@ -192,6 +195,9 @@ local function transpile_module(py_path, lua_path, opts)
   end
 end
 
+---@param prog ast.Program
+---@param cwd string
+---@param opts? table
 function import.resolve(prog, cwd, opts)
   opts = opts or {}
   processed_modules = {}

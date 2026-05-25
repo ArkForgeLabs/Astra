@@ -15,6 +15,10 @@ local function replace_with_else(body, i, stmt)
   end
 end
 
+--- Resolve keyword argument names to parameter positions for known local functions.
+--- When f(a=1, b=2) calls a function defined in the same module, this pass maps
+--- keyword names to positional slots so the generator can emit a correctly-ordered argument list.
+---@param program ast.Program
 function optimizer.call_resolution_pass(program)
   local func_map = {}
   walker.walk_all_bodies(program, {
@@ -49,6 +53,7 @@ function optimizer.call_resolution_pass(program)
   })
 end
 
+---@param program ast.Program
 function optimizer.kwarg_pass(program)
   program._has_kwargs = false
   walker.walk_program(program, {
@@ -61,6 +66,9 @@ function optimizer.kwarg_pass(program)
   })
 end
 
+--- Prune if-statements with constant (compile-time-known) test values.
+--- Replaces `if False: ...` with its else branch and inlines `if True: ...`.
+---@param program ast.Program
 function optimizer.if_false_pass(program)
   walker.walk_all_bodies(program, {
     visit_after = function(body)
@@ -93,6 +101,8 @@ function optimizer.if_false_pass(program)
   })
 end
 
+--- Prune while-loops with a `False` test (dead loop elimination).
+---@param program ast.Program
 function optimizer.while_false_pass(program)
   walker.walk_all_bodies(program, {
     visit_after = function(body)
@@ -110,6 +120,8 @@ function optimizer.while_false_pass(program)
   })
 end
 
+--- Remove unreachable code after return/break/continue statements.
+---@param program ast.Program
 function optimizer.unreachable_pass(program)
   walker.walk_all_bodies(program, {
     visit_after = function(body)
@@ -126,6 +138,8 @@ function optimizer.unreachable_pass(program)
   })
 end
 
+---@param program ast.Program
+---@param analysis table
 function optimizer.stdlib_usage_pass(program, analysis)
   analysis.used_stdlib = {}
   local used = analysis.used_stdlib
@@ -185,6 +199,9 @@ function optimizer.stdlib_usage_pass(program, analysis)
   })
 end
 
+---@param program ast.Program
+---@param options? table
+---@return table
 function optimizer.analyze(program, options)
   options = options or {}
   local analysis = {}

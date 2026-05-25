@@ -1,30 +1,35 @@
 --- Parser context shared between expression and statement parsers.
--- Creates a fresh state object for each parse invocation, providing
--- all token-manipulation helpers (peek, advance, match, expect, etc.).
+--- Creates a fresh state object for each parse invocation, providing
+--- all token-manipulation helpers (peek, advance, match, expect, etc.).
 local token = require("python.token")
 local TK = token.TK
 local token_names = token.token_names
 
---- Creates a fresh parser state from a token stream.  The state holds
--- the current position and all helpers consumed by the parse functions.
----@param tokens table  Array of token objects from the tokenizer
----@return table  State with .tokens, .position, and helper methods
+---@class ParserState
+---@field tokens token_obj[]
+---@field position integer
+
+---@return ParserState
 local function create_state(tokens)
   local state = {
     tokens = tokens,
     position = 1,
   }
 
+  ---@return token_obj?
   function state:peek_token()
     return self.tokens[self.position]
   end
 
+  ---@return token_obj?
   function state:advance_token()
     local tok = self.tokens[self.position]
     self.position = self.position + 1
     return tok
   end
 
+  ---@param kind tk_kind
+  ---@return boolean
   function state:match_token(kind)
     local tok = self:peek_token()
     if tok and tok.kind == kind then
@@ -34,6 +39,8 @@ local function create_state(tokens)
     return false
   end
 
+  ---@param kind tk_kind
+  ---@return token_obj?
   function state:expect_token(kind)
     local tok = self:peek_token()
     if not tok or tok.kind ~= kind then
@@ -51,16 +58,32 @@ local function create_state(tokens)
     return self:advance_token()
   end
 
+  ---@param kind tk_kind
+  ---@return boolean
   function state:peek_is(kind)
     local tok = self:peek_token()
     return tok and tok.kind == kind
   end
 
+  ---@param kind tk_kind
+  ---@return boolean
   function state:peek_not(kind)
     local tok = self:peek_token()
     return tok and tok.kind ~= kind
   end
 
+  function state:expect_colon_newline()
+    self:expect_token(TK.COLON)
+    while self:peek_is(TK.COMMENT) do
+      self:advance_token()
+    end
+    if self:peek_is(TK.NEWLINE) then
+      self:advance_token()
+    end
+  end
+
+  ---@param ... tk_kind
+  ---@return boolean
   function state:peek_one_of(...)
     local tok = self:peek_token()
     if not tok then

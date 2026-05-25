@@ -23,9 +23,9 @@ local function create_match(pattern, string, ct, anchored)
 end
 
 local function get_captures(regex, string)
-  local c = regex:captures(string)
-  if c and c[1] then
-    return c[1]
+  local captures = regex:captures(string)
+  if captures and captures[1] then
+    return captures[1]
   end
   return nil
 end
@@ -64,9 +64,9 @@ function re_mod.findall(pattern, string)
   local result = {}
   local offset = 1
   while offset <= #string do
-    local c = regex:captures(string:sub(offset))
-    if c and c[1] then
-      local ct = c[1]
+    local captures = regex:captures(string:sub(offset))
+    if captures and captures[1] then
+      local ct = captures[1]
       local match_str = ct[1]
       if #ct > 1 then
         local groups = {}
@@ -90,9 +90,9 @@ function re_mod.split(pattern, string)
   local parts = {}
   local last_end = 1
   while last_end <= #string do
-    local c = regex:captures(string:sub(last_end))
-    if c and c[1] then
-      local ct = c[1]
+    local captures = regex:captures(string:sub(last_end))
+    if captures and captures[1] then
+      local ct = captures[1]
       local match_str = ct[1]
       local idx = string:find(match_str, last_end, true)
       if idx then
@@ -112,22 +112,22 @@ end
 function re_mod.sub(pattern, repl, string, count)
   count = count or 1
   local regex = validation.regex(pattern)
-  local s = string
+  local current_string = string
   local replaced = 0
   local offset = 1
-  while replaced < count and offset <= #s do
-    local c = regex:captures(s:sub(offset))
-    if c and c[1] then
-      local ct = c[1]
+  while replaced < count and offset <= #current_string do
+    local captures = regex:captures(current_string:sub(offset))
+    if captures and captures[1] then
+      local ct = captures[1]
       local match_str = ct[1]
-      local idx = s:find(match_str, offset, true)
+      local idx = current_string:find(match_str, offset, true)
       if idx then
         if type(repl) == "string" then
-          s = s:sub(1, idx - 1) .. repl .. s:sub(idx + #match_str)
+          current_string = current_string:sub(1, idx - 1) .. repl .. current_string:sub(idx + #match_str)
           offset = idx + #repl
         elseif type(repl) == "function" then
           local replacement = repl(ct[1])
-          s = s:sub(1, idx - 1) .. tostring(replacement) .. s:sub(idx + #match_str)
+          current_string = current_string:sub(1, idx - 1) .. tostring(replacement) .. current_string:sub(idx + #match_str)
           offset = idx + #tostring(replacement)
         end
         replaced = replaced + 1
@@ -138,7 +138,7 @@ function re_mod.sub(pattern, repl, string, count)
       break
     end
   end
-  return s, replaced
+  return current_string, replaced
 end
 
 function re_mod.subn(pattern, repl, string)
