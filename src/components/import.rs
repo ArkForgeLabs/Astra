@@ -91,7 +91,7 @@ async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua:
         lua.globals().set("CURRENT_SCRIPT", file_path.clone())?;
         let result = lua
             .load(content)
-            .set_name(file_path)
+            .set_name(format!("@{file_path}"))
             .eval_async::<mlua::Value>()
             .await?;
 
