@@ -56,18 +56,20 @@ local function is_string_prefix(word)
     or lower == "br"
 end
 
-local function read_quoted_string(s, start_index, quote_char)
+local function read_quoted_string(s, start_index, qb)
   advance_char(s)
-  if s.source:sub(s.source_pos, s.source_pos + 1) == quote_char .. quote_char then
+  local double_qb = string.char(qb, qb)
+  local triple_qb = string.char(qb, qb, qb)
+  if s.source:sub(s.source_pos, s.source_pos + 1) == double_qb then
     s.source_pos = s.source_pos + 2
     s.col = s.col + 2
     while s.source_pos <= s.source_len do
-      if s.source:sub(s.source_pos, s.source_pos + 2) == quote_char .. quote_char .. quote_char then
+      if s.source:sub(s.source_pos, s.source_pos + 2) == triple_qb then
         s.source_pos = s.source_pos + 3
         s.col = s.col + 3
         break
       end
-      if s.source:sub(s.source_pos, s.source_pos) == "\n" then
+      if s.source:byte(s.source_pos) == 10 then
         s.line = s.line + 1
         s.col = 1
       else
@@ -78,11 +80,11 @@ local function read_quoted_string(s, start_index, quote_char)
     emit_token(s, TK.STRING, s.source:sub(start_index, s.source_pos - 1))
   else
     while s.source_pos <= s.source_len do
-      local c = s.source:sub(s.source_pos, s.source_pos)
-      if c == "\\" then
+      local c = s.source:byte(s.source_pos)
+      if c == 92 then
         s.source_pos = s.source_pos + 2
         s.col = s.col + 2
-      elseif c == quote_char then
+      elseif c == qb then
         advance_char(s)
         break
       else
@@ -93,16 +95,16 @@ local function read_quoted_string(s, start_index, quote_char)
   end
 end
 
-local function read_fstring(s, quote_char)
+local function read_fstring(s, qb)
   advance_char(s)
   emit_token(s, TK.FSTRING_START, "")
-  local function skip_string_in_expr(qc)
+  local function skip_string_in_expr(sqc)
     while s.source_pos <= s.source_len do
-      local c = s.source:sub(s.source_pos, s.source_pos)
-      if c == "\\" then
+      local c = s.source:byte(s.source_pos)
+      if c == 92 then
         s.source_pos = s.source_pos + 2
         s.col = s.col + 2
-      elseif c == qc then
+      elseif c == sqc then
         advance_char(s)
         return
       else
@@ -112,45 +114,45 @@ local function read_fstring(s, quote_char)
   end
   local parts = {}
   while s.source_pos <= s.source_len do
-    local c = s.source:sub(s.source_pos, s.source_pos)
-    if c == "\\" and s.source_pos + 1 <= s.source_len then
-      local next_char = s.source:sub(s.source_pos + 1, s.source_pos + 1)
-      if next_char == "{" or next_char == "}" then
-        parts[#parts + 1] = next_char
+    local c = s.source:byte(s.source_pos)
+    if c == 92 and s.source_pos + 1 <= s.source_len then
+      local next_b = s.source:byte(s.source_pos + 1)
+      if next_b == 123 or next_b == 125 then
+        parts[#parts + 1] = string.char(next_b)
         s.source_pos = s.source_pos + 2
         s.col = s.col + 2
       else
-        parts[#parts + 1] = c
+        parts[#parts + 1] = "\\"
         advance_char(s)
       end
-    elseif c == "{" and s.source_pos + 1 <= s.source_len and s.source:sub(s.source_pos + 1, s.source_pos + 1) == "{" then
+    elseif c == 123 and s.source_pos + 1 <= s.source_len and s.source:byte(s.source_pos + 1) == 123 then
       parts[#parts + 1] = "{"
       s.source_pos = s.source_pos + 2
       s.col = s.col + 2
-    elseif c == "}" and s.source_pos + 1 <= s.source_len and s.source:sub(s.source_pos + 1, s.source_pos + 1) == "}" then
+    elseif c == 125 and s.source_pos + 1 <= s.source_len and s.source:byte(s.source_pos + 1) == 125 then
       parts[#parts + 1] = "}"
       s.source_pos = s.source_pos + 2
       s.col = s.col + 2
-    elseif c == "{" then
+    elseif c == 123 then
       advance_char(s)
       local expr_text = ""
       local depth = 1
       while s.source_pos <= s.source_len and depth > 0 do
-        local expr_char = s.source:sub(s.source_pos, s.source_pos)
-        if expr_char == "\"" or expr_char == "'" then
-          skip_string_in_expr(expr_char)
-        elseif expr_char == "{" then
+        local expr_b = s.source:byte(s.source_pos)
+        if expr_b == 34 or expr_b == 39 then
+          skip_string_in_expr(expr_b)
+        elseif expr_b == 123 then
           depth = depth + 1
           expr_text = expr_text .. "{"
           advance_char(s)
-        elseif expr_char == "}" then
+        elseif expr_b == 125 then
           depth = depth - 1
           if depth > 0 then
             expr_text = expr_text .. "}"
           end
           advance_char(s)
         else
-          expr_text = expr_text .. expr_char
+          expr_text = expr_text .. string.char(expr_b)
           advance_char(s)
         end
       end
@@ -184,11 +186,11 @@ local function read_fstring(s, quote_char)
       if conv then expr_info.conversion = conv end
       if spec then expr_info.format_spec = spec end
       parts[#parts + 1] = expr_info
-    elseif c == quote_char then
+    elseif c == qb then
       advance_char(s)
       break
     else
-      parts[#parts + 1] = c
+      parts[#parts + 1] = string.char(c)
       advance_char(s)
     end
   end
@@ -214,9 +216,9 @@ end
 
 local function tokenize_main(s)
   while s.source_pos <= s.source_len do
-    local char = s.source:sub(s.source_pos, s.source_pos)
+    local ch = s.source:byte(s.source_pos)
 
-    if char == "\n" then
+    if ch == 10 then
       if s.bracket_depth > 0 then
         s.source_pos = s.source_pos + 1
         s.line = s.line + 1
@@ -229,21 +231,21 @@ local function tokenize_main(s)
         s.at_line_start = true
       end
     elseif s.at_line_start then
-      if char == " " or char == "\t" then
+      if ch == 32 or ch == 9 then
         local indent_count = 0
-        local indent_char = char
+        local indent_byte = ch
         while s.source_pos <= s.source_len do
-          local c = s.source:sub(s.source_pos, s.source_pos)
-          if c == " " or c == "\t" then
-            indent_count = indent_count + (c ~= indent_char and (c == "\t" and 4 or 1) or 1)
+          local c = s.source:byte(s.source_pos)
+          if c == 32 or c == 9 then
+            indent_count = indent_count + (c ~= indent_byte and (c == 9 and 4 or 1) or 1)
             advance_char(s)
           else
             break
           end
         end
         local current_indent = s.indent_stack[#s.indent_stack]
-        local next_char = s.source_pos <= s.source_len and s.source:sub(s.source_pos, s.source_pos) or ""
-        if next_char ~= "\n" and next_char ~= "" then
+        local next_b = s.source_pos <= s.source_len and s.source:byte(s.source_pos) or 0
+        if next_b ~= 10 and next_b ~= 0 then
           if indent_count > current_indent then
             emit_token(s, TK.INDENT)
             s.indent_stack[#s.indent_stack + 1] = indent_count
@@ -262,28 +264,28 @@ local function tokenize_main(s)
         end
         s.at_line_start = false
       end
-    elseif char == "#" then
+    elseif ch == 35 then
       local start = s.source_pos + 1
-      while s.source_pos <= s.source_len and s.source:sub(s.source_pos, s.source_pos) ~= "\n" do
+      while s.source_pos <= s.source_len and s.source:byte(s.source_pos) ~= 10 do
         advance_char(s)
       end
       local text = s.source:sub(start, s.source_pos - 1)
-      text = text:match("^%s*(.-)%s*$") or ""
+      text = text:match("^(.-)%s*$") or ""
       emit_token(s, TK.COMMENT, text)
-    elseif char == '"' or char == "'" then
-      read_quoted_string(s, s.source_pos, char)
-    elseif char >= "0" and char <= "9" then
+    elseif ch == 34 or ch == 39 then
+      read_quoted_string(s, s.source_pos, ch)
+    elseif ch >= 48 and ch <= 57 then
       local start_index = s.source_pos
       local is_float = false
       advance_char(s)
       while s.source_pos <= s.source_len do
-        local c = s.source:sub(s.source_pos, s.source_pos)
-        if c >= "0" and c <= "9" then
+        local c = s.source:byte(s.source_pos)
+        if c >= 48 and c <= 57 then
           advance_char(s)
-        elseif c == "." then
+        elseif c == 46 then
           is_float = true
           advance_char(s)
-        elseif c == "e" or c == "E" then
+        elseif c == 101 or c == 69 then
           is_float = true
           advance_char(s)
         else
@@ -291,25 +293,25 @@ local function tokenize_main(s)
         end
       end
       emit_token(s, is_float and TK.FLOAT or TK.INTEGER, s.source:sub(start_index, s.source_pos - 1))
-    elseif (char >= "a" and char <= "z") or (char >= "A" and char <= "Z") or char == "_" then
+    elseif (ch >= 97 and ch <= 122) or (ch >= 65 and ch <= 90) or ch == 95 then
       local start_index = s.source_pos
       advance_char(s)
       while s.source_pos <= s.source_len do
-        local c = s.source:sub(s.source_pos, s.source_pos)
-        if (c >= "a" and c <= "z") or (c >= "A" and c <= "Z") or (c >= "0" and c <= "9") or c == "_" then
+        local c = s.source:byte(s.source_pos)
+        if (c >= 97 and c <= 122) or (c >= 65 and c <= 90) or (c >= 48 and c <= 57) or c == 95 then
           advance_char(s)
         else
           break
         end
       end
       local word = s.source:sub(start_index, s.source_pos - 1)
-      local next_char = s.source_pos <= s.source_len and s.source:sub(s.source_pos, s.source_pos) or ""
-      if (next_char == '"' or next_char == "'") and is_string_prefix(word) then
+      local next_b = s.source_pos <= s.source_len and s.source:byte(s.source_pos) or 0
+      if (next_b == 34 or next_b == 39) and is_string_prefix(word) then
         local lower = word:lower()
         if lower == "f" or lower == "rf" or lower == "fr" then
-          read_fstring(s, next_char)
+          read_fstring(s, next_b)
         else
-          read_quoted_string(s, start_index + #word, next_char)
+          read_quoted_string(s, start_index + #word, next_b)
         end
       else
         emit_token(s, keyword_token_map[word] or TK.IDENTIFIER, word)
@@ -326,30 +328,30 @@ local function tokenize_main(s)
         emit_token(s, multi_character_tokens[next_two], next_two)
         s.source_pos = s.source_pos + 2
         s.col = s.col + 2
-      elseif single_character_tokens[char] then
-        emit_token(s, single_character_tokens[char], char)
+      elseif single_character_tokens[string.char(ch)] then
+        emit_token(s, single_character_tokens[string.char(ch)], string.char(ch))
         advance_char(s)
-      elseif char == " " or char == "\t" or char == "\r" then
+      elseif ch == 32 or ch == 9 or ch == 13 then
         advance_char(s)
-      elseif char == "\\" then
-        local next_char = s.source_pos + 1 <= s.source_len and s.source:sub(s.source_pos + 1, s.source_pos + 1) or ""
-        if next_char == "\n" then
+      elseif ch == 92 then
+        local next_b = s.source_pos + 1 <= s.source_len and s.source:byte(s.source_pos + 1) or 0
+        if next_b == 10 then
           s.source_pos = s.source_pos + 2
           s.line = s.line + 1
           s.col = 1
         elseif
-          next_char == "\r"
+          next_b == 13
           and s.source_pos + 2 <= s.source_len
-          and s.source:sub(s.source_pos + 2, s.source_pos + 2) == "\n"
+          and s.source:byte(s.source_pos + 2) == 10
         then
           s.source_pos = s.source_pos + 3
           s.line = s.line + 1
           s.col = 1
         else
-          error("syntax error at line " .. s.line .. " col " .. s.col .. ": unexpected character " .. char)
+          error("syntax error at line " .. s.line .. " col " .. s.col .. ": unexpected character " .. string.char(ch))
         end
       else
-        error("syntax error at line " .. s.line .. " col " .. s.col .. ": unexpected character " .. char)
+        error("syntax error at line " .. s.line .. " col " .. s.col .. ": unexpected character " .. string.char(ch))
       end
     end
   end

@@ -1,16 +1,51 @@
 local ast = require("python.ast")
 local util = require("python.util")
 
+local precedence = {
+  ["**"] = 10,
+  ["//"] = 9, ["*"] = 9,
+  ["/"] = 8, ["%"] = 8,
+  ["+"] = 7, ["-"] = 7,
+  ["<<"] = 6, [">>"] = 6,
+  ["&"] = 5,
+  ["^"] = 4,
+  ["|"] = 3,
+}
+
+local simple_types = {
+  [ast.CONSTANT] = true,
+  [ast.NAME] = true,
+  [ast.CALL] = true,
+  [ast.ATTRIBUTE] = true,
+  [ast.SUPER] = true,
+}
+
+local function needs_paren(child, parent_op)
+  if simple_types[child.type] then return false end
+  if child.type == ast.BIN_OP then
+    local child_prec = precedence[child.op] or 0
+    local parent_prec = precedence[parent_op] or 0
+    return child_prec < parent_prec
+  end
+  return true
+end
+
 return function(ctx)
   local binop_gen = {
-    ["**"] = function(l, r) return "(" .. l .. " ^ " .. r .. ")" end,
-    ["//"] = function(l, r) return "math.floor(" .. l .. " / " .. r .. ")" end,
+    ["**"] = function(l, r) return l .. " ^ " .. r end,
+    ["//"] = function(l, r, ln, rn)
+      if needs_paren(ln, "//") then l = "(" .. l .. ")" end
+      if needs_paren(rn, "//") then r = "(" .. r .. ")" end
+      return "math.floor(" .. l .. " / " .. r .. ")"
+    end,
     ["+"]  = function(l, r, ln, rn)
       if (ln.type == ast.CONSTANT and type(ln.value) == "string")
       or (rn.type == ast.CONSTANT and type(rn.value) == "string") then
-        return "(" .. l .. " .. " .. r .. ")"
+        return l .. " .. " .. r
       end
-      return "(" .. l .. " + " .. r .. ")"
+      if needs_paren(ln, "+") then l = "(" .. l .. ")" end
+      if needs_paren(rn, "+") then r = "(" .. r .. ")" end
+      return l .. " + " .. r
     end,
     ["*"]  = function(l, r, ln, rn)
       if ln.type == ast.CONSTANT and type(ln.value) == "string" then
@@ -23,13 +58,17 @@ return function(ctx)
       or rn.type == ast.LIST or rn.type == ast.SET then
         return "__py_repeat(" .. l .. ", " .. r .. ")"
       end
-      return "(" .. l .. " * " .. r .. ")"
+      if needs_paren(ln, "*") then l = "(" .. l .. ")" end
+      if needs_paren(rn, "*") then r = "(" .. r .. ")" end
+      return l .. " * " .. r
     end,
     ["%"]  = function(l, r, ln, rn)
       if ln.type == ast.CONSTANT and type(ln.value) == "string" then
         return "string.format(" .. l .. ", " .. r .. ")"
       end
-      return "(" .. l .. " % " .. r .. ")"
+      if needs_paren(ln, "%") then l = "(" .. l .. ")" end
+      if needs_paren(rn, "%") then r = "(" .. r .. ")" end
+      return l .. " % " .. r
     end,
     ["|"]  = function(l, r) return "__py_bor(" .. l .. ", " .. r .. ")" end,
     ["^"]  = function(l, r) return "__py_bxor(" .. l .. ", " .. r .. ")" end,
@@ -66,7 +105,7 @@ return function(ctx)
     if handler then
       return handler(left, right)
     end
-    return "(" .. left .. " " .. op .. " " .. right .. ")"
+    return left .. " " .. op .. " " .. right
   end
 
   ---@param expr ast_node
@@ -100,13 +139,17 @@ return function(ctx)
       if handler then
         return handler(ctx.gen_expr(expr.left), ctx.gen_expr(expr.right), expr.left, expr.right)
       end
-      return "(" .. ctx.gen_expr(expr.left) .. " " .. expr.op .. " " .. ctx.gen_expr(expr.right) .. ")"
+      local l = ctx.gen_expr(expr.left)
+      local r = ctx.gen_expr(expr.right)
+      if needs_paren(expr.left, expr.op) then l = "(" .. l .. ")" end
+      if needs_paren(expr.right, expr.op) then r = "(" .. r .. ")" end
+      return l .. " " .. expr.op .. " " .. r
     end,
     [ast.UNARY_OP] = function(expr)
       if expr.op == "~" then
         return "__py_bnot(" .. ctx.gen_expr(expr.operand) .. ")"
       end
-      return "(" .. expr.op .. " " .. ctx.gen_expr(expr.operand) .. ")"
+      return expr.op .. " " .. ctx.gen_expr(expr.operand)
     end,
     [ast.BOOL_OP] = function(expr)
       local vals = {}
@@ -222,9 +265,6 @@ return function(ctx)
         return "__py_slice(" .. target_obj .. ", " .. lower .. ", " .. upper .. ", " .. step .. ")"
       end
       local idx = ctx.gen_index(expr)
-      if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
-        return target_obj .. "[" .. idx .. "]"
-      end
       return "__py_getitem(" .. target_obj .. ", " .. idx .. ")"
     end,
     [ast.ATTRIBUTE] = function(expr)
@@ -280,27 +320,27 @@ return function(ctx)
         .. " end end)()"
     end,
     [ast.LIST_COMP] = function(expr)
-      return "(function() local __res = {} "
+      return "(function()\n    local __res = {}"
         .. ctx.gen_comp_loops(function()
-          return "__res[#__res + 1] = " .. ctx.gen_expr(expr.element) .. "; "
+          return "    __res[#__res + 1] = " .. ctx.gen_expr(expr.element)
         end, expr.generators, 1)
-        .. " return __res end)()"
+        .. "\n    return __res\nend)()"
     end,
     [ast.SET_COMP] = function(expr)
-      return "(function() local __res = {} "
+      return "(function()\n    local __res = {}"
         .. ctx.gen_comp_loops(function()
-          return "__res[#__res + 1] = " .. ctx.gen_expr(expr.element) .. "; "
+          return "    __res[#__res + 1] = " .. ctx.gen_expr(expr.element)
         end, expr.generators, 1)
-        .. " return __res end)()"
+        .. "\n    return __res\nend)()"
     end,
     [ast.DICT_COMP] = function(expr)
       local key = ctx.gen_expr(expr.key)
       local val = ctx.gen_expr(expr.value)
-      return "(function() local __res = {} "
+      return "(function()\n    local __res = {}"
         .. ctx.gen_comp_loops(function()
-          return "__res[" .. key .. "] = " .. val .. "; "
+          return "    __res[" .. key .. "] = " .. val
         end, expr.generators, 1)
-        .. " return __res end)()"
+        .. "\n    return __res\nend)()"
     end,
     [ast.JOINED_STR] = function(expr)
       local parts = {}

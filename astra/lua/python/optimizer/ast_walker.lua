@@ -170,12 +170,4 @@ function walker.walk_all_bodies(program, visitors)
   recurse(program.body, nil)
 end
 
----@deprecated Use walker.walk_all_bodies with visitors table instead
-function walker.walk_stmt_bodies(body, enter_fn, leave_fn)
-  walker.walk_all_bodies({ body = body }, {
-    visit_before = enter_fn,
-    visit_after = leave_fn,
-  })
-end
-
 return walker

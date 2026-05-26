@@ -29,24 +29,38 @@ function generator.generate(prog, analysis)
     indent = indent,
     analysis = analysis,
     indent_level = indent_level,
+    uses_full_stdlib = false,
   }
 
   local function gen_index(expr)
-    local idx = ctx.gen_expr(expr.index)
-    if expr.index.type == ast.CONSTANT and type(expr.index.value) == "string" then
-      return idx
+    if expr.index.type == ast.CONSTANT then
+      if type(expr.index.value) == "string" then
+        return ctx.gen_expr(expr.index)
+      elseif type(expr.index.value) == "number" then
+        return tostring(expr.index.value + 1)
+      end
     end
-    return idx .. " + 1"
+    return ctx.gen_expr(expr.index) .. " + 1"
   end
 
   gen_body = function(body)
     local i = 1
+    local pending_blanks = 0
+    local function flush_blanks()
+      for _ = 1, pending_blanks do
+        ctx.push("")
+      end
+      pending_blanks = 0
+    end
     while i <= #body do
       if body[i].type == ast.COMMENT then
         local comment_lines = {}
         while i <= #body and body[i].type == ast.COMMENT do
           local text = body[i].value
-          if text ~= "" then
+          if text == "" then
+            pending_blanks = pending_blanks + 1
+          else
+            flush_blanks()
             for line in text:gmatch("[^\n]+") do
               comment_lines[#comment_lines + 1] = line
             end
@@ -56,13 +70,17 @@ function generator.generate(prog, analysis)
         if #comment_lines == 1 then
           ctx.push(ctx.indent() .. "-- " .. comment_lines[1])
         elseif #comment_lines > 1 then
-          ctx.push(ctx.indent() .. "--[[ " .. table.concat(comment_lines, " ") .. " ]]")
+          for _, line in ipairs(comment_lines) do
+            ctx.push(ctx.indent() .. "-- " .. line)
+          end
         end
       else
+        flush_blanks()
         ctx.gen_stmt(body[i])
         i = i + 1
       end
     end
+    pending_blanks = 0
   end
 
   with_indent = function(fn)
@@ -71,22 +89,25 @@ function generator.generate(prog, analysis)
     indent_level = indent_level - 1
   end
 
-  gen_comp_loops = function(inner_fn, generators, idx)
+  gen_comp_loops = function(inner_fn, generators, idx, depth)
+    depth = depth or 1
     if idx > #generators then
       return inner_fn()
     end
-    local gen_clause = generators[idx]
-    local parts = {}
-    parts[#parts + 1] = "for _, " .. gen_clause.target .. " in ipairs(" .. ctx.gen_expr(gen_clause.iterator) .. ") do "
-    for _, if_expr in ipairs(gen_clause.ifs or {}) do
-      parts[#parts + 1] = "if " .. ctx.gen_expr(if_expr) .. " then "
+    local gen = generators[idx]
+    local indent = string.rep("    ", depth)
+    local result = "\n" .. indent .. "for _, " .. gen.target .. " in ipairs(" .. ctx.gen_expr(gen.iterator) .. ") do"
+    local inner = gen_comp_loops(inner_fn, generators, idx + 1, depth + 1)
+    for _, if_expr in ipairs(gen.ifs or {}) do
+      result = result .. "\n" .. indent .. "    if " .. ctx.gen_expr(if_expr) .. " then"
+      result = result .. inner
+      result = result .. "\n" .. indent .. "    end"
     end
-    parts[#parts + 1] = gen_comp_loops(inner_fn, generators, idx + 1)
-    for _ in ipairs(gen_clause.ifs or {}) do
-      parts[#parts + 1] = "end "
+    if #(gen.ifs or {}) == 0 then
+      result = result .. inner
     end
-    parts[#parts + 1] = "end "
-    return table.concat(parts)
+    result = result .. "\n" .. indent .. "end"
+    return result
   end
 
   local function is_lua_module(name)
@@ -128,23 +149,32 @@ function generator.generate(prog, analysis)
   gen_body(prog.body)
   local user_body = table.concat(parts, "\n")
 
+  ctx.uses_full_stdlib = false
   local used = (analysis or {}).used_stdlib
   local preamble_parts = {}
   if used then
-    preamble_parts[#preamble_parts + 1] = "local chr, ord, str, int = string.char, string.byte, tostring, tonumber"
-    preamble_parts[#preamble_parts + 1] = "if not table.unpack then table.unpack = unpack end"
-    for _, name in ipairs({
-      "__py_slice", "__py_slice_assign", "__py_in", "__py_repeat", "__py_range",
-      "__py_items", "__py_super", "__py_getitem",
-      "__py_isinstance", "__py_issubclass", "__py_call",
-      "__py_exception_classes", "__py_exception_match",
-      "__py_bitwise_ops",
-    }) do
-      if used[name] then
-        preamble_parts[#preamble_parts + 1] = stdlib.__inline_functions[name]
+    local used_count = 0
+    for _ in pairs(used) do used_count = used_count + 1 end
+    if used_count > 5 then
+      ctx.uses_full_stdlib = true
+      preamble_parts[#preamble_parts + 1] = "require('python.stdlib')"
+    else
+      preamble_parts[#preamble_parts + 1] = "local chr, ord, str, int = string.char, string.byte, tostring, tonumber"
+      preamble_parts[#preamble_parts + 1] = "if not table.unpack then table.unpack = unpack end"
+      for _, name in ipairs({
+        "__py_slice", "__py_slice_assign", "__py_in", "__py_repeat", "__py_range",
+        "__py_items", "__py_super", "__py_getitem",
+        "__py_isinstance", "__py_issubclass", "__py_call",
+        "__py_exception_classes", "__py_exception_match",
+        "__py_bitwise_ops",
+      }) do
+        if used[name] then
+          preamble_parts[#preamble_parts + 1] = stdlib.__inline_functions[name]
+        end
       end
     end
   else
+    ctx.uses_full_stdlib = true
     preamble_parts[#preamble_parts + 1] = "require('python.stdlib')"
   end
 

@@ -184,7 +184,6 @@ local single_character_tokens = {
   [":"] = TK.COLON,
   [","] = TK.COMMA,
   ["."] = TK.DOT,
-  [";"] = TK.SEMI,
   ["@"] = TK.AT,
   ["~"] = TK.TILDE,
   ["|"] = TK.PIPE,

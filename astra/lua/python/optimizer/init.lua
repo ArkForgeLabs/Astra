@@ -96,8 +96,13 @@ function optimizer.dead_code_pass(program)
       end
       for i, stmt in ipairs(body) do
         if stmt.type == ast.RETURN or stmt.type == ast.BREAK or stmt.type == ast.CONTINUE then
-          while body[i + 1] do
-            table.remove(body)
+          local j = i + 1
+          while j <= #body do
+            if body[j].type == ast.COMMENT then
+              j = j + 1
+            else
+              table.remove(body, j)
+            end
           end
           break
         end

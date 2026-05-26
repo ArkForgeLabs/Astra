@@ -343,7 +343,7 @@ return function(test)
   test.it("Comment AST", function()
     local p = parse("# hello\npass")
     test.expect(p.body[1].type).to.equal(ast.COMMENT)
-    test.expect(p.body[1].value).to.equal("hello")
+    test.expect(p.body[1].value).to.equal(" hello")
   end)
 
   test.it("Global AST", function()

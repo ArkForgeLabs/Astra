@@ -55,6 +55,6 @@ __py_getitem = function(container, index)
 end
 
 function reverse(s)
-    return __py_slice(s, nil, nil, (- 1))
+    return __py_slice(s, nil, nil, - 1)
 end
 return { reverse = reverse }

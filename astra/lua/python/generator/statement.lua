@@ -3,14 +3,12 @@ local util = require("python.util")
 local stdlib = require("python.stdlib")
 
 local function gen_fn_sig(args, vararg, kwarg)
-  local parts = {}
-  for _, a in ipairs(args) do
-    parts[#parts + 1] = a
-  end
+  local result = table.concat(args, ", ")
   if vararg or kwarg then
-    parts[#parts + 1] = "..."
+    if #result > 0 then result = result .. ", " end
+    result = result .. "..."
   end
-  return table.concat(parts, ", ")
+  return result
 end
 
 local function apply_decorators(ctx, stmt)
@@ -70,7 +68,11 @@ local function emit_defaults(ctx, args, defaults)
   for i, d in ipairs(args) do
     local default_val = defaults[i]
     if default_val then
-      ctx.push(ctx.indent() .. "if " .. d .. " == nil then " .. d .. " = " .. ctx.gen_expr(default_val) .. " end")
+      if default_val.type == ast.CONSTANT then
+        ctx.push(ctx.indent() .. d .. " = " .. d .. " or " .. ctx.gen_expr(default_val))
+      else
+        ctx.push(ctx.indent() .. "if " .. d .. " == nil then " .. d .. " = " .. ctx.gen_expr(default_val) .. " end")
+      end
     end
   end
 end
@@ -413,18 +415,27 @@ return function(ctx)
       end
     end,
     [ast.EXPR_STMT] = function(stmt)
-      if stmt.expr.type ~= ast.CONSTANT then
-        ctx.push(ctx.indent() .. ctx.gen_expr(stmt.expr))
-      end
-    end,
-    [ast.COMMENT] = function(stmt)
-      local text = stmt.value
-      if text == "" then
-        ctx.push("")
-      else
-        for line in text:gmatch("[^\n]+") do
-          ctx.push(ctx.indent() .. "-- " .. line)
+      if stmt.expr.type == ast.CONSTANT and type(stmt.expr.value) == "string" then
+        local text = stmt.expr.value
+        if #text > 0 and text:find("\n") then
+          local start = 1
+          while start <= #text do
+            local next_nl = text:find("\n", start)
+            if next_nl then
+              local line = text:sub(start, next_nl - 1)
+              ctx.push(ctx.indent() .. "-- " .. line)
+              start = next_nl + 1
+            else
+              local line = text:sub(start)
+              if #line > 0 then
+                ctx.push(ctx.indent() .. "-- " .. line)
+              end
+              break
+            end
+          end
         end
+      elseif stmt.expr.type ~= ast.CONSTANT then
+        ctx.push(ctx.indent() .. ctx.gen_expr(stmt.expr))
       end
     end,
     [ast.IMPORT] = function(stmt)
@@ -435,7 +446,7 @@ return function(ctx)
         else
           local alias = name.as_name or name.name
           local module_map = stdlib.map[name.name]
-          if module_map then
+          if module_map and not (ctx.uses_full_stdlib and module_map.__module) then
             local fields = {}
             for k, v in pairs(module_map) do
               if k ~= "__module" then
@@ -444,7 +455,8 @@ return function(ctx)
             end
             parts[#parts + 1] = ctx.indent() .. "local " .. alias .. " = {" .. table.concat(fields, ", ") .. "}"
           else
-            parts[#parts + 1] = ctx.indent() .. "local " .. alias .. " = require('" .. name.name .. "')"
+            local mod_name = module_map and module_map.__module or name.name
+            parts[#parts + 1] = ctx.indent() .. "local " .. alias .. " = require('" .. mod_name .. "')"
           end
         end
         ctx.push(table.concat(parts, "\n"))
@@ -454,14 +466,17 @@ return function(ctx)
       local target = stmt.module
       for _, name in ipairs(stmt.names) do
         if name.name == "*" then
-          ctx.push(ctx.indent() .. "for k, v in pairs(require('" .. (stdlib.map[stmt.module] and stdlib.map[stmt.module].__module or stmt.module) .. "')) do _ENV[k] = v end")
+          local mod_name = stdlib.map[stmt.module] and stdlib.map[stmt.module].__module or stmt.module
+          ctx.push(ctx.indent() .. "for k, v in pairs(require('" .. mod_name .. "')) do _ENV[k] = v end")
         else
           local alias = name.as_name or name.name
-          local inline = stdlib.map[stmt.module] and stdlib.map[stmt.module][name.name]
-          if inline then
+          local mod_entry = stdlib.map[stmt.module]
+          local inline = mod_entry and mod_entry[name.name]
+          if inline and not (ctx.uses_full_stdlib and mod_entry.__module) then
             ctx.push(ctx.indent() .. "local " .. alias .. " = " .. inline)
           else
-            ctx.push(ctx.indent() .. "local " .. alias .. " = require('" .. (stdlib.map[stmt.module] and stdlib.map[stmt.module].__module or stmt.module) .. "')." .. name.name)
+            local mod_name = mod_entry and mod_entry.__module or stmt.module
+            ctx.push(ctx.indent() .. "local " .. alias .. " = require('" .. mod_name .. "')." .. name.name)
           end
         end
       end
