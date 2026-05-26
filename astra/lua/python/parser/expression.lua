@@ -276,6 +276,107 @@ return function(state, top_parse)
     return left
   end
 
+  local function parse_slice()
+    local lower, upper, step = nil, nil, nil
+    if state:peek_not(TK.RBRACKET) and state:peek_token().kind ~= TK.COLON then
+      upper = expr.parse_expr()
+    end
+    if state:peek_is(TK.COLON) then
+      state:advance_token()
+      if state:peek_not(TK.RBRACKET) then
+        step = expr.parse_expr()
+      end
+    end
+    return ast.Slice(lower, upper, step)
+  end
+
+  local function parse_subscript()
+    if state:peek_is(TK.COLON) then
+      state:advance_token()
+      return parse_slice()
+    else
+      local idx = expr.parse_expr()
+      if state:peek_is(TK.COLON) then
+        state:advance_token()
+        local upper, step = nil, nil
+        if state:peek_not(TK.RBRACKET) and state:peek_token().kind ~= TK.COLON then
+          upper = expr.parse_expr()
+        end
+        if state:peek_is(TK.COLON) then
+          state:advance_token()
+          if state:peek_not(TK.RBRACKET) then
+            step = expr.parse_expr()
+          end
+        end
+        return ast.Slice(idx, upper, step)
+      end
+      return idx
+    end
+  end
+
+  local function parse_dict_or_comp(first, key)
+    local dict_value = expr.parse_expr()
+    skip_continuation_tokens()
+    if state:peek_is(TK.FOR) then
+      state:advance_token()
+      local generators = parse_comprehension_clauses()
+      skip_continuation_tokens()
+      state:expect_token(TK.RBRACE)
+      return ast.DictComp(key, dict_value, generators)
+    end
+    local keys = { key }
+    local dict_values = { dict_value }
+    while state:match_token(TK.COMMA) do
+      skip_continuation_tokens()
+      if state:peek_is(TK.RBRACE) then break end
+      keys[#keys + 1] = expr.parse_expr()
+      state:expect_token(TK.COLON)
+      skip_continuation_tokens()
+      if state:peek_is(TK.RBRACE) then break end
+      dict_values[#dict_values + 1] = expr.parse_expr()
+      skip_continuation_tokens()
+    end
+    skip_continuation_tokens()
+    state:expect_token(TK.RBRACE)
+    return ast.Dict(keys, dict_values)
+  end
+
+  local function parse_set_or_comp(first)
+    if state:peek_is(TK.FOR) then
+      state:advance_token()
+      local generators = parse_comprehension_clauses()
+      skip_continuation_tokens()
+      state:expect_token(TK.RBRACE)
+      return ast.SetComp(first, generators)
+    end
+    local elements = { first }
+    while state:match_token(TK.COMMA) do
+      skip_continuation_tokens()
+      elements[#elements + 1] = expr.parse_expr()
+      skip_continuation_tokens()
+    end
+    skip_continuation_tokens()
+    state:expect_token(TK.RBRACE)
+    return ast.Set(elements)
+  end
+
+  local function parse_brace_expr()
+    state:advance_token()
+    skip_continuation_tokens()
+    if state:peek_is(TK.RBRACE) then
+      skip_continuation_tokens()
+      state:expect_token(TK.RBRACE)
+      return ast.Dict({}, {})
+    end
+    local first = expr.parse_expr()
+    skip_continuation_tokens()
+    if state:peek_is(TK.COLON) then
+      state:advance_token()
+      return parse_dict_or_comp(first, first)
+    end
+    return parse_set_or_comp(first)
+  end
+
   expr.parse_primary = function()
     local atom = expr.parse_atom()
     while true do
@@ -299,40 +400,14 @@ return function(state, top_parse)
         end
       elseif state:peek_is(TK.LBRACKET) then
         state:advance_token()
-        if state:peek_is(TK.COLON) then
-          state:advance_token()
-          local lower, upper, step = nil, nil, nil
-          if state:peek_not(TK.RBRACKET) and state:peek_token().kind ~= TK.COLON then
-            upper = expr.parse_expr()
-          end
-          if state:peek_is(TK.COLON) then
-            state:advance_token()
-            if state:peek_not(TK.RBRACKET) then
-              step = expr.parse_expr()
-            end
-          end
+        local idx = parse_subscript()
+        if type(idx) == "table" and idx.type == ast.SLICE then
+          local slice_node = idx
           state:expect_token(TK.RBRACKET)
-          atom = ast.Subscript(atom, ast.Slice(lower, upper, step))
+          atom = ast.Subscript(atom, slice_node)
         else
-          local idx = expr.parse_expr()
-          if state:peek_is(TK.COLON) then
-            state:advance_token()
-            local upper, step = nil, nil
-            if state:peek_not(TK.RBRACKET) and state:peek_token().kind ~= TK.COLON then
-              upper = expr.parse_expr()
-            end
-            if state:peek_is(TK.COLON) then
-              state:advance_token()
-              if state:peek_not(TK.RBRACKET) then
-                step = expr.parse_expr()
-              end
-            end
-            state:expect_token(TK.RBRACKET)
-            atom = ast.Subscript(atom, ast.Slice(idx, upper, step))
-          else
-            state:expect_token(TK.RBRACKET)
-            atom = ast.Subscript(atom, idx)
-          end
+          state:expect_token(TK.RBRACKET)
+          atom = ast.Subscript(atom, idx)
         end
       elseif state:peek_is(TK.DOT) then
         state:advance_token()
@@ -384,65 +459,6 @@ return function(state, top_parse)
     end
     state:expect_token(TK.RBRACKET)
     return ast.List(elements)
-  end
-
-  local function parse_brace_expr()
-    state:advance_token()
-    skip_continuation_tokens()
-    if state:peek_not(TK.RBRACE) then
-      local first = expr.parse_expr()
-      skip_continuation_tokens()
-      if state:peek_is(TK.COLON) then
-        state:advance_token()
-        local key = first
-        skip_continuation_tokens()
-        local dict_value = expr.parse_expr()
-        skip_continuation_tokens()
-        if state:peek_is(TK.FOR) then
-          state:advance_token()
-          local generators = parse_comprehension_clauses()
-          skip_continuation_tokens()
-          state:expect_token(TK.RBRACE)
-          return ast.DictComp(key, dict_value, generators)
-        end
-        local keys = { key }
-        local dict_values = { dict_value }
-        while state:match_token(TK.COMMA) do
-          skip_continuation_tokens()
-          if state:peek_is(TK.RBRACE) then break end
-          keys[#keys + 1] = expr.parse_expr()
-          state:expect_token(TK.COLON)
-          skip_continuation_tokens()
-          if state:peek_is(TK.RBRACE) then break end
-          dict_values[#dict_values + 1] = expr.parse_expr()
-          skip_continuation_tokens()
-        end
-        skip_continuation_tokens()
-        state:expect_token(TK.RBRACE)
-        return ast.Dict(keys, dict_values)
-      else
-        if state:peek_is(TK.FOR) then
-          state:advance_token()
-          local generators = parse_comprehension_clauses()
-          skip_continuation_tokens()
-          state:expect_token(TK.RBRACE)
-          return ast.SetComp(first, generators)
-        end
-        local elements = { first }
-        while state:match_token(TK.COMMA) do
-          skip_continuation_tokens()
-          elements[#elements + 1] = expr.parse_expr()
-          skip_continuation_tokens()
-        end
-        skip_continuation_tokens()
-        state:expect_token(TK.RBRACE)
-        return ast.Set(elements)
-      end
-    else
-      skip_continuation_tokens()
-      state:expect_token(TK.RBRACE)
-      return ast.Dict({}, {})
-    end
   end
 
   ---@return ast_node

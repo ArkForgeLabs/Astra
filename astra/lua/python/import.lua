@@ -6,9 +6,16 @@ local parser = require("python.parser")
 local stdlib = require("python.stdlib")
 local tokenizer = require("python.tokenizer")
 local util = require("python.util")
+local walker = require("python.optimizer.ast_walker")
 
 local import = {}
 local processed_modules
+local module_cache = {}
+
+local cache_key = function(py_path)
+  local meta = fs.get_metadata(py_path)
+  return py_path .. ":" .. (meta and tostring(meta:last_modified()) or "0")
+end
 
 local function add_to_path(dir)
   local sep = fs.get_separator()
@@ -55,8 +62,8 @@ end
 
 local function collect_import_names(prog)
   local names = {}
-  local function walk_body(body)
-    for _, stmt in ipairs(body) do
+  walker.walk_all_bodies(prog, {
+    visit_node = function(stmt)
       if stmt.type == ast.IMPORT then
         for _, n in ipairs(stmt.names) do
           if n.name ~= "*" then
@@ -65,31 +72,9 @@ local function collect_import_names(prog)
         end
       elseif stmt.type == ast.IMPORT_FROM then
         names[stmt.module] = true
-      elseif stmt.type == ast.FUNCTION_DEF or stmt.type == ast.ASYNC_FUNCTION_DEF then
-        walk_body(stmt.body)
-      elseif stmt.type == ast.CLASS_DEF then
-        walk_body(stmt.body)
-      elseif stmt.type == ast.IF then
-        walk_body(stmt.body)
-        for _, elif in ipairs(stmt.elifs) do walk_body(elif.body) end
-        if stmt.or_else then walk_body(stmt.or_else) end
-      elseif stmt.type == ast.WHILE then
-        walk_body(stmt.body)
-        if stmt.or_else then walk_body(stmt.or_else) end
-      elseif stmt.type == ast.FOR then
-        walk_body(stmt.body)
-        if stmt.or_else then walk_body(stmt.or_else) end
-      elseif stmt.type == ast.TRY then
-        walk_body(stmt.body)
-        for _, handler in ipairs(stmt.handlers) do walk_body(handler.body) end
-        if stmt.or_else then walk_body(stmt.or_else) end
-        if stmt.finally_body then walk_body(stmt.finally_body) end
-      elseif stmt.type == ast.WITH then
-        walk_body(stmt.body)
       end
-    end
-  end
-  walk_body(prog.body)
+    end,
+  })
   return names
 end
 
@@ -165,6 +150,23 @@ function import.transpile_source(source, opts)
 end
 
 local function transpile_module(py_path, lua_path, opts)
+  local ck = cache_key(py_path)
+  if module_cache[ck] then
+    local cached = module_cache[ck]
+    local lua_code = cached.lua_code
+    local prog = cached.prog
+    local import_names = collect_import_names(prog)
+    for name in pairs(import_names) do
+      if not is_builtin(name) then
+        local chain = resolve_package_chain(name, { util.dirname(py_path) })
+        for _, item in ipairs(chain) do
+          transpile_module(item.py_path, item.lua_path, opts)
+        end
+      end
+    end
+    return
+  end
+
   local source = fs.read_file(py_path)
   local lua_code, prog = import.transpile_source(source, opts)
 
@@ -183,6 +185,8 @@ local function transpile_module(py_path, lua_path, opts)
   end
 
   fs.write_file(lua_path, lua_code)
+
+  module_cache[ck] = { lua_code = lua_code, prog = prog }
 
   local import_names = collect_import_names(prog)
   for name in pairs(import_names) do

@@ -324,5 +324,9 @@ return function(ctx)
     end,
   }
 
-  return expr_handlers
+  return setmetatable(expr_handlers, {
+    __index = function(_, type)
+      error("unknown expression type: " .. type)
+    end,
+  })
 end

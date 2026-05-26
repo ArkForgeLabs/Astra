@@ -104,11 +104,7 @@ function generator.generate(prog, analysis)
   local stmt_handlers = statement_gen(ctx)
 
   ctx.gen_expr = function(expr)
-    local handler = expr_handlers[expr.type]
-    if handler then
-      return handler(expr)
-    end
-    error("unknown expression type: " .. expr.type)
+    return expr_handlers[expr.type](expr)
   end
 
   ctx.gen_subscript_target = function(expr)
@@ -126,12 +122,7 @@ function generator.generate(prog, analysis)
   end
 
   ctx.gen_stmt = function(stmt)
-    local handler = stmt_handlers[stmt.type]
-    if handler then
-      handler(stmt)
-    else
-      error("unknown statement type: " .. stmt.type)
-    end
+    stmt_handlers[stmt.type](stmt)
   end
 
   gen_body(prog.body)

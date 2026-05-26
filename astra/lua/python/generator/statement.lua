@@ -2,88 +2,201 @@ local ast = require("python.ast")
 local util = require("python.util")
 local stdlib = require("python.stdlib")
 
-local function has_yield(body)
-  for _, stmt in ipairs(body or {}) do
-    if stmt.type == ast.YIELD then
-      return true
-    end
-    if stmt.body and has_yield(stmt.body) then return true end
-    if stmt.type == ast.IF then
-      if has_yield(stmt.body) then return true end
-      for _, elif in ipairs(stmt.elifs or {}) do
-        if has_yield(elif.body) then return true end
+local function gen_fn_sig(args, vararg, kwarg)
+  local parts = {}
+  for _, a in ipairs(args) do
+    parts[#parts + 1] = a
+  end
+  if vararg or kwarg then
+    parts[#parts + 1] = "..."
+  end
+  return table.concat(parts, ", ")
+end
+
+local function apply_decorators(ctx, stmt)
+  if not stmt.decorators then return end
+  for i = #stmt.decorators, 1, -1 do
+    local decorator = stmt.decorators[i]
+    ctx.push(ctx.indent() .. stmt.name .. " = " .. ctx.gen_expr(decorator) .. "(" .. stmt.name .. ")")
+  end
+end
+
+local function flatten_targets(ctx, targets)
+  local result = {}
+  for _, t in ipairs(targets) do
+    if type(t) == "string" then
+      result[#result + 1] = t
+    elseif t.type == ast.LIST or t.type == ast.TUPLE then
+      for _, e in ipairs(t.elements) do
+        result[#result + 1] = ctx.gen_subscript_target(e)
       end
-      if has_yield(stmt.or_else) then return true end
-    end
-    if (stmt.type == ast.WHILE or stmt.type == ast.FOR) and has_yield(stmt.body) then return true end
-    if stmt.type == ast.TRY then
-      if has_yield(stmt.body) then return true end
-      for _, handler in ipairs(stmt.handlers or {}) do
-        if has_yield(handler.body) then return true end
-      end
-      if has_yield(stmt.finally_body) then return true end
+    else
+      result[#result + 1] = ctx.gen_subscript_target(t)
     end
   end
-  return false
+  return result
+end
+
+local dunder_map = {
+  __str__ = "__tostring",
+  __len__ = "__len",
+  __add__ = "__add",
+  __sub__ = "__sub",
+  __mul__ = "__mul",
+  __div__ = "__div",
+  __eq__ = "__eq",
+  __lt__ = "__lt",
+  __le__ = "__le",
+  __call__ = "__call",
+  __concat__ = "__concat",
+  __unm__ = "__unm",
+}
+
+local function find_property_getters(body)
+  local getters = {}
+  for _, s in ipairs(body) do
+    if s.type == ast.FUNCTION_DEF then
+      for _, d in ipairs(s.decorators or {}) do
+        if d.type == ast.NAME and d.id == "property" then
+          getters[s.name] = s.name
+        end
+      end
+    end
+  end
+  return getters
+end
+
+local function emit_defaults(ctx, args, defaults)
+  for i, d in ipairs(args) do
+    local default_val = defaults[i]
+    if default_val then
+      ctx.push(ctx.indent() .. "if " .. d .. " == nil then " .. d .. " = " .. ctx.gen_expr(default_val) .. " end")
+    end
+  end
+end
+
+local function emit_vararg(ctx, vararg, kwarg)
+  if vararg then
+    ctx.push(ctx.indent() .. "local " .. vararg .. " = {...}")
+  end
+  if kwarg then
+    ctx.push(ctx.indent() .. "local " .. kwarg .. " = {...}")
+  end
+end
+
+local function emit_class_call(ctx, bases)
+  ctx.push(ctx.indent() .. "__call = function(cls, ...)")
+  ctx.push(ctx.indent() .. "    local mt = {}")
+  ctx.push(ctx.indent() .. "    for k, v in pairs(__mt) do mt[k] = v end")
+  ctx.push(ctx.indent() .. "    if not mt.__index then mt.__index = cls end")
+  ctx.push(ctx.indent() .. "    local inst = setmetatable({}, mt)")
+  ctx.push(ctx.indent() .. "    if cls.__init__ then cls.__init__(inst, ...) end")
+  ctx.push(ctx.indent() .. "    return inst")
+  ctx.push(ctx.indent() .. "end")
+  if #bases == 0 then
+    ctx.push(ctx.indent() .. "__class = setmetatable({}, {__call = __call})")
+  else
+    ctx.push(ctx.indent() .. "__class = setmetatable({}, {__index = " .. ctx.gen_expr(bases[1]) .. ", __call = __call})")
+    ctx.push(ctx.indent() .. "__class.__py_base = " .. ctx.gen_expr(bases[1]))
+  end
+end
+
+local function emit_class_method(ctx, s)
+  local lua_name = dunder_map[s.name]
+  local is_static = false
+  local is_classmethod = false
+  for _, d in ipairs(s.decorators or {}) do
+    if d.type == ast.NAME then
+      if d.id == "staticmethod" then
+        is_static = true
+      elseif d.id == "classmethod" then
+        is_classmethod = true
+      end
+    end
+  end
+  if lua_name and not is_static and not is_classmethod then
+    ctx.push(ctx.indent() .. "function __mt." .. lua_name .. "(" .. table.concat(s.args, ", ") .. ")")
+  elseif is_static then
+    ctx.push(ctx.indent() .. "function __class." .. s.name .. "(self" .. (#s.args > 0 and ", " or "") .. table.concat(s.args, ", ") .. ")")
+  elseif is_classmethod then
+    ctx.push(ctx.indent() .. "function __class." .. s.name .. "(cls" .. (#s.args > 1 and ", " or "") .. table.concat(s.args, ", ", 2) .. ")")
+    ctx.push(ctx.indent() .. "    cls = __class")
+  else
+    ctx.push(ctx.indent() .. "function __class." .. s.name .. "(" .. table.concat(s.args, ", ") .. ")")
+  end
+  ctx.with_indent(function()
+    ctx.gen_body(s.body)
+  end)
+  ctx.push(ctx.indent() .. "end")
+end
+
+local function emit_class_assignment(ctx, s)
+  local variable_name = s.targets[1].id
+  if variable_name:match("^(.+)%.setter$") then
+    local prop_name = variable_name:match("^(.+)%.setter$")
+    ctx.push(ctx.indent() .. "function __mt.__newindex(t, k, v) if k == " .. util.escape(prop_name) .. " then __class." .. prop_name .. "(t, v) else rawset(t, k, v) end end")
+  else
+    ctx.push(ctx.indent() .. "__class." .. s.targets[1].id .. " = " .. ctx.gen_expr(s.value))
+  end
+end
+
+local function emit_property_index(ctx, property_getters)
+  if not next(property_getters) then return end
+  ctx.push(ctx.indent() .. "__mt.__index = function(_, k)")
+  ctx.with_indent(function()
+    for name, _ in pairs(property_getters) do
+      ctx.push(ctx.indent() .. "if k == " .. util.escape(name) .. " then return __class." .. name .. "(_, _) end")
+    end
+    ctx.push(ctx.indent() .. "return __class[k]")
+  end)
+  ctx.push(ctx.indent() .. "end")
+end
+
+local function emit_catch_body(ctx, handler)
+  if handler.name then
+    ctx.push(ctx.indent() .. "local " .. handler.name .. " = __err")
+  end
+  ctx.push(ctx.indent() .. "__caught = true")
+  ctx.gen_body(handler.body)
+end
+
+local function emit_type_check(ctx, handler)
+  if handler.type.type == ast.TUPLE then
+    local checks = {}
+    for _, t in ipairs(handler.type.elements) do
+      checks[#checks + 1] = "__py_exception_match(__err, " .. ctx.gen_expr(t) .. ")"
+    end
+    return "(" .. table.concat(checks, " or ") .. ")"
+  end
+  return "__py_exception_match(__err, " .. ctx.gen_expr(handler.type) .. ")"
+end
+
+local function emit_try_handler(ctx, handler)
+  if handler.type then
+    ctx.push(ctx.indent() .. "if not __ok and not __caught and type(__err) == \"table\" and " .. emit_type_check(ctx, handler) .. " then")
+    ctx.with_indent(function()
+      emit_catch_body(ctx, handler)
+    end)
+    ctx.push(ctx.indent() .. "end")
+  else
+    ctx.push(ctx.indent() .. "if not __ok and not __caught then")
+    ctx.with_indent(function()
+      emit_catch_body(ctx, handler)
+    end)
+    ctx.push(ctx.indent() .. "end")
+  end
 end
 
 return function(ctx)
-  local function gen_fn_sig(args, vararg, kwarg)
-    local parts = {}
-    for _, a in ipairs(args) do
-      parts[#parts + 1] = a
-    end
-    if vararg or kwarg then
-      parts[#parts + 1] = "..."
-    end
-    return table.concat(parts, ", ")
-  end
-
-  local function apply_decorators(stmt)
-    if not stmt.decorators then
-      return
-    end
-    for i = #stmt.decorators, 1, -1 do
-      local decorator = stmt.decorators[i]
-      ctx.push(ctx.indent() .. stmt.name .. " = " .. ctx.gen_expr(decorator) .. "(" .. stmt.name .. ")")
-    end
-  end
-
-  local function flatten_targets(targets)
-    local result = {}
-    for _, t in ipairs(targets) do
-      if type(t) == "string" then
-        result[#result + 1] = t
-      elseif t.type == ast.LIST or t.type == ast.TUPLE then
-        for _, e in ipairs(t.elements) do
-          result[#result + 1] = ctx.gen_subscript_target(e)
-        end
-      else
-        result[#result + 1] = ctx.gen_subscript_target(t)
-      end
-    end
-    return result
-  end
-
   ---@type table<string, fun(stmt: ast_node)>
   local stmt_handlers = {
     [ast.FUNCTION_DEF] = function(stmt)
       local has_decos = stmt.decorators and #stmt.decorators > 0
       local signature = gen_fn_sig(stmt.args, stmt.vararg, stmt.kwarg)
-      local is_gen = has_yield(stmt.body)
+      local is_gen = stmt._is_generator
       local function emit_body()
-        for i, d in ipairs(stmt.args) do
-          local default_val = stmt.defaults[i]
-          if default_val then
-            ctx.push(ctx.indent() .. "if " .. d .. " == nil then " .. d .. " = " .. ctx.gen_expr(default_val) .. " end")
-          end
-        end
-        if stmt.vararg then
-          ctx.push(ctx.indent() .. "local " .. stmt.vararg .. " = {...}")
-        end
-        if stmt.kwarg then
-          ctx.push(ctx.indent() .. "local " .. stmt.kwarg .. " = {...}")
-        end
+        emit_defaults(ctx, stmt.args, stmt.defaults)
+        emit_vararg(ctx, stmt.vararg, stmt.kwarg)
         if is_gen then
           ctx.push(ctx.indent() .. "return coroutine.wrap(function()")
           ctx.with_indent(function()
@@ -106,7 +219,7 @@ return function(ctx)
           ctx.push(ctx.indent() .. stmt.name .. " = __fn")
         end)
         ctx.push(ctx.indent() .. "end")
-        apply_decorators(stmt)
+        apply_decorators(ctx, stmt)
       else
         ctx.push(ctx.indent() .. "function " .. stmt.name .. "(" .. signature .. ")")
         ctx.with_indent(function()
@@ -116,102 +229,26 @@ return function(ctx)
       end
     end,
     [ast.CLASS_DEF] = function(stmt)
-      local dunder_map = {
-        __str__ = "__tostring",
-        __len__ = "__len",
-        __add__ = "__add",
-        __sub__ = "__sub",
-        __mul__ = "__mul",
-        __div__ = "__div",
-        __eq__ = "__eq",
-        __lt__ = "__lt",
-        __le__ = "__le",
-        __call__ = "__call",
-        __concat__ = "__concat",
-        __unm__ = "__unm",
-      }
-      local property_getters = {}
-      for _, s in ipairs(stmt.body) do
-        if s.type == ast.FUNCTION_DEF then
-          for _, d in ipairs(s.decorators or {}) do
-            if d.type == ast.NAME and d.id == "property" then
-              property_getters[s.name] = s.name
-            end
-          end
-        end
-      end
+      local property_getters = find_property_getters(stmt.body)
       ctx.push(ctx.indent() .. "do")
       ctx.with_indent(function()
         ctx.push(ctx.indent() .. "local __class, __call, __mt")
         ctx.push(ctx.indent() .. "__mt = {}")
-        ctx.push(ctx.indent() .. "__call = function(cls, ...)")
-        ctx.push(ctx.indent() .. "    local mt = {}")
-        ctx.push(ctx.indent() .. "    for k, v in pairs(__mt) do mt[k] = v end")
-        ctx.push(ctx.indent() .. "    if not mt.__index then mt.__index = cls end")
-        ctx.push(ctx.indent() .. "    local inst = setmetatable({}, mt)")
-        ctx.push(ctx.indent() .. "    if cls.__init__ then cls.__init__(inst, ...) end")
-        ctx.push(ctx.indent() .. "    return inst")
-        ctx.push(ctx.indent() .. "end")
-        if #stmt.bases == 0 then
-          ctx.push(ctx.indent() .. "__class = setmetatable({}, {__call = __call})")
-        else
-          ctx.push(ctx.indent() .. "__class = setmetatable({}, {__index = " .. ctx.gen_expr(stmt.bases[1]) .. ", __call = __call})")
-          ctx.push(ctx.indent() .. "__class.__py_base = " .. ctx.gen_expr(stmt.bases[1]))
-        end
+        emit_class_call(ctx, stmt.bases)
         for _, s in ipairs(stmt.body) do
           if s.type == ast.FUNCTION_DEF then
-            local lua_name = dunder_map[s.name]
-            local is_static = false
-            local is_classmethod = false
-            for _, d in ipairs(s.decorators or {}) do
-              if d.type == ast.NAME then
-                if d.id == "staticmethod" then
-                  is_static = true
-                elseif d.id == "classmethod" then
-                  is_classmethod = true
-                end
-              end
-            end
-            if lua_name and not is_static and not is_classmethod then
-              ctx.push(ctx.indent() .. "function __mt." .. lua_name .. "(" .. table.concat(s.args, ", ") .. ")")
-            elseif is_static then
-              ctx.push(ctx.indent() .. "function __class." .. s.name .. "(self" .. (#s.args > 0 and ", " or "") .. table.concat(s.args, ", ") .. ")")
-            elseif is_classmethod then
-              ctx.push(ctx.indent() .. "function __class." .. s.name .. "(cls" .. (#s.args > 1 and ", " or "") .. table.concat(s.args, ", ", 2) .. ")")
-              ctx.push(ctx.indent() .. "    cls = __class")
-            else
-              ctx.push(ctx.indent() .. "function __class." .. s.name .. "(" .. table.concat(s.args, ", ") .. ")")
-            end
-            ctx.with_indent(function()
-              ctx.gen_body(s.body)
-            end)
-            ctx.push(ctx.indent() .. "end")
+            emit_class_method(ctx, s)
           elseif s.type == ast.ASSIGN and #s.targets == 1 and s.targets[1].type == ast.NAME then
-            local variable_name = s.targets[1].id
-            if variable_name:match("^(.+)%.setter$") then
-              local prop_name = variable_name:match("^(.+)%.setter$")
-              ctx.push(ctx.indent() .. "function __mt.__newindex(t, k, v) if k == " .. util.escape(prop_name) .. " then __class." .. prop_name .. "(t, v) else rawset(t, k, v) end end")
-            else
-              ctx.push(ctx.indent() .. "__class." .. s.targets[1].id .. " = " .. ctx.gen_expr(s.value))
-            end
+            emit_class_assignment(ctx, s)
           elseif s.type == ast.EXPR_STMT then
             ctx.push(ctx.indent() .. ctx.gen_expr(s.expr))
           end
         end
-        if next(property_getters) then
-          ctx.push(ctx.indent() .. "__mt.__index = function(_, k)")
-          ctx.with_indent(function()
-            for name, _ in pairs(property_getters) do
-              ctx.push(ctx.indent() .. "if k == " .. util.escape(name) .. " then return __class." .. name .. "(_, _) end")
-            end
-            ctx.push(ctx.indent() .. "return __class[k]")
-          end)
-          ctx.push(ctx.indent() .. "end")
-        end
+        emit_property_index(ctx, property_getters)
         ctx.push(ctx.indent() .. stmt.name .. " = __class")
       end)
       ctx.push(ctx.indent() .. "end")
-      apply_decorators(stmt)
+      apply_decorators(ctx, stmt)
     end,
     [ast.IF] = function(stmt)
       ctx.push(ctx.indent() .. "if " .. ctx.gen_expr(stmt.test) .. " then")
@@ -257,7 +294,7 @@ return function(ctx)
         local target = stmt.targets[1]
         ctx.push(ctx.indent() .. "for " .. target .. " = " .. start_val .. ", " .. stop_val .. " - 1, " .. step_val .. " do")
       else
-        local targets = flatten_targets(stmt.targets)
+        local targets = flatten_targets(ctx, stmt.targets)
         if #targets == 1 then
           ctx.push(ctx.indent() .. "for _, " .. targets[1] .. " in ipairs(" .. ctx.gen_expr(stmt.iterator) .. ") do")
         else
@@ -294,34 +331,7 @@ return function(ctx)
       ctx.push(ctx.indent() .. "end)")
       ctx.push(ctx.indent() .. "local __caught = false")
       for _, handler in ipairs(stmt.handlers) do
-        if handler.type then
-          local type_check
-          if handler.type.type == ast.TUPLE then
-            local checks = {}
-            for _, t in ipairs(handler.type.elements) do
-              checks[#checks + 1] = "__py_exception_match(__err, " .. ctx.gen_expr(t) .. ")"
-            end
-            type_check = "(" .. table.concat(checks, " or ") .. ")"
-          else
-            type_check = "__py_exception_match(__err, " .. ctx.gen_expr(handler.type) .. ")"
-          end
-          ctx.push(ctx.indent() .. "if not __ok and not __caught and type(__err) == \"table\" and " .. type_check .. " then")
-          ctx.with_indent(function()
-            if handler.name then
-              ctx.push(ctx.indent() .. "local " .. handler.name .. " = __err")
-            end
-            ctx.push(ctx.indent() .. "__caught = true")
-            ctx.gen_body(handler.body)
-          end)
-          ctx.push(ctx.indent() .. "end")
-        else
-          ctx.push(ctx.indent() .. "if not __ok and not __caught then")
-          ctx.with_indent(function()
-            ctx.push(ctx.indent() .. "__caught = true")
-            ctx.gen_body(handler.body)
-          end)
-          ctx.push(ctx.indent() .. "end")
-        end
+        emit_try_handler(ctx, handler)
       end
       if stmt.or_else then
         ctx.push(ctx.indent() .. "if __ok then")
@@ -369,7 +379,7 @@ return function(ctx)
         ctx.push(ctx.indent() .. "__py_slice_assign(" .. obj .. ", " .. lower .. ", " .. upper .. ", " .. step .. ", " .. value .. ")")
         return
       end
-      local targets = flatten_targets(stmt.targets)
+      local targets = flatten_targets(ctx, stmt.targets)
       if #targets == 1 then
         ctx.push(ctx.indent() .. targets[1] .. " = " .. value)
       else
@@ -546,18 +556,8 @@ return function(ctx)
       local signature = gen_fn_sig(stmt.args, stmt.vararg, stmt.kwarg)
       ctx.push(ctx.indent() .. "function " .. stmt.name .. "(" .. signature .. ")")
       ctx.with_indent(function()
-        for i, d in ipairs(stmt.args) do
-          local default_val = stmt.defaults[i]
-          if default_val then
-            ctx.push(ctx.indent() .. "if " .. d .. " == nil then " .. d .. " = " .. ctx.gen_expr(default_val) .. " end")
-          end
-        end
-        if stmt.vararg then
-          ctx.push(ctx.indent() .. "local " .. stmt.vararg .. " = {...}")
-        end
-        if stmt.kwarg then
-          ctx.push(ctx.indent() .. "local " .. stmt.kwarg .. " = {...}")
-        end
+        emit_defaults(ctx, stmt.args, stmt.defaults)
+        emit_vararg(ctx, stmt.vararg, stmt.kwarg)
         ctx.push(ctx.indent() .. "return spawn_task(function()")
         ctx.with_indent(function()
           ctx.gen_body(stmt.body)
@@ -572,5 +572,9 @@ return function(ctx)
     end,
   }
 
-  return stmt_handlers
+  return setmetatable(stmt_handlers, {
+    __index = function(_, type)
+      error("unknown statement type: " .. type)
+    end,
+  })
 end
