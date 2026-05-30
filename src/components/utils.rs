@@ -157,10 +157,16 @@ where
 fn spawn_task(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__spawn_task",
-        lua.create_async_function(|_, callback: mlua::Function| async move {
+        lua.create_async_function(|lua, callback: mlua::Function| async move {
+            let registry_key = lua.create_registry_value(callback)?;
             Ok(create_async_function(async move {
-                if let Err(e) = callback.call_async::<()>(()).await {
-                    println!("Error running a task: {e}");
+                match lua.registry_value::<mlua::Function>(&registry_key) {
+                    Ok(callback) => {
+                        if let Err(e) = callback.call_async::<()>(()).await {
+                            println!("Error running a task: {e}");
+                        }
+                    }
+                    Err(e) => println!("Error getting the task from registry: {e}"),
                 }
             }))
         })?,
@@ -171,13 +177,20 @@ fn spawn_timeout(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__spawn_timeout",
         lua.create_async_function(
-            |_, (callback, sleep_length): (mlua::Function, u64)| async move {
+            |lua, (callback, sleep_length): (mlua::Function, u64)| async move {
+                let registry_key = lua.create_registry_value(callback)?;
+
                 Ok(create_async_function(async move {
                     // sleep
                     tokio::time::sleep(std::time::Duration::from_millis(sleep_length)).await;
 
-                    if let Err(e) = callback.call_async::<()>(()).await {
-                        println!("Error running a task: {e}");
+                    match lua.registry_value::<mlua::Function>(&registry_key) {
+                        Ok(callback) => {
+                            if let Err(e) = callback.call_async::<()>(()).await {
+                                println!("Error running a task: {e}");
+                            }
+                        }
+                        Err(e) => println!("Error getting the task from registry: {e}"),
                     }
                 }))
             },
@@ -189,11 +202,18 @@ fn spawn_interval(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__spawn_interval",
         lua.create_async_function(
-            |_, (callback, sleep_length): (mlua::Function, u64)| async move {
+            |lua, (callback, sleep_length): (mlua::Function, u64)| async move {
+                let registry_key = lua.create_registry_value(callback)?;
+
                 Ok(create_async_function(async move {
                     loop {
-                        if let Err(e) = callback.call_async::<()>(()).await {
-                            println!("Error running a task: {e}");
+                        match lua.registry_value::<mlua::Function>(&registry_key) {
+                            Ok(callback) => {
+                                if let Err(e) = callback.call_async::<()>(()).await {
+                                    println!("Error running a task: {e}");
+                                }
+                            }
+                            Err(e) => println!("Error getting the task from registry: {e}"),
                         }
 
                         // sleep
