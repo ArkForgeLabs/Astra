@@ -3,7 +3,7 @@
     Astra's build system script written by Elham Aryanpur.
     There are many commands to automate the common tasks around.
     This script was tested with Lua 5.4 and LuaJIT.
-    The license is same as the Astra's license.
+    Licensed under the Apache License, Version 2.0.
 ]]
 
 local fs = require("fs")
