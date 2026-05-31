@@ -4,7 +4,7 @@
 [![Release Windows](https://github.com/ArkForgeLabs/Astra/actions/workflows/windows_release.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/windows_release.yml)
 [![Release MacOS](https://github.com/ArkForgeLabs/Astra/actions/workflows/macos_release.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/macos_release.yml)
 [![Publish the crate](https://github.com/ArkForgeLabs/Astra/actions/workflows/crates_io_publish.yml/badge.svg)](https://github.com/ArkForgeLabs/Astra/actions/workflows/crates_io_publish.yml)
-[![Static Badge](https://img.shields.io/badge/Read_The_Docs-blue?style=flat&logo=docsdotrs&color=%23000000)](https://astra.arkforge.net/docs/latest)
+[![Static Badge](https://img.shields.io/badge/Read_The_Docs-blue?style=flat&logo=docsdotrs&color=%23000000)](https://astra.arkforge.net)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Matrix Chat](https://img.shields.io/badge/Chat-Matrix-blue.svg)](https://matrix.to/#/#Astra:matrix.org)
 
@@ -90,7 +90,7 @@ db:execute([[
 print(db:query_all("SELECT * FROM data"))
 ```
 
-There is also support for cryptography, datetime, jinja2, markdown, pubsub/observers, type system for LSP, runtime type safety, and validation, async filesystem, and many more, check them at at the [docs](https://astra.arkforge.net/docs/latest)
+There is also support for cryptography, datetime, jinja2, markdown, pubsub/observers, type system for LSP, runtime type safety, and validation, async filesystem, and many more, check them at at the [docs](https://astra.arkforge.net/)
 
 ## Community Projects
 

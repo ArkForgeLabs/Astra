@@ -5,13 +5,13 @@ language = "en"
 src = "./src"
 
 [build]
-build-dir = "../../../docs/latest"
+build-dir = "../../../docs"
 
 [output.html]
 default-theme = "dark"
 preferred-dark-theme = "coal"
 git-repository-url = "https://git.arkforge.net/ArkForgeLabs/Astra"
-site-url = "/latest/"
+site-url = "/"
 edit-url-template = "https://git.arkforge.net/ArkForgeLabs/Astra/_edit/main/src/docs/latest/{path}"
 
 [output.html.playground]
