@@ -62,12 +62,12 @@ impl Database {
                                 let mut options = options.create_if_missing(true);
 
                                 for i in connection_options.extensions {
-                                    options = options.extension(i)
+                                    options = unsafe {options.extension(i)}
                                 }
                                 for (name, entry_point) in
                                     connection_options.extensions_with_entrypoint
                                 {
-                                    options = options.extension_with_entrypoint(name, entry_point)
+                                    options = unsafe {options.extension_with_entrypoint(name, entry_point)}
                                 }
                                 options = options.immutable(connection_options.is_immutable);
 
@@ -229,9 +229,10 @@ impl UserData for Database {
                 #[allow(mismatched_lifetime_syntaxes)]
                 fn $function_name(
                     lua: mlua::Lua,
-                    sql: &str,
+                    sql: String,
                     parameters: Option<mlua::Table>,
                 ) -> $return_type {
+                    let sql: &'static str = sql.leak();
                     let mut query = sqlx::query(sql);
 
                     match parameters {
@@ -273,11 +274,11 @@ impl UserData for Database {
         }
         query_builder_fn!(
             query_builder_postgres,
-            sqlx::query::Query<'_, sqlx::Postgres, sqlx::postgres::PgArguments>
+            sqlx::query::Query<'static, sqlx::Postgres, sqlx::postgres::PgArguments>
         );
         query_builder_fn!(
             query_builder_sqlite,
-            sqlx::query::Query<'_, sqlx::Sqlite, sqlx::sqlite::SqliteArguments>
+            sqlx::query::Query<'static, sqlx::Sqlite, sqlx::sqlite::SqliteArguments>
         );
 
         methods.add_async_method(
@@ -289,7 +290,7 @@ impl UserData for Database {
                             if let Some(ref p) = parameters {
                                 validate_params(&lua, Some(p))?;
                             }
-                            let query = query_builder_sqlite(lua.clone(), &sql, parameters);
+                            let query = query_builder_sqlite(lua.clone(), sql, parameters);
 
                             match query.execute(pool).await {
                                 Ok(_) => Ok(()),
@@ -302,7 +303,7 @@ impl UserData for Database {
                             if let Some(ref p) = parameters {
                                 validate_params(&lua, Some(p))?;
                             }
-                            let query = query_builder_postgres(lua.clone(), &sql, parameters);
+                            let query = query_builder_postgres(lua.clone(), sql, parameters);
 
                             match query.execute(pool).await {
                                 Ok(_) => Ok(()),
@@ -321,7 +322,8 @@ impl UserData for Database {
             ($type:ty, $lua:ident, $sql:ident, $db:ident) => {
                 match &$db {
                     DatabaseType::Sqlite(pool) => {
-                        match sqlx::query_scalar::<_, $type>(&$sql)
+                        let sql: &'static str = $sql.leak();
+                        match sqlx::query_scalar::<_, $type>(sql)
                             .fetch_optional(pool)
                             .await
                         {
@@ -336,7 +338,8 @@ impl UserData for Database {
                         }
                     }
                     DatabaseType::Postgres(pool) => {
-                        match sqlx::query_scalar::<_, $type>(&$sql)
+                        let sql: &'static str = $sql.leak();
+                        match sqlx::query_scalar::<_, $type>(sql)
                             .fetch_optional(pool)
                             .await
                         {
@@ -377,7 +380,7 @@ impl UserData for Database {
                             if let Some(ref p) = parameters {
                                 validate_params(&lua, Some(p))?;
                             }
-                            let query = query_builder_sqlite(lua.clone(), &sql, parameters);
+                            let query = query_builder_sqlite(lua.clone(), sql, parameters);
 
                             match query.fetch_optional(pool).await {
                                 Ok(Some(row)) => {
@@ -393,7 +396,7 @@ impl UserData for Database {
                             if let Some(ref p) = parameters {
                                 validate_params(&lua, Some(p))?;
                             }
-                            let query = query_builder_postgres(lua.clone(), &sql, parameters);
+                            let query = query_builder_postgres(lua.clone(), sql, parameters);
 
                             match query.fetch_optional(pool).await {
                                 Ok(Some(row)) => {
@@ -420,7 +423,7 @@ impl UserData for Database {
                             if let Some(ref p) = parameters {
                                 validate_params(&lua, Some(p))?;
                             }
-                            let query = query_builder_sqlite(lua.clone(), &sql, parameters);
+                            let query = query_builder_sqlite(lua.clone(), sql, parameters);
 
                             match query.fetch_all(pool).await {
                                 Ok(rows) => {
@@ -442,7 +445,7 @@ impl UserData for Database {
                             if let Some(ref p) = parameters {
                                 validate_params(&lua, Some(p))?;
                             }
-                            let query = query_builder_postgres(lua.clone(), &sql, parameters);
+                            let query = query_builder_postgres(lua.clone(), sql, parameters);
 
                             match query.fetch_all(pool).await {
                                 Ok(rows) => {

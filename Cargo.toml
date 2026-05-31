@@ -113,7 +113,7 @@ regex = "1.12.3"
 pastey = "0.2.3"
 
 # database
-sqlx = { version = "0.8.6", features = [
+sqlx = { version = "0.9.0", features = [
   "runtime-tokio",
   "tls-rustls",
   "postgres",
