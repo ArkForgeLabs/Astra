@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.49.0](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.48.0..v0.49.0) - 2026-05-31
+
+### Bug Fixes
+
+- ctrl+c working and argv never empty - ([3ac2ea0](https://git.arkforge.net/ArkForgeLabs/Astra/commit/3ac2ea05693e147ec960d3e64ab9628956531df5))
+- imported script using correct name now on errors - ([7f18d99](https://git.arkforge.net/ArkForgeLabs/Astra/commit/7f18d9946cb59ddf65313938c5aae5ed88b30faf))
+- stack issue of async task spanws - ([dc38828](https://git.arkforge.net/ArkForgeLabs/Astra/commit/dc388282a3b248d9292db7bdf635aecd62d516b7))
+- doc link issues - ([29547f8](https://git.arkforge.net/ArkForgeLabs/Astra/commit/29547f80075c1807d7878c833b93aa030895cf23))
+- errors can format filename better - ([8940e1c](https://git.arkforge.net/ArkForgeLabs/Astra/commit/8940e1cff6816c94d2d2ac679bab91d8ebcd17eb))
+
+### Documentation
+
+- updated the docs location and README - ([3be013e](https://git.arkforge.net/ArkForgeLabs/Astra/commit/3be013e84a1787754989beb38869045cb5f3c7e2))
+
+### Features
+
+- RUNTIME spec added https//gist.github.com/Bottersnike/001470cbbb0cd63d9790a542ed5be1bf - ([bc26081](https://git.arkforge.net/ArkForgeLabs/Astra/commit/bc26081bb5be7cdd166134e7a45c090b2f5459f2))
+
+### Miscellaneous Chores
+
+- Moved back to Apache-2.0 license - ([579aee3](https://git.arkforge.net/ArkForgeLabs/Astra/commit/579aee317a642595ba0c4355b26058c48cc50226))
+- updated sqlx to 0.9.0 - ([fd924a1](https://git.arkforge.net/ArkForgeLabs/Astra/commit/fd924a15372d6604eae8941a69c65682c7917b6b))
+
 ## [0.48.0](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.47.0..0.48.0) - 2026-05-18
 
 ### BREAKING
