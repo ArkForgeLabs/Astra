@@ -8,7 +8,7 @@
     "astra"
   ],
   "diagnostics.globals": [
-    "ASTRA_VERSION",
+    "_RUNTIME",
     "CURRENT_SCRIPT",
     "MAIN_SCRIPT",
     "SHUTDOWN_CODE"

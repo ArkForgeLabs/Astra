@@ -48,9 +48,10 @@ async fn registration(lua: &mlua::Lua, script_path: &str) -> mlua::Result<()> {
         "ASTRA_INTERNAL__STDLIB_TABLE",
         stdlib_to_lua_table(lua).await?,
     )?;
-    lua.globals().set("ASTRA_VERSION", clap::crate_version!())?;
     lua.globals().set("CURRENT_SCRIPT", script_path)?;
     lua.globals().set("MAIN_SCRIPT", script_path)?;
+
+    lua.globals().set("_RUNTIME", runtime_details(lua)?)?;
 
     let _ = dotenvy::from_filename_override(".env");
     let _ = dotenvy::from_filename_override(".env.production");
@@ -61,4 +62,60 @@ async fn registration(lua: &mlua::Lua, script_path: &str) -> mlua::Result<()> {
     let _ = dotenvy::from_filename_override(".env.local");
 
     Ok(())
+}
+
+fn runtime_details(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
+    let runtime_table = lua.create_table()?;
+
+    // details about the current build
+    {
+        let version_table = lua.create_table()?;
+        version_table.set("display", clap::crate_version!())?;
+
+        // set the semantic versioning
+        {
+            let version_semantic_table = lua.create_table()?;
+            let version = clap::crate_version!().split(".").collect::<Vec<_>>();
+            version_semantic_table.set(
+                "major",
+                version
+                    .first()
+                    .and_then(|value| value.parse::<u16>().ok())
+                    .unwrap_or(0),
+            )?;
+            version_semantic_table.set(
+                "minor",
+                version
+                    .get(1)
+                    .and_then(|value| value.parse::<u16>().ok())
+                    .unwrap_or(0),
+            )?;
+            version_semantic_table.set(
+                "patch",
+                version
+                    .get(2)
+                    .and_then(|value| value.parse::<u16>().ok())
+                    .unwrap_or(0),
+            )?;
+            version_table.set("semantic", version_semantic_table)?;
+        }
+
+        // set the git details
+        {
+            let git_table = lua.create_table()?;
+
+            git_table.set("url", "https://git.arkforge.net/ArkForgeLabs/Astra")?;
+            git_table.set("commit", env!("GIT_HASH"))?;
+            git_table.set("branch", "main")?;
+
+            version_table.set("git", git_table)?;
+        }
+
+        runtime_table.set("version", version_table)?;
+    }
+
+    runtime_table.set("name", "astra")?;
+    runtime_table.set("url", "https://astra.arkforge.net")?;
+
+    Ok(runtime_table)
 }
