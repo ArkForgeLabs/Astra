@@ -5,14 +5,14 @@ language = "en"
 src = "./src"
 
 [build]
-build-dir = "../../../docs/docs/latest"
+build-dir = "../../../docs/latest"
 
 [output.html]
 default-theme = "dark"
 preferred-dark-theme = "coal"
-git-repository-url = "https://github.com/ArkForgeLabs/Astra"
-site-url = "/docs/latest/"
-edit-url-template = "https://github.com/ArkForgeLabs/Astra/edit/main/src/docs/latest/{path}"
+git-repository-url = "https://git.arkforge.net/ArkForgeLabs/Astra"
+site-url = "/latest/"
+edit-url-template = "https://git.arkforge.net/ArkForgeLabs/Astra/_edit/main/src/docs/latest/{path}"
 
 [output.html.playground]
 copyable = true

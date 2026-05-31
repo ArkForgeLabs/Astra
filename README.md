@@ -8,6 +8,9 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Matrix Chat](https://img.shields.io/badge/Chat-Matrix-blue.svg)](https://matrix.to/#/#Astra:matrix.org)
 
+>[!NOTE]
+>The code is hosted at [git.arkforge.net/ArkForgelabs/Astra](https://git.arkforge.net/ArkForgeLabs/Astra). The GitHub repository is a mirror. For opening [issues](https://git.arkforge.net/ArkForgeLabs/Astra/issues) and [PR](https://git.arkforge.net/ArkForgeLabs/Astra/pulls)s please visit there instead.
+
 Astra is a Rust based runtime environment for Lua (5.1-5.5), Luau and LuaJIT. The goal is to get as much performance as possible while writing the logic in Lua instead for faster iteration, fault-tolerance, all the batteries included, and complete customization. This project is internally used here at [ArkForge](https://arkforge.net), by universities, research labs, and many large organizations.
 
 For enterprise and business inquiries, send us an email at [contact@arkforge.net](mailto:contact@arkforge.net)
@@ -36,6 +39,12 @@ Alternatively you can also install through [cargo](https://doc.rust-lang.org/car
 
 ```bash
 cargo install lua-astra
+```
+
+Or a specific Lua version:
+
+```bash
+cargo install lua-astra --no-default-features --features=luau
 ```
 
 ## Example
@@ -81,18 +90,18 @@ db:execute([[
 print(db:query_all("SELECT * FROM data"))
 ```
 
-There is also support for cryptography, datetime, jinja2, markdown, pubsub/observers, runtime and for LSP type safety and validation, async filesystem, and many more, check them at at the [docs](https://astra.arkforge.net/docs/latest)
+There is also support for cryptography, datetime, jinja2, markdown, pubsub/observers, type system for LSP, runtime type safety, and validation, async filesystem, and many more, check them at at the [docs](https://astra.arkforge.net/docs/latest)
 
 ## Community Projects
 
 - Astra Trails - <https://github.com/0riginaln0/astra-trails>
 - Hack Club Clubs API - <https://github.com/hackclub/clubapi>
 
-If you have a project that uses or extends Astra, let us know about it by extending the list above or opening a new [issue](https://github.com/ArkForgeLabs/Astra/issues/new)
+If you have a project that uses or extends Astra, let us know about it by extending the list above or [commenting here](https://git.arkforge.net/ArkForgeLabs/Astra/issues/68).
 
 ## Where is the community?
 
-In the past, we had a discord server where you could join and talk in, however we moved it to [GitHub discussions](https://github.com/ArkForgeLabs/Astra/discussions) instead. Please open conversations here from now on.
+In the past, we had a discord server where you could join and talk in, however we moved it to [Matrix](https://matrix.to/#/#Astra:matrix.org) instead. Please open conversations here from now on.
 
 ## License
 
