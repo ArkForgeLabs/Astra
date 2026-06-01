@@ -15,7 +15,7 @@ categories = [
 edition = "2024"
 license = "Apache-2.0"
 exclude = [".github", "examples", "docs", "tests"]
-rust-version = "1.92"
+rust-version = "1.94"
 
 [[bin]]
 name = "astra"

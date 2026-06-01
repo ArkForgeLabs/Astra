@@ -15,7 +15,7 @@ Astra is a Rust based runtime environment for Lua (5.1-5.5), Luau and LuaJIT. Th
 
 For enterprise and business inquiries, send us an email at [contact@arkforge.net](mailto:contact@arkforge.net)
 
-> MSRV: 1.92+
+> MSRV: 1.94+
 
 ## installation
 
