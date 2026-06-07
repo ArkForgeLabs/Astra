@@ -1,25 +1,78 @@
 ---@meta
 
-local utils = require("utils")
-
 --- Jinja2 templating engine
 ---@class Jinja2Engine
 ---@field add_template fun(templates: Jinja2Engine, name: string, template: string)
 ---@field add_template_file fun(templates: Jinja2Engine, name: string, path: string)
 ---@field get_template_names fun(template: Jinja2Engine): string[]
+---@field get_template_names_all fun(template: Jinja2Engine): string[] Fetches all the names, including the excluded templates
+---@field get_template_paths fun(template: Jinja2Engine): string[]
+---@field get_template_paths_all fun(template: Jinja2Engine): string[] Fetches all the paths, including the excluded templates
 ---Excludes template files from being added to the server for rendering
 ---@field exclude_templates fun(templates: Jinja2Engine, names: string[])
 ---@field reload_templates fun(templates: Jinja2Engine) Refreshes the template code from the glob given at the start
 ---@field add_function fun(templates: Jinja2Engine, name: string, function: template_function): any Add a function to the templates
 ---Renders the given template into a string with the available context
----@field render fun(templates: Jinja2Engine, name: string, context?: table): string
----@field add_to_server fun(templates: Jinja2Engine, server: HTTPServer, context?: table) Adds the templates to the server
+---@field render fun(templates: Jinja2Engine, name: string, context: table?): string
+---@field add_to_server fun(templates: Jinja2Engine, server: HTTPServer, context: table?) Adds the templates to the server
 ---Adds the templates to the server in debugging manner, where the content refreshes on each request
----@field add_to_server_debug fun(templates: Jinja2Engine, server: HTTPServer, context?: table)
----@field debug_watch fun(_: Jinja2Engine, server: HTTPServer, dir_path: string)
+---@field add_to_server_debug fun(templates: Jinja2Engine, server: HTTPServer, context: table?)
 
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias template_function fun(args: table): any
+
+---@param template_names string[]
+---@param server HTTPServer
+local function debug_watch(template_names, server)
+  local serde = require("serde")
+  local utils = require("utils")
+  local fs = require("fs")
+
+  local files = {}
+  for _, value in ipairs(template_names) do
+    local success, is_file = pcall(function()
+      return fs.get_metadata(value):type():is_file()
+    end)
+    if success and is_file then
+      table.insert(files, { value, 0 })
+    else
+      print(is_file)
+    end
+  end
+
+  ---@param paths table[]
+  ---@return table[]
+  local function last_modified_times(paths)
+    local result = {}
+    for _, file in ipairs(paths) do
+      pcall(function()
+        local file_details = fs.get_metadata(file[1])
+        table.insert(result, { file[1], file_details:last_modified() })
+      end)
+    end
+    return result
+  end
+
+  local did_change = false
+  utils.spawn_interval(function()
+    local old_files = serde.json.encode(files)
+    files = last_modified_times(files)
+    if old_files ~= serde.json.encode(files) then
+      did_change = true
+    else
+      did_change = false
+    end
+  end, 500)
+
+  server:get("/debug.js", function(_, response)
+    response:set_header("Content-Type", "text/javascript")
+    return [[setInterval(async ()=>{const response=await fetch("/debug");if(response.ok &&(await response.text())=="true"){window.location.reload();}},100);]]
+  end)
+
+  server:get("/debug", function()
+    return tostring(did_change)
+  end)
+end
 
 --- Returns a new templating engine
 ---@param dir? string path to the directory, for example: `"templates/**/[!exclude.html]*.html"`
@@ -70,6 +123,8 @@ local function new_engine(dir)
 
   function Jinja2EngineWrapper:add_to_server_debug(server, context)
     local names = self.engine:get_template_names()
+    debug_watch(self.engine:get_template_paths_all(), server)
+
     for _, value in ipairs(names) do
       local path = templates_re:replace(value, "")
 
@@ -81,46 +136,6 @@ local function new_engine(dir)
         end)
       end
     end
-  end
-
-  function Jinja2EngineWrapper.debug_watch(_, server, dir_path)
-    local serde = require("serde")
-    local fs = require("fs")
-
-    local files = {}
-    ---@param path string the directory to watch
-    local function read_recursive(path)
-      for _, i in ipairs(fs.read_dir(path)) do
-        if i:file_type():is_file() then
-          pcall(function()
-            local file_details = fs.get_metadata(i:path())
-            table.insert(files, { i:path(), file_details:last_modified() })
-          end)
-        elseif i:file_type():is_dir() then
-          read_recursive(i:path())
-        end
-      end
-    end
-
-    local did_change = false
-    utils.spawn_interval(function()
-      local old_files = serde.json.encode(files)
-      files = {}
-      read_recursive(dir_path)
-
-      if old_files ~= serde.json.encode(files) then
-        did_change = true
-      else
-        did_change = false
-      end
-    end, 500)
-    server:get("/debug.js", function(_, response)
-      response:set_header("Content-Type", "text/javascript")
-      return [[setInterval(async ()=>{const response=await fetch("/debug");if(response.ok &&(await response.text())=="true"){window.location.reload();}},100);]]
-    end)
-    server:get("/debug", function()
-      return tostring(did_change)
-    end)
   end
 
   local templating_methods = {

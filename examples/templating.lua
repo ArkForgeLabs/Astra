@@ -18,7 +18,7 @@ template_engine:add_to_server(
 )
 
 -- Or for debugging
--- template_engine:add_to_server_debug(server)
+-- template_engine:add_to_server_debug(server, { count = 5 })
 
 -- Partial hydration
 local count = 0

@@ -3,7 +3,7 @@ local server = http.server.new()
 
 -- A simple GET index route with text return
 server:get("/", function()
-  return "hello from default Astra instance! " .. ASTRA_VERSION
+  return "hello from default Astra instance! " .. _RUNTIME.display
 end)
 
 -- Redirect users somewhere else...

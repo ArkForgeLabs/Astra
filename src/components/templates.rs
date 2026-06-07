@@ -1,10 +1,10 @@
 use crate::LUA;
 use minijinja::{ErrorKind::UndefinedError, path_loader};
 use mlua::{ExternalError, FromLua, LuaSerdeExt, UserData};
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 
 /// Will include the name, path, and source
-#[derive(Debug, Clone, FromLua)]
+#[derive(Debug, Clone, FromLua, PartialEq, Eq)]
 struct Template {
     name: String,
     path: Option<String>,
@@ -28,10 +28,10 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
             };
 
             if let Some(dir) = dir {
-                let matches = parse_glob_pattern(&dir).map_err(|e| e.into_lua_err())?;
+                let matches = super::file_system::GlobResult::parse_glob_pattern(&dir)?;
 
                 engine.env.set_loader(path_loader(&matches.base_path));
-                engine.add_template_files(matches.results).await?;
+                engine.add_template_files(matches).await?;
             }
 
             Ok(engine)
@@ -41,18 +41,24 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     Ok(())
 }
 impl TemplatingEngine<'_> {
-    pub async fn add_template_files(&mut self, matches: Vec<(String, String)>) -> mlua::Result<()> {
-        for (name, path) in matches {
+    pub async fn add_template_files(
+        &mut self,
+        matches: super::file_system::GlobResult,
+    ) -> mlua::Result<()> {
+        let base_path = matches.base_path.clone();
+
+        for name in matches.entries.iter() {
+            let string_name = name.to_string_lossy().to_string();
             // get the file source
-            match tokio::fs::read_to_string(path.clone()).await {
+            match tokio::fs::read_to_string(base_path.join(name)).await {
                 Ok(source) => {
                     self.templates.push(Template {
-                        name: name.clone(),
-                        path: Some(path),
+                        name: string_name.clone(),
+                        path: Some(base_path.join(name).to_string_lossy().to_string()),
                         source: source.clone(),
                     });
 
-                    if let Err(e) = self.env.add_template_owned(name, source) {
+                    if let Err(e) = self.env.add_template_owned(string_name, source) {
                         return Err(e.into_lua_err());
                     }
                 }
@@ -75,6 +81,7 @@ impl TemplatingEngine<'_> {
                 i.source.clone()
             };
 
+            self.env.remove_template(&i.name);
             if let Err(e) = self.env.add_template_owned(i.name.clone(), source) {
                 return Err(e.into_lua_err());
             }
@@ -124,31 +131,54 @@ impl UserData for TemplatingEngine<'_> {
         );
         methods.add_method_mut("remove_template", |_, this, name: String| {
             this.env.remove_template(&name.clone());
-
-            this.templates = this
-                .templates
-                .iter()
-                .filter(|template| template.name != name)
-                .cloned()
-                .collect::<Vec<_>>();
-
             Ok(())
         });
         methods.add_method("get_template_names", |_, this, _: ()| {
             Ok(this
                 .templates
                 .iter()
+                .filter_map(|template| {
+                    //
+                    let name = template.name.clone();
+                    if !this.exclusions.contains(&name.clone().into()) {
+                        Some(name)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>())
+        });
+        methods.add_method("get_template_names_all", |_, this, _: ()| {
+            Ok(this
+                .templates
+                .iter()
                 .map(|template| template.name.clone())
+                .collect::<Vec<_>>())
+        });
+        methods.add_method("get_template_paths", |_, this, _: ()| {
+            Ok(this
+                .templates
+                .iter()
+                .filter_map(|template| {
+                    //
+                    let name = template.name.clone();
+                    if !this.exclusions.contains(&name.into()) {
+                        template.path.clone()
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>())
+        });
+        methods.add_method("get_template_paths_all", |_, this, _: ()| {
+            Ok(this
+                .templates
+                .iter()
+                .filter_map(|template| template.path.clone())
                 .collect::<Vec<_>>())
         });
         methods.add_method_mut("exclude_templates", |_, this, names: Vec<String>| {
             for i in names {
-                this.templates = this
-                    .templates
-                    .iter()
-                    .filter(|template| template.name != i)
-                    .cloned()
-                    .collect::<Vec<_>>();
                 this.exclusions.push(i.into());
             }
 
@@ -205,47 +235,6 @@ impl UserData for TemplatingEngine<'_> {
             },
         );
     }
-}
-
-struct GlobFileResults {
-    base_path: PathBuf,
-    results: Vec<(String, String)>,
-}
-
-fn parse_glob_pattern(pattern: &str) -> Result<GlobFileResults, mlua::Error> {
-    // Convert glob pattern to Path
-    let pattern_path = std::path::Path::new(pattern);
-
-    // Determine base directory by finding the part before the first wildcard
-    let mut base_path = std::path::PathBuf::new();
-    for component in pattern_path.components() {
-        if let std::path::Component::Normal(os_str) = component {
-            let part = os_str.to_string_lossy();
-            if part.contains('*') || part.contains('?') || part.contains('[') {
-                break;
-            }
-            base_path.push(part.as_ref());
-        } else {
-            base_path.push(component);
-        }
-    }
-
-    // Perform the actual glob matching
-    let mut results = Vec::new();
-    let globs = glob::glob(pattern).map_err(|e| e.into_lua_err())?;
-    for entry in globs {
-        let path = entry.map_err(|e| e.into_lua_err())?;
-        let full_path = path.to_string_lossy().to_string();
-
-        if let Ok(relative) = path.strip_prefix(&base_path) {
-            results.push((relative.to_string_lossy().to_string(), full_path));
-        } else {
-            // Fallback to full path if prefix can't be stripped
-            results.push((full_path.clone(), full_path));
-        }
-    }
-
-    Ok(GlobFileResults { base_path, results })
 }
 
 // ============================================================== //
