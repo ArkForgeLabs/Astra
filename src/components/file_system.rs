@@ -37,9 +37,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
 
     lua_globals.set(
         "astra_internal__open_file",
-        lua.create_async_function(|_, path: String| async {
-            Ok(AstraFile(tokio::fs::File::open(path).await?))
-        })?,
+        lua.create_async_function(|_, path: String| async { AstraFile::new(path).await })?,
     )?;
 
     file_io_methods!("astra_internal__read_file_bytes", tokio::fs::read);
@@ -131,8 +129,20 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
 }
 
 #[derive(Debug)]
-struct AstraFile(tokio::fs::File);
-super::macros::impl_deref!(AstraFile, tokio::fs::File);
+struct AstraFile {
+    path: std::path::PathBuf,
+    content: tokio::fs::File,
+}
+impl AstraFile {
+    pub async fn new(path: impl Into<std::path::PathBuf>) -> mlua::Result<Self> {
+        let path = path.into();
+
+        Ok(Self {
+            content: tokio::fs::File::open(&path).await?,
+            path,
+        })
+    }
+}
 impl UserData for AstraFile {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         macro_rules! file_io_methods {
@@ -141,7 +151,7 @@ impl UserData for AstraFile {
                     $name,
                     |_, mut this, buffer: AstraBufferMut| async move {
                         let mut bytes = buffer.lock().await;
-                        match this.$method(&mut *bytes).await {
+                        match this.content.$method(&mut *bytes).await {
                             Ok(result) => Ok(result),
                             Err(e) => Err(e.into_lua_err()),
                         }
@@ -149,14 +159,7 @@ impl UserData for AstraFile {
                 );
             };
         }
-
-        // methods.add_async_method_mut("", |_, mut this, buffer: AstraBufferMut| async move {
-        //     let mut bytes = buffer.0.lock().await;
-        //     match this.0.read(&mut *bytes).await {
-        //         Ok(result) => Ok(result),
-        //         Err(e) => Err(e.into_lua_err()),
-        //     }
-        // });
+        methods.add_method("path", |lua, this, _: ()| lua.to_value(&this.path));
 
         file_io_methods!("read", read);
         file_io_methods!("read_buf", read_buf);
@@ -240,5 +243,66 @@ impl UserData for AstraDirEntry {
             Some(path) => Ok(path.to_string()),
             None => Err(mlua::Error::runtime("Could not get the path")),
         });
+    }
+}
+
+pub struct GlobResult {
+    base_path: std::path::PathBuf,
+    entries: Vec<std::path::PathBuf>,
+}
+impl GlobResult {
+    pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
+        lua.globals().set(
+            "astra_internal__parse_glob",
+            lua.create_function(|lua, path: String| {
+                let glob_result_table = lua.create_table()?;
+
+                let glob_result = Self::parse_glob_pattern(&path)?;
+                glob_result_table.set("base_path", glob_result.base_path)?;
+                glob_result_table.set("entries", glob_result.entries)?;
+
+                Ok(glob_result_table)
+            })?,
+        )?;
+
+        Ok(())
+    }
+
+    fn parse_glob_pattern(pattern: &str) -> mlua::Result<Self> {
+        // Convert glob pattern to Path
+        let pattern_path = std::path::Path::new(pattern);
+
+        // Determine base directory by finding the part before the first wildcard
+        let mut base_path = std::path::PathBuf::new();
+        for component in pattern_path.components() {
+            if let std::path::Component::Normal(os_str) = component {
+                let part = os_str.to_string_lossy();
+                if part.contains('*') || part.contains('?') || part.contains('[') {
+                    break;
+                }
+                base_path.push(part.as_ref());
+            } else {
+                base_path.push(component);
+            }
+        }
+
+        // Perform the actual glob matching
+        let mut results = Vec::new();
+        let globs = glob::glob(pattern).map_err(|e| e.into_lua_err())?;
+        for entry in globs {
+            let path = entry.map_err(|e| e.into_lua_err())?;
+
+            if let Ok(relative) = path.strip_prefix(&base_path) {
+                results.push(relative.to_path_buf());
+            } else {
+                // Fallback to full path if prefix can't be stripped
+                results.push(path);
+            }
+        }
+
+        Ok(Self {
+            base_path,
+            entries: results,
+        })
     }
 }

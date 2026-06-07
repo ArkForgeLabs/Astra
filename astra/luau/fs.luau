@@ -2,6 +2,7 @@
 --!nolint
 
 type File = {
+  path: (self: File) -> string,
   --- Pulls some bytes from this source into the specified buffer, returning how many bytes were read.
   read: (self: File, buffer: Buffer) -> (),
   --- Pulls some bytes from this source into the specified buffer, advancing the buffer's internal cursor.
@@ -41,7 +42,20 @@ type FileIOPermissions = {
   set_readonly: (self: FileIOPermissions, value: boolean) -> (),
 }
 
+type GlobResult = {
+  --- The directory path that entries are in
+  base_path: string,
+  entries: {string}
+}
+
 local fs = {}
+
+--- Parses a path and matches entries with given filenames.
+---
+--- For example "examples/templates/**/*.html"
+function fs.parse_glob(path: string): GlobResult
+  return astra_internal__parse_glob(path)
+end
 
 --- Creates a new buffer with size in bytes allocated
 function fs.new_buffer(capacity: number): Buffer

@@ -3,6 +3,7 @@
 local fs = {}
 
 ---@class File
+---@field path fun(self: File): string
 ---Pulls some bytes from this source into the specified buffer, returning how many bytes were read. A nonzero n value indicates that the buffer buf has been filled in with n bytes of data from this source.
 ---@field read fun(self: File, buffer: Buffer)
 ---Pulls some bytes from this source into the specified buffer, advancing the buffer's internal cursor. A nonzero n value indicates that the buffer buf has been filled in with n bytes of data from this source.
@@ -34,6 +35,21 @@ local fs = {}
 ---@class FileIOPermissions
 ---@field is_readonly fun(self: FileIOPermissions): boolean
 ---@field set_readonly fun(self: FileIOPermissions, value: boolean)
+
+---@class GlobResult
+---The directory path that entries are in
+---@field base_path string
+---@field entries string[]
+
+---Parses a path and matches entries with given filenames.
+---
+---For example "examples/templates/**/*.html"
+---@param path string
+---@return GlobResult
+function fs.parse_glob(path)
+  ---@diagnostic disable-next-line: undefined-global
+  return astra_internal__parse_glob(path)
+end
 
 ---Creates a new buffer with size in bytes allocated
 ---@param capacity number
