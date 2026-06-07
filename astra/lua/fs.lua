@@ -14,26 +14,26 @@ local fs = {}
 ---This method will continuously call write until buffer remaining calls returns false. This method will not return until the entire buffer has been successfully written or an error occurs. The first error generated will be returned. The buffer is advanced after each chunk is successfully written.
 ---@field write_buffer fun(self: File, buffer: Buffer)
 
----@class FileType
----@field is_file fun(file_type: FileType): boolean
----@field is_dir fun(file_type: FileType): boolean
----@field is_symlink fun(file_type: FileType): boolean
+---@class EntryType
+---@field is_file fun(self: EntryType): boolean
+---@field is_dir fun(self: EntryType): boolean
+---@field is_symlink fun(self: EntryType): boolean
 
 ---@class DirEntry
----@field file_name fun(dir_entry: DirEntry): string Returns the file_name of the entry
----@field file_type fun(dir_entry: DirEntry): FileType
----@field path fun(dir_entry: DirEntry): string Returns the path of each entry in the list
+---@field file_name fun(self: DirEntry): string Returns the file_name of the entry
+---@field file_type fun(self: DirEntry): EntryType
+---@field path fun(self: DirEntry): string Returns the path of each entry in the list
 
----@class FileMetadata
----@field last_accessed fun(file_metadata: FileMetadata): number
----@field created_at fun(file_metadata: FileMetadata): number
----@field last_modified fun(file_metadata: FileMetadata): number
----@field file_type fun(file_metadata: FileMetadata): FileType
----@field file_permissions fun(file_metadata: FileMetadata): FileIOPermissions
+---@class Metadata
+---@field last_accessed fun(self: Metadata): number
+---@field created_at fun(self: Metadata): number
+---@field last_modified fun(self: Metadata): number
+---@field type fun(self: Metadata): EntryType
+---@field file_permissions fun(self: Metadata): FileIOPermissions
 
 ---@class FileIOPermissions
----@field is_readonly fun(file_io_permissions: FileIOPermissions): boolean
----@field set_readonly fun(file_io_permissions: FileIOPermissions, value: boolean)
+---@field is_readonly fun(self: FileIOPermissions): boolean
+---@field set_readonly fun(self: FileIOPermissions, value: boolean)
 
 ---Creates a new buffer with size in bytes allocated
 ---@param capacity number
@@ -77,7 +77,7 @@ end
 
 ---Returns the metadata of a file or directory
 ---@param path string
----@return FileMetadata
+---@return Metadata
 function fs.get_metadata(path)
   ---@diagnostic disable-next-line: undefined-global
   return astra_internal__get_metadata(path)

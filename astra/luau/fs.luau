@@ -14,31 +14,31 @@ type File = {
   write_buffer: (self: File, buffer: Buffer) -> (),
 }
 
-type FileType = {
-  is_file: (file_type: FileType) -> boolean,
-  is_dir: (file_type: FileType) -> boolean,
-  is_symlink: (file_type: FileType) -> boolean,
+type EntryType = {
+  is_file: (self: EntryType) -> boolean,
+  is_dir: (self: EntryType) -> boolean,
+  is_symlink: (self: EntryType) -> boolean,
 }
 
 type DirEntry = {
   --- Returns the file_name of the entry
-  file_name: (dir_entry: DirEntry) -> string,
-  file_type: (dir_entry: DirEntry) -> FileType,
+  file_name: (self: DirEntry) -> string,
+  file_type: (self: DirEntry) -> EntryType,
   --- Returns the path of each entry in the list
-  path: (dir_entry: DirEntry) -> string,
+  path: (self: DirEntry) -> string,
 }
 
-type FileMetadata = {
-  last_accessed: (file_metadata: FileMetadata) -> number,
-  created_at: (file_metadata: FileMetadata) -> number,
-  last_modified: (file_metadata: FileMetadata) -> number,
-  file_type: (file_metadata: FileMetadata) -> FileType,
-  file_permissions: (file_metadata: FileMetadata) -> FileIOPermissions,
+type Metadata = {
+  last_accessed: (self: Metadata) -> number,
+  created_at: (self: Metadata) -> number,
+  last_modified: (self: Metadata) -> number,
+  type: (self: Metadata) -> EntryType,
+  file_permissions: (self: Metadata) -> FileIOPermissions,
 }
 
 type FileIOPermissions = {
-  is_readonly: (file_io_permissions: FileIOPermissions) -> boolean,
-  set_readonly: (file_io_permissions: FileIOPermissions, value: boolean) -> (),
+  is_readonly: (self: FileIOPermissions) -> boolean,
+  set_readonly: (self: FileIOPermissions, value: boolean) -> (),
 }
 
 local fs = {}
@@ -69,7 +69,7 @@ function fs.write_file(path: string, contents: string | { number } | { any }): (
 end
 
 --- Returns the metadata of a file or directory
-function fs.get_metadata(path: string): FileMetadata
+function fs.get_metadata(path: string): Metadata
   return astra_internal__get_metadata(path)
 end
 

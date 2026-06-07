@@ -20,7 +20,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         "astra_internal__get_metadata",
         lua.create_async_function(|_, path: String| async {
             match tokio::fs::metadata(path).await {
-                Ok(result) => Ok(AstraFileMetadata(result)),
+                Ok(result) => Ok(AstraMetadata(result)),
                 Err(e) => Err(e.into_lua_err()),
             }
         })?,
@@ -168,9 +168,9 @@ impl UserData for AstraFile {
 }
 
 #[derive(Debug, Clone)]
-struct AstraFileMetadata(std::fs::Metadata);
-super::macros::impl_deref!(AstraFileMetadata, std::fs::Metadata);
-impl UserData for AstraFileMetadata {
+struct AstraMetadata(std::fs::Metadata);
+super::macros::impl_deref!(AstraMetadata, std::fs::Metadata);
+impl UserData for AstraMetadata {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         macro_rules! file_metadata_methods {
             ($name:expr, $method:ident) => {
@@ -190,7 +190,7 @@ impl UserData for AstraFileMetadata {
         file_metadata_methods!("last_accessed", accessed);
         file_metadata_methods!("last_modified", modified);
         file_metadata_methods!("created_at", created);
-        file_metadata_methods!("file_type", AstraFileType, file_type);
+        file_metadata_methods!("file_type", AstraEntryType, file_type);
         file_metadata_methods!("file_permissions", AstraFilePermissions, permissions);
     }
 }
@@ -209,9 +209,9 @@ impl UserData for AstraFilePermissions {
 }
 
 #[derive(Debug, Clone)]
-struct AstraFileType(std::fs::FileType);
-super::macros::impl_deref!(AstraFileType, std::fs::FileType);
-impl UserData for AstraFileType {
+struct AstraEntryType(std::fs::FileType);
+super::macros::impl_deref!(AstraEntryType, std::fs::FileType);
+impl UserData for AstraEntryType {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("is_file", |_, this, ()| Ok(this.is_file()));
         methods.add_method("is_dir", |_, this, ()| Ok(this.is_dir()));
@@ -232,7 +232,7 @@ impl UserData for AstraDirEntry {
         });
         methods.add_async_method("file_type", |_, this, ()| async move {
             match this.file_type().await {
-                Ok(file_type) => Ok(AstraFileType(file_type)),
+                Ok(file_type) => Ok(AstraEntryType(file_type)),
                 Err(e) => Err(e.into_lua_err()),
             }
         });
