@@ -22,7 +22,7 @@ local fs = {}
 
 ---@class DirEntry
 ---@field file_name fun(self: DirEntry): string Returns the file_name of the entry
----@field file_type fun(self: DirEntry): EntryType
+---@field type fun(self: DirEntry): EntryType
 ---@field path fun(self: DirEntry): string Returns the path of each entry in the list
 
 ---@class Metadata

@@ -24,7 +24,7 @@ type EntryType = {
 type DirEntry = {
   --- Returns the file_name of the entry
   file_name: (self: DirEntry) -> string,
-  file_type: (self: DirEntry) -> EntryType,
+  type: (self: DirEntry) -> EntryType,
   --- Returns the path of each entry in the list
   path: (self: DirEntry) -> string,
 }

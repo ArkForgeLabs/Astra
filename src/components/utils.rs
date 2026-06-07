@@ -51,7 +51,7 @@ pub fn pprint(lua: &mlua::Lua) -> mlua::Result<()> {
         "print",
         lua.create_function(|_, args: mlua::MultiValue| {
             for input in args.iter() {
-                if input.is_string()
+                if (input.is_string() || input.is_error())
                     && let Ok(s) = input.to_string()
                 {
                     print!("{} ", s);

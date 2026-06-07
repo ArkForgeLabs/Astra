@@ -193,7 +193,7 @@ impl UserData for AstraMetadata {
         file_metadata_methods!("last_accessed", accessed);
         file_metadata_methods!("last_modified", modified);
         file_metadata_methods!("created_at", created);
-        file_metadata_methods!("file_type", AstraEntryType, file_type);
+        file_metadata_methods!("type", AstraEntryType, file_type);
         file_metadata_methods!("file_permissions", AstraFilePermissions, permissions);
     }
 }
@@ -233,7 +233,7 @@ impl UserData for AstraDirEntry {
                 Err(e) => Err(mlua::Error::runtime(format!("{e:?}"))),
             }
         });
-        methods.add_async_method("file_type", |_, this, ()| async move {
+        methods.add_async_method("type", |_, this, ()| async move {
             match this.file_type().await {
                 Ok(file_type) => Ok(AstraEntryType(file_type)),
                 Err(e) => Err(e.into_lua_err()),
@@ -247,8 +247,8 @@ impl UserData for AstraDirEntry {
 }
 
 pub struct GlobResult {
-    base_path: std::path::PathBuf,
-    entries: Vec<std::path::PathBuf>,
+    pub base_path: std::path::PathBuf,
+    pub entries: Vec<std::path::PathBuf>,
 }
 impl GlobResult {
     pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
@@ -268,7 +268,7 @@ impl GlobResult {
         Ok(())
     }
 
-    fn parse_glob_pattern(pattern: &str) -> mlua::Result<Self> {
+    pub fn parse_glob_pattern(pattern: &str) -> mlua::Result<Self> {
         // Convert glob pattern to Path
         let pattern_path = std::path::Path::new(pattern);
 
