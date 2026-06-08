@@ -42,9 +42,12 @@ jobs:
         run: cargo install mdbook
 
       - name: Build docs
-        run: |
-          cd src/docs/latest && mdbook build -d dist
-          mv src/docs/latest/dist/**/* docs/
+        run: cd src/docs/latest && mdbook build -d dist
+
+      - run: ls
+
+      - name: Copy content to docs
+        run: mv src/docs/latest/dist/**/* docs/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
