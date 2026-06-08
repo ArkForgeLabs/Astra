@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.50.0](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.49.0..v0.50.0) - 2026-06-08
+
+### Features
+
+- added `fs.parse_glob` function - ([42da9a9](https://git.arkforge.net/ArkForgeLabs/Astra/commit/42da9a90bd39d1ebae3d177adf5ef253c0ddaa79))
+- better debug server for templates - ([109a12b](https://git.arkforge.net/ArkForgeLabs/Astra/commit/109a12bfe52d4293c837bf3a4d32e987e3a54c02))
+
+### Miscellaneous Chores
+
+- updated MSRV to 1.94 - ([b07ef2f](https://git.arkforge.net/ArkForgeLabs/Astra/commit/b07ef2fb1b9f03d97c8c193c45a042e8d5ca1c12))
+
+### Refactoring
+
+- get the runtime export on non-luau - ([122bc19](https://git.arkforge.net/ArkForgeLabs/Astra/commit/122bc1939b9d346ef76a9672cd2e8afbe2a06a88))
+- moved `FileType` to `EntryType` - ([79626c9](https://git.arkforge.net/ArkForgeLabs/Astra/commit/79626c987f9ffdeda0fd5b5b0accf5b8bf25fb52))
+- moved `FileMetadata` to `Metadata` - ([79626c9](https://git.arkforge.net/ArkForgeLabs/Astra/commit/79626c987f9ffdeda0fd5b5b0accf5b8bf25fb52))
+- moved `FileMetadata.file_type` to `Metadata.type` - ([79626c9](https://git.arkforge.net/ArkForgeLabs/Astra/commit/79626c987f9ffdeda0fd5b5b0accf5b8bf25fb52))
+- moved all the fs `.file_type()` to `.type()` - ([846b419](https://git.arkforge.net/ArkForgeLabs/Astra/commit/846b419a7ec34dce6f1fc49d009719f3e58a78fb))
+
 ## [0.49.0](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.48.0..v0.49.0) - 2026-05-31
 
 ### Bug Fixes
