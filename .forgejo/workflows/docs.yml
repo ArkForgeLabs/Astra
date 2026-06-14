@@ -19,11 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: Mirrors/checkout@v6
+        uses: https://git.arkforge.net/Mirrors/checkout@v6
 
       - name: Restore cache
         id: cache-cargo-restore
-        uses: Mirrors/cache/restore@v5
+        uses: https://git.arkforge.net/Mirrors/cache/restore@v5
         with:
           path: |
             ~/.cargo/bin/
@@ -47,7 +47,7 @@ jobs:
 
       - name: Save Cache
         id: cache-cargo-save
-        uses: Mirrors/cache/save@v5
+        uses: https://git.arkforge.net/Mirrors/cache/save@v5
         with:
           path: |
             ~/.cargo/bin/
