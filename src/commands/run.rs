@@ -84,13 +84,13 @@ async fn run_command_prerequisite(
 
     // Handle extra arguments.
     if let Ok(args) = lua.create_table() {
-        if let Err(e) = args.set(0, file_path) {
+        if let Err(e) = args.set(1, file_path) {
             error!("Error adding arg to the args list: {e:?}");
         }
 
         if let Some(extra_args) = extra_args {
             for (index, value) in extra_args.into_iter().enumerate() {
-                if let Err(e) = args.set((index + 1) as i32, value) {
+                if let Err(e) = args.set((index + 2) as i32, value) {
                     error!("Error adding arg to the args list: {e:?}");
                 }
             }
