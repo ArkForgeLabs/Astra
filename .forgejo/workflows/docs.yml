@@ -37,12 +37,22 @@ jobs:
         continue-on-error: true
         run: |
           MIN_VERSION="0.5.0"
-          CURRENT_VERSION=$(mdbook --version | awk '{print $2}' | sed 's/v//')
-          if printf '%s\n%s\n' "$MIN_VERSION" "$CURRENT_VERSION" | sort -V -C; then
-            echo "mdbook is up-to-date."
+
+          # Check if mdbook is installed
+          if ! command -v mdbook >/dev/null 2>&1; then
+              echo "mdbook is not installed. Installing..."
+              cargo install mdbook
           else
-            echo "Updating mdbook..."
-            cargo install mdbook
+              # Get current version and remove 'v' prefix
+              CURRENT_VERSION=$(mdbook --version | awk '{print $2}' | sed 's/v//')
+
+              # Compare versions
+              if printf '%s\n%s\n' "$MIN_VERSION" "$CURRENT_VERSION" | sort -V -C; then
+                  echo "mdbook is up-to-date."
+              else
+                  echo "Updating mdbook..."
+                  cargo install --force mdbook
+              fi
           fi
 
       - name: Save Cache
