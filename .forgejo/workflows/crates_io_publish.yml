@@ -12,7 +12,7 @@ jobs:
     name: Publish the crate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: Mirrors/checkout@v6
 
       - run: |
           rustup toolchain install 1.94.0

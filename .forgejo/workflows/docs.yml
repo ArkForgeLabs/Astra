@@ -1,21 +1,12 @@
-# Simple workflow for deploying static content to GitHub Pages
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
     branches: ["main"]
     paths:
       - src/docs/**
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: write
-  pages: write
-  id-token: write
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -24,22 +15,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: Mirrors/checkout@v6
 
       - name: Restore cache
         id: cache-cargo-restore
-        uses: actions/cache@v4
+        uses: Mirrors/cache/restore@v5
         with:
           path: |
             ~/.cargo/bin/
@@ -63,7 +47,7 @@ jobs:
 
       - name: Save Cache
         id: cache-cargo-save
-        uses: actions/cache/save@v4
+        uses: Mirrors/cache/save@v5
         with:
           path: |
             ~/.cargo/bin/
@@ -79,11 +63,8 @@ jobs:
       - name: Copy content to docs
         run: mv src/docs/latest/dist/**/* docs/
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: "docs"
+      - name: archive content
+        run: zip -r docs.zip docs
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: upload
+        run: bash .forgejo/upload_package.sh "https://internals-yak.arkforge.net" "docs.zip" "{{ secrets.ASTRA_DOCS_SECRET }}" "AstraDocs"
