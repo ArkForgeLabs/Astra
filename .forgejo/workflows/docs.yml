@@ -78,4 +78,4 @@ jobs:
         run: zip -r docs.zip docs
 
       - name: upload
-        run: bash .forgejo/upload_package.sh "https://internals-yak.arkforge.net" "docs.zip" "{{ secrets.ASTRA_DOCS_SECRET }}" "AstraDocs"
+        run: bash .forgejo/upload_package.sh "https://internals-yak.arkforge.net" "docs.zip" "${{ secrets.ASTRA_DOCS_SECRET }}" "AstraDocs"
