@@ -69,19 +69,10 @@ jobs:
           key: ${{ runner.os }}-docs-cargo
 
       - name: Build docs
-        run: cd src/docs/latest && mdbook build -d dist
+        run: cd src/docs/latest && mdbook build
 
       - name: Copy content to docs
-        run: cp -r src/docs/latest/dist/. docs/
-
-      - name: Listdir
-        run: |
-          echo "docs dir:"
-          ls docs
-          echo "docs std"
-          ls docs/std
-          echo "original"
-          ls src/docs/latest/dist
+        run: cp resources/* docs/
 
       - name: archive content
         run: zip -r docs.zip docs
