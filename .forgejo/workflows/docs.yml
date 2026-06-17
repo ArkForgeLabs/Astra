@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - src/docs/**
+      - docs/**
 
   workflow_dispatch:
 
@@ -71,7 +72,7 @@ jobs:
         run: cd src/docs/latest && mdbook build -d dist
 
       - name: Copy content to docs
-        run: mv src/docs/latest/dist/**/* docs/
+        run: cp -r src/docs/latest/dist/. docs/
 
       - name: archive content
         run: zip -r docs.zip docs
