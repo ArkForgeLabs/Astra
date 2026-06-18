@@ -5,7 +5,7 @@
     "target"
   ],
   "workspace.library": [
-    "astra"
+    "astra/lua"
   ],
   "diagnostics.globals": [
     "_RUNTIME",
