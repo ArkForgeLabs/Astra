@@ -58,7 +58,7 @@ enum AstraCLI {
         about = "Exports the type definitions for language servers",
         alias = "export"
     )]
-    ExportBundle {
+    Init {
         /// Path to the export file.
         path: Option<String>,
     },
@@ -116,7 +116,7 @@ pub async fn main() -> std::io::Result<()> {
 
             commands::run_command(file_path, code, stdlib_path, extra_args).await
         }
-        AstraCLI::ExportBundle { path } => commands::export_bundle_command(path).await?,
+        AstraCLI::Init { path } => commands::export_bundle_command(path).await?,
         AstraCLI::Upgrade { user_agent } => {
             if let Err(e) = commands::upgrade_command(user_agent).await {
                 eprintln!("Could not update to the latest version: {e}");
