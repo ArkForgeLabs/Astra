@@ -81,45 +81,60 @@ pub async fn main() -> std::io::Result<()> {
         .with(tracing_subscriber::fmt::layer().compact())
         .init();
 
-    match AstraCLI::parse() {
-        AstraCLI::Run {
-            file_path,
-            code,
-            stdlib_path,
-            safe,
-            extra_args,
-        } => {
-            if safe {
-                #[allow(clippy::expect_used)]
-                LUA.set(
+    if let Ok(is_packed) = commands::is_packed_binary().await
+        && is_packed
+    {
+        #[allow(clippy::expect_used)]
+        LUA.set(unsafe {
+            #[allow(clippy::expect_used)]
+            mlua::Lua::unsafe_new_with(
+                mlua::StdLib::ALL,
+                mlua::LuaOptions::new()
+                    .thread_pool_size(std::thread::available_parallelism()?.get()),
+            )
+        })
+        .expect("Could not set up the global VM");
+    } else {
+        match AstraCLI::parse() {
+            AstraCLI::Run {
+                file_path,
+                code,
+                stdlib_path,
+                safe,
+                extra_args,
+            } => {
+                if safe {
                     #[allow(clippy::expect_used)]
-                    mlua::Lua::new_with(
-                        mlua::StdLib::ALL_SAFE,
-                        mlua::LuaOptions::new()
-                            .thread_pool_size(std::thread::available_parallelism()?.get()),
+                    LUA.set(
+                        #[allow(clippy::expect_used)]
+                        mlua::Lua::new_with(
+                            mlua::StdLib::ALL_SAFE,
+                            mlua::LuaOptions::new()
+                                .thread_pool_size(std::thread::available_parallelism()?.get()),
+                        )
+                        .expect("Could not start the safe runtime"),
                     )
-                    .expect("Could not start the safe runtime"),
-                )
-                .expect("Could not set up the global VM");
-            } else {
-                #[allow(clippy::expect_used)]
-                LUA.set(unsafe {
+                    .expect("Could not set up the global VM");
+                } else {
                     #[allow(clippy::expect_used)]
-                    mlua::Lua::unsafe_new_with(
-                        mlua::StdLib::ALL,
-                        mlua::LuaOptions::new()
-                            .thread_pool_size(std::thread::available_parallelism()?.get()),
-                    )
-                })
-                .expect("Could not set up the global VM");
-            }
+                    LUA.set(unsafe {
+                        #[allow(clippy::expect_used)]
+                        mlua::Lua::unsafe_new_with(
+                            mlua::StdLib::ALL,
+                            mlua::LuaOptions::new()
+                                .thread_pool_size(std::thread::available_parallelism()?.get()),
+                        )
+                    })
+                    .expect("Could not set up the global VM");
+                }
 
-            commands::run_command(file_path, code, stdlib_path, extra_args).await
-        }
-        AstraCLI::Init { path } => commands::export_bundle_command(path).await?,
-        AstraCLI::Upgrade { user_agent } => {
-            if let Err(e) = commands::upgrade_command(user_agent).await {
-                eprintln!("Could not update to the latest version: {e}");
+                commands::run_command(file_path, code, stdlib_path, extra_args).await
+            }
+            AstraCLI::Init { path } => commands::export_bundle_command(path).await?,
+            AstraCLI::Upgrade { user_agent } => {
+                if let Err(e) = commands::upgrade_command(user_agent).await {
+                    eprintln!("Could not update to the latest version: {e}");
+                }
             }
         }
     }
