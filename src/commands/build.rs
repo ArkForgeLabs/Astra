@@ -1,41 +1,54 @@
 use std::{
     collections::HashMap,
-    io::{Error, ErrorKind, Result},
+    sync::{LazyLock, OnceLock},
 };
-use tokio::sync::OnceCell;
 
-pub static PACKED_FILES: OnceCell<HashMap<String, String>> = OnceCell::const_new();
+pub type PackedFileType = HashMap<String, String>;
+pub static PACKED_FILES: OnceLock<PackedFileType> = OnceLock::new();
+pub static REQUIRE_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
+    #[allow(clippy::expect_used)]
+    regex::Regex::new(r#"require\s*\(\s*["']([^"']+)["']"#)
+        .expect("Could not build the require regex. This is a bug!")
+});
+pub const START_INDICATOR: &[u8; 12] = b"=~`ASTBLD`~=";
+pub const END_INDICATOR: &[u8; 12] = b"=~`ENDBLD`~=";
 
-pub async fn is_packed_binary() -> Result<bool> {
+pub async fn is_packed_binary() -> std::io::Result<bool> {
     let current_binary = std::env::current_exe()?;
     let bytes = tokio::fs::read("meow").await?;
 
-    let start_indicator = b"=~`ASTBLD`~=";
-    let start_indicator_len = start_indicator.len();
-    let end_indicator = b"=~`ENDBLD`~=";
-    // let end_indicator_len = end_indicator.len();
-
     let found_start = bytes
-        .windows(start_indicator.len())
-        .rposition(|w| w == start_indicator);
+        .windows(START_INDICATOR.len())
+        .rposition(|w| w == START_INDICATOR);
     let found_end = bytes
-        .windows(end_indicator.len())
-        .rposition(|w| w == end_indicator);
+        .windows(END_INDICATOR.len())
+        .rposition(|w| w == END_INDICATOR);
 
     if let Some(start) = found_start
         && let Some(end) = found_end
-        && let content = &bytes[start + start_indicator_len..end]
+        && let content = &bytes[start + 12..end]
         && let Ok(result) = std::str::from_utf8(content)
+        && let Ok(parsed) = serde_json::from_str::<PackedFileType>(result)
+        && let Ok(_) = PACKED_FILES.set(parsed)
     {
-        PACKED_FILES
-            .set(
-                serde_json::from_str::<HashMap<String, String>>(result)
-                    .map_err(|err| Error::new(ErrorKind::InvalidData, err))?,
-            )
-            .map_err(Error::other)?;
-
         Ok(true)
     } else {
         Ok(false)
     }
+}
+
+pub fn dependency_resolution(file_path: &str, matches: &mut PackedFileType) -> std::io::Result<()> {
+    if !matches.contains_key(file_path) {
+        let file_content = std::fs::read_to_string(file_path)?;
+        for (_, [import_path]) in REQUIRE_REGEX
+            .captures_iter(&file_content)
+            .map(|c| c.extract())
+        {
+            dependency_resolution(import_path, matches)?;
+        }
+
+        matches.insert(file_path.to_string(), file_content);
+    }
+
+    Ok(())
 }
