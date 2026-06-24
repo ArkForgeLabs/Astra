@@ -48,7 +48,10 @@ pub async fn find_first_lua_match_with_content(
         // Check from the packed files
         if let Some(contents) = crate::commands::PACKED_FILES.get() {
             for candidate in candidates.iter() {
-                if let Some(content) = contents.get(&candidate.to_string_lossy().to_string()) {
+                if let Some(content) = contents
+                    .imports
+                    .get(&candidate.to_string_lossy().to_string())
+                {
                     return Some((candidate.clone(), content.clone()));
                 }
             }
