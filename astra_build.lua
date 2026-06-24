@@ -37,7 +37,7 @@ local function execute_command_in_subdirectories(directory, ignore, command)
       local full_path = directory .. "/" .. file
 
       -- Check if the entry is a directory
-      local is_dir = fs.get_metadata(full_path):file_type():is_dir()
+      local is_dir = fs.get_metadata(full_path):type():is_dir()
 
       if is_dir then
         print("Executing command in directory: " .. full_path)

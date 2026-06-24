@@ -4,6 +4,8 @@ mod upgrade;
 pub use upgrade::*;
 mod export;
 pub use export::*;
+mod build;
+pub use build::*;
 
 static LUA_ASTRA_STDLIB_TABLE: tokio::sync::OnceCell<mlua::Table> =
     tokio::sync::OnceCell::const_new();

@@ -67,6 +67,16 @@ enum AstraCLI {
         /// Custom user agent for requesting the updates
         user_agent: Option<String>,
     },
+    #[command(
+        about = "Packs the code and produces a single binary as output",
+        alias = "build"
+    )]
+    Pack {
+        path: Option<String>,
+
+        #[arg(short = 'o', long)]
+        output: Option<String>,
+    },
 }
 
 /// Initializes the Astra CLI.
@@ -81,47 +91,84 @@ pub async fn main() -> std::io::Result<()> {
         .with(tracing_subscriber::fmt::layer().compact())
         .init();
 
-    match AstraCLI::parse() {
-        AstraCLI::Run {
-            file_path,
-            code,
-            stdlib_path,
-            safe,
-            extra_args,
-        } => {
-            if safe {
-                #[allow(clippy::expect_used)]
-                LUA.set(
-                    #[allow(clippy::expect_used)]
-                    mlua::Lua::new_with(
-                        mlua::StdLib::ALL_SAFE,
-                        mlua::LuaOptions::new()
-                            .thread_pool_size(std::thread::available_parallelism()?.get()),
-                    )
-                    .expect("Could not start the safe runtime"),
-                )
-                .expect("Could not set up the global VM");
-            } else {
-                #[allow(clippy::expect_used)]
-                LUA.set(unsafe {
-                    #[allow(clippy::expect_used)]
-                    mlua::Lua::unsafe_new_with(
-                        mlua::StdLib::ALL,
-                        mlua::LuaOptions::new()
-                            .thread_pool_size(std::thread::available_parallelism()?.get()),
-                    )
-                })
-                .expect("Could not set up the global VM");
-            }
+    // check for env to skip the packed runtime
+    if let skip_pack = std::env::var("ASTRA_BE_ASTRA").map(|should_skip|
+          !(should_skip.to_lowercase() == "true" || should_skip == "1")
+        ).unwrap_or(true) // if no env is found, assume its not skippable
+        && skip_pack
+        && let Ok(is_packed) = commands::is_packed_binary().await
+        && is_packed
+    {
+        if let Some(content) = commands::PACKED_FILES.get()
+            && let Some(entry_code) = content.entries.get(&content.start.clone())
+        {
+            create_lua_vm(true)?;
 
-            commands::run_command(file_path, code, stdlib_path, extra_args).await
+            commands::run_command(
+                Some(content.start.clone()),
+                Some(entry_code.clone()),
+                None,
+                Some(std::env::args().collect::<Vec<_>>()),
+            )
+            .await;
         }
-        AstraCLI::Init { path } => commands::export_bundle_command(path).await?,
-        AstraCLI::Upgrade { user_agent } => {
-            if let Err(e) = commands::upgrade_command(user_agent).await {
-                eprintln!("Could not update to the latest version: {e}");
+    } else {
+        match AstraCLI::parse() {
+            AstraCLI::Run {
+                file_path,
+                code,
+                stdlib_path,
+                safe,
+                extra_args,
+            } => {
+                create_lua_vm(safe)?;
+                commands::run_command(file_path, code, stdlib_path, extra_args).await
+            }
+            AstraCLI::Init { path } => commands::export_bundle_command(path).await?,
+            AstraCLI::Upgrade { user_agent } => {
+                if let Err(e) = commands::upgrade_command(user_agent).await {
+                    eprintln!("Could not update to the latest version: {e}");
+                }
+            }
+            AstraCLI::Pack { path, output } => {
+                commands::pack(
+                    path.unwrap_or("init".to_string()),
+                    output
+                        .unwrap_or("astra-dist".to_string())
+                        .replace(".exe", ""),
+                )
+                .await?
             }
         }
+    }
+
+    Ok(())
+}
+
+fn create_lua_vm(is_safe: bool) -> std::io::Result<()> {
+    if is_safe {
+        #[allow(clippy::expect_used)]
+        LUA.set(
+            #[allow(clippy::expect_used)]
+            mlua::Lua::new_with(
+                mlua::StdLib::ALL_SAFE,
+                mlua::LuaOptions::new()
+                    .thread_pool_size(std::thread::available_parallelism()?.get()),
+            )
+            .expect("Could not start the safe runtime"),
+        )
+        .expect("Could not set up the global VM");
+    } else {
+        #[allow(clippy::expect_used)]
+        LUA.set(unsafe {
+            #[allow(clippy::expect_used)]
+            mlua::Lua::unsafe_new_with(
+                mlua::StdLib::ALL,
+                mlua::LuaOptions::new()
+                    .thread_pool_size(std::thread::available_parallelism()?.get()),
+            )
+        })
+        .expect("Could not set up the global VM");
     }
 
     Ok(())
