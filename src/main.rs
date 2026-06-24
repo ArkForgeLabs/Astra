@@ -67,6 +67,11 @@ enum AstraCLI {
         /// Custom user agent for requesting the updates
         user_agent: Option<String>,
     },
+    #[command(
+        about = "Packs the code and produces a single binary as output",
+        alias = "build"
+    )]
+    Pack { path: Option<String> },
 }
 
 /// Initializes the Astra CLI.
@@ -81,7 +86,9 @@ pub async fn main() -> std::io::Result<()> {
         .with(tracing_subscriber::fmt::layer().compact())
         .init();
 
-    if let Ok(is_packed) = commands::is_packed_binary().await
+    if let Ok(should_skip) = std::env::var("ASTRA_BE_ASTRA")
+        && !(should_skip.to_lowercase() == "true" || should_skip == "1")
+        && let Ok(is_packed) = commands::is_packed_binary().await
         && is_packed
     {
         #[allow(clippy::expect_used)]
@@ -94,6 +101,8 @@ pub async fn main() -> std::io::Result<()> {
             )
         })
         .expect("Could not set up the global VM");
+
+        println!("PACKED: {:?}", commands::PACKED_FILES);
     } else {
         match AstraCLI::parse() {
             AstraCLI::Run {
@@ -136,6 +145,7 @@ pub async fn main() -> std::io::Result<()> {
                     eprintln!("Could not update to the latest version: {e}");
                 }
             }
+            AstraCLI::Pack { path } => commands::pack(path.unwrap_or("init".to_string())).await?,
         }
     }
 
