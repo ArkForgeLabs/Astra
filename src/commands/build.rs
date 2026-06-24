@@ -85,6 +85,7 @@ pub async fn pack(path: String, output: String) -> std::io::Result<()> {
         .truncate(true)
         .open(output)
         .await?;
+    #[cfg(unix)]
     file.set_permissions(std::fs::Permissions::from_mode(0o755))
         .await?;
     file.write_all(&bytes).await?;
