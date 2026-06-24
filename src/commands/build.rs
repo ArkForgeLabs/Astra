@@ -1,7 +1,10 @@
 use std::{
     collections::HashMap,
+    os::unix::fs::PermissionsExt,
     sync::{LazyLock, OnceLock},
 };
+
+use tokio::io::AsyncWriteExt;
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PackedFiles {
@@ -21,23 +24,6 @@ pub const END_INDICATOR: &[u8; 8] = b"_ENDBLD_";
 pub async fn is_packed_binary() -> std::io::Result<bool> {
     let current_binary = std::env::current_exe()?;
     let bytes = tokio::fs::read(current_binary).await?;
-
-    // let a = r#"return { test = function() print(arg) end }"#;
-    // let b = r#"require("bar").test()"#;
-
-    // let mut c = PackedFileType::new();
-    // c.insert("bar.lua".to_string(), a.to_string());
-    // c.insert("main.lua".to_string(), b.to_string());
-    // c.insert("start".to_string(), "main.lua".to_string());
-    // let content = serde_json::to_string(&c).unwrap();
-
-    // println!("{content:?}");
-
-    // bytes.append(&mut START_INDICATOR.to_vec());
-    // bytes.append(&mut content.into_bytes());
-    // bytes.append(&mut END_INDICATOR.to_vec());
-
-    // tokio::fs::write("meow3", bytes.clone()).await;
 
     // check if the last bytes are END indicator
     if let has_end = &bytes[bytes.len() - 8..bytes.len()] == END_INDICATOR
@@ -65,7 +51,6 @@ pub async fn dependency_resolution(
             && let Some((_, file_content)) =
                 crate::components::import::find_first_lua_match_with_content(None, file_path).await
         {
-            println!("Found {file_path:?}");
             for (_, [import_path]) in REQUIRE_REGEX
                 .captures_iter(&file_content)
                 .map(|c| c.extract())
@@ -83,13 +68,26 @@ pub async fn dependency_resolution(
     .await
 }
 
-pub async fn pack(path: String) -> std::io::Result<()> {
+pub async fn pack(path: String, output: String) -> std::io::Result<()> {
     let mut result = PackedFiles::default();
     dependency_resolution(&path.replace(".luau", "").replace(".lua", ""), &mut result).await?;
     result.start = path;
 
     let current_binary = std::env::current_exe()?;
     let mut bytes = tokio::fs::read(current_binary).await?;
+
+    bytes.append(&mut START_INDICATOR.to_vec());
+    bytes.append(&mut serde_json::to_string(&result)?.into_bytes());
+    bytes.append(&mut END_INDICATOR.to_vec());
+
+    let mut file = tokio::fs::OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(output)
+        .await?;
+    file.set_permissions(std::fs::Permissions::from_mode(0o755))
+        .await?;
+    file.write_all(&bytes).await?;
 
     Ok(())
 }

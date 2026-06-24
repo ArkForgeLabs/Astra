@@ -71,7 +71,12 @@ enum AstraCLI {
         about = "Packs the code and produces a single binary as output",
         alias = "build"
     )]
-    Pack { path: Option<String> },
+    Pack {
+        path: Option<String>,
+
+        #[arg(short = 'o', long)]
+        output: Option<String>,
+    },
 }
 
 /// Initializes the Astra CLI.
@@ -94,13 +99,14 @@ pub async fn main() -> std::io::Result<()> {
         && let Ok(is_packed) = commands::is_packed_binary().await
         && is_packed
     {
-        println!("is packed");
-        if let Some(content) = commands::PACKED_FILES.get() {
+        if let Some(content) = commands::PACKED_FILES.get()
+            && let Some(entry_code) = content.entries.get(&content.start.clone())
+        {
             create_lua_vm(true)?;
 
             commands::run_command(
-                None,
                 Some(content.start.clone()),
+                Some(entry_code.clone()),
                 None,
                 Some(std::env::args().collect::<Vec<_>>()),
             )
@@ -124,7 +130,15 @@ pub async fn main() -> std::io::Result<()> {
                     eprintln!("Could not update to the latest version: {e}");
                 }
             }
-            AstraCLI::Pack { path } => commands::pack(path.unwrap_or("init".to_string())).await?,
+            AstraCLI::Pack { path, output } => {
+                commands::pack(
+                    path.unwrap_or("init".to_string()),
+                    output
+                        .unwrap_or("astra-dist".to_string())
+                        .replace(".exe", ""),
+                )
+                .await?
+            }
         }
     }
 
