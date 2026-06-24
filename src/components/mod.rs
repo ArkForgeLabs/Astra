@@ -1,13 +1,13 @@
 use mlua::{ExternalError, FromLua, LuaSerdeExt};
 
-mod astra_serde;
-mod crypto;
+pub mod astra_serde;
+pub mod crypto;
 pub mod database;
-mod datetime;
-mod file_system;
+pub mod datetime;
+pub mod file_system;
 pub mod http;
-mod import;
-mod templates;
+pub mod import;
+pub mod templates;
 pub mod utils;
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {

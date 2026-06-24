@@ -2,14 +2,16 @@ use crate::ASTRA_STD_LIBS;
 use std::path::{MAIN_SEPARATOR_STR, PathBuf};
 
 pub async fn find_first_lua_match_with_content(
-    lua: &mlua::Lua,
+    lua: Option<&mlua::Lua>,
     module_name: &str,
 ) -> Option<(PathBuf, String)> {
     let lua_path: String;
-    if let Ok(path) = lua.load("return package.path").eval::<String>() {
+    if let Some(lua) = lua
+        && let Ok(path) = lua.load("return package.path").eval::<String>()
+    {
         lua_path = path
     } else {
-        lua_path = "?".to_string();
+        lua_path = "?;".to_string();
     }
     let module_path = module_name.replace(".", MAIN_SEPARATOR_STR);
 
@@ -49,7 +51,7 @@ pub async fn find_first_lua_match_with_content(
         if let Some(contents) = crate::commands::PACKED_FILES.get() {
             for candidate in candidates.iter() {
                 if let Some(content) = contents
-                    .imports
+                    .entries
                     .get(&candidate.to_string_lossy().to_string())
                 {
                     return Some((candidate.clone(), content.clone()));
@@ -94,7 +96,7 @@ pub async fn find_first_lua_match_with_content(
 async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua::Value> {
     let current_script_path: String = lua.globals().get::<String>("CURRENT_SCRIPT")?;
 
-    if let Some((file_path, content)) = find_first_lua_match_with_content(lua, path).await {
+    if let Some((file_path, content)) = find_first_lua_match_with_content(Some(lua), path).await {
         let file_path = file_path
             .to_string_lossy()
             .replace("./", "")

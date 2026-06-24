@@ -3,13 +3,12 @@ use std::{
     sync::{LazyLock, OnceLock},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PackedFiles {
-    pub entry_point: String,
-    pub imports: PackedFileType,
+    pub start: String,
+    pub entries: HashMap<String, String>,
 }
 
-pub type PackedFileType = HashMap<String, String>;
 pub static PACKED_FILES: OnceLock<PackedFiles> = OnceLock::new();
 pub static REQUIRE_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
     #[allow(clippy::expect_used)]
@@ -48,12 +47,8 @@ pub async fn is_packed_binary() -> std::io::Result<bool> {
             .rposition(|w| w == START_INDICATOR)
         && let content = &bytes[start + 8..bytes.len() - 8]
         && let Ok(result) = std::str::from_utf8(content)
-        && let Ok(mut imports) = serde_json::from_str::<PackedFileType>(result)
-        && let Some(entry_point) = imports.remove("start")
-        && let Ok(_) = PACKED_FILES.set(PackedFiles {
-            entry_point,
-            imports,
-        })
+        && let Ok(packed_files) = serde_json::from_str::<PackedFiles>(result)
+        && let Ok(_) = PACKED_FILES.set(packed_files)
     {
         Ok(true)
     } else {
@@ -61,27 +56,40 @@ pub async fn is_packed_binary() -> std::io::Result<bool> {
     }
 }
 
-pub fn dependency_resolution(file_path: &str, matches: &mut PackedFileType) -> std::io::Result<()> {
-    if !matches.contains_key(file_path) {
-        let file_content = std::fs::read_to_string(file_path)?;
-        for (_, [import_path]) in REQUIRE_REGEX
-            .captures_iter(&file_content)
-            .map(|c| c.extract())
+pub async fn dependency_resolution(
+    file_path: &str,
+    matches: &mut PackedFiles,
+) -> std::io::Result<()> {
+    Box::pin(async {
+        if !matches.entries.contains_key(file_path)
+            && let Some((_, file_content)) =
+                crate::components::import::find_first_lua_match_with_content(None, file_path).await
         {
-            dependency_resolution(import_path, matches)?;
+            println!("Found {file_path:?}");
+            for (_, [import_path]) in REQUIRE_REGEX
+                .captures_iter(&file_content)
+                .map(|c| c.extract())
+            {
+                dependency_resolution(import_path, matches).await?;
+            }
+
+            matches
+                .entries
+                .insert(file_path.to_string() + ".lua", file_content);
         }
 
-        matches.insert(file_path.to_string(), file_content);
-    }
-
-    Ok(())
+        Ok(())
+    })
+    .await
 }
 
 pub async fn pack(path: String) -> std::io::Result<()> {
-    let mut result = PackedFileType::new();
-    dependency_resolution(&path, &mut result)?;
+    let mut result = PackedFiles::default();
+    dependency_resolution(&path.replace(".luau", "").replace(".lua", ""), &mut result).await?;
+    result.start = path;
 
-    println!("{:?}", result);
+    let current_binary = std::env::current_exe()?;
+    let mut bytes = tokio::fs::read(current_binary).await?;
 
     Ok(())
 }

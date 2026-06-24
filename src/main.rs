@@ -100,7 +100,7 @@ pub async fn main() -> std::io::Result<()> {
 
             commands::run_command(
                 None,
-                Some(content.entry_point.clone()),
+                Some(content.start.clone()),
                 None,
                 Some(std::env::args().collect::<Vec<_>>()),
             )
