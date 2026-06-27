@@ -39,6 +39,10 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
         .map(|exists| !exists)
         .map(|_| std::fs::write(".luaurc", luaurc_file))??;
 
+    std::fs::exists(".stylua.toml")
+        .map(|exists| !exists)
+        .map(|_| std::fs::write(".stylua.toml", include_str!("../../.stylua.toml")))??;
+
     println!("🚀 Successfully exported the bundled type definitions!");
     Ok(())
 }
