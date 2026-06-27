@@ -25,23 +25,28 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
     };
 
     #[cfg(not(feature = "luau"))]
-    let luarc_file = include_str!("../../.luarc.json").replace("LuaJIT", runtime);
-    #[cfg(feature = "luau")]
-    let luaurc_file = include_str!("../../.luaurc");
-
-    #[cfg(not(feature = "luau"))]
     std::fs::exists(".luarc.json")
         .map(|exists| !exists)
-        .map(|_| std::fs::write(".luarc.json", luarc_file))??;
+        .map(|_| {
+            std::fs::write(
+                ".luarc.json",
+                include_str!("../../.luarc.json").replace("LuaJIT", runtime),
+            )
+        })??;
 
     #[cfg(feature = "luau")]
     std::fs::exists(".luaurc")
         .map(|exists| !exists)
-        .map(|_| std::fs::write(".luaurc", luaurc_file))??;
+        .map(|_| std::fs::write(".luaurc", include_str!("../../.luaurc")))??;
 
     std::fs::exists(".stylua.toml")
         .map(|exists| !exists)
-        .map(|_| std::fs::write(".stylua.toml", include_str!("../../.stylua.toml")))??;
+        .map(|_| {
+            std::fs::write(
+                ".stylua.toml",
+                include_str!("../../.stylua.toml").replace("LuaJIT", runtime),
+            )
+        })??;
 
     println!("🚀 Successfully exported the bundled type definitions!");
     Ok(())
