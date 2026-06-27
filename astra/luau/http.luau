@@ -8,7 +8,7 @@ type WSCallback = (socket: WebSocket) -> any
 type Buffer = {
   bytes: (self: Buffer) -> { number },
   text: (self: Buffer) -> string,
-  json: (self: Buffer) -> { any },
+  json: (self: Buffer) -> { [any]: any },
 }
 
 type HTTPClientResponse = {
