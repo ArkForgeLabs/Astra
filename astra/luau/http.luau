@@ -27,7 +27,7 @@ type HTTPClientRequestTableType = {
   method: string?,
   body: any?,
   file: string?,
-  headers: { any }?,
+  headers: { [string]: string }?,
   form: { any }?,
 }
 
