@@ -38,7 +38,8 @@ jobs:
         with:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-luajit-linux-amd64
-          tag: ${{ github.ref }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: LuaJIT 52
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features luajit52
@@ -46,7 +47,7 @@ jobs:
         with:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-luajit52-linux-amd64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Luau
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features luau
@@ -54,7 +55,7 @@ jobs:
         with:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-luau-linux-amd64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.1
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features lua51
@@ -62,7 +63,7 @@ jobs:
         with:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-lua51-linux-amd64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.2
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features lua52
@@ -70,7 +71,7 @@ jobs:
         with:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-lua52-linux-amd64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.3
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features lua53
@@ -78,7 +79,7 @@ jobs:
         with:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-lua53-linux-amd64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.4
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features lua54
@@ -86,7 +87,7 @@ jobs:
         with:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-lua54-linux-amd64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.5
         run: cross build --release --target x86_64-unknown-linux-gnu --no-default-features --features lua55
@@ -94,7 +95,7 @@ jobs:
         with:
           file: ./target/x86_64-unknown-linux-gnu/release/astra
           asset_name: astra-lua55-linux-amd64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       # =========================================================== #
       # =========================== ARM =========================== #
@@ -106,7 +107,7 @@ jobs:
         with:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-luajit-linux-arm64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: LuaJIT 52
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features luajit52
@@ -114,7 +115,7 @@ jobs:
         with:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-luajit52-linux-arm64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Luau
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features luau
@@ -122,7 +123,7 @@ jobs:
         with:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-luau-linux-arm64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.1
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua51
@@ -130,7 +131,7 @@ jobs:
         with:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-lua51-linux-arm64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.2
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua52
@@ -138,7 +139,7 @@ jobs:
         with:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-lua52-linux-arm64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.3
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua53
@@ -146,7 +147,7 @@ jobs:
         with:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-lua53-linux-arm64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.4
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua54
@@ -154,7 +155,7 @@ jobs:
         with:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-lua54-linux-arm64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.5
         run: cross build --release --target aarch64-unknown-linux-gnu --no-default-features --features lua55
@@ -162,7 +163,7 @@ jobs:
         with:
           file: ./target/aarch64-unknown-linux-gnu/release/astra
           asset_name: astra-lua55-linux-arm64
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - uses: chrnorm/deployment-action@v2
         name: Create GitHub deployment

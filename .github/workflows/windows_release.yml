@@ -30,7 +30,7 @@ jobs:
         with:
           file: ./target/release/astra.exe
           asset_name: astra-luajit-windows-amd64.exe
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: LuaJIT 52
         run: cargo build --release --no-default-features --features luajit52
@@ -38,7 +38,7 @@ jobs:
         with:
           file: ./target/release/astra.exe
           asset_name: astra-luajit52-windows-amd64.exe
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Luau
         run: cargo build --release --no-default-features --features luau
@@ -46,7 +46,7 @@ jobs:
         with:
           file: ./target/release/astra.exe
           asset_name: astra-luau-windows-amd64.exe
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.1
         run: cargo build --release --no-default-features --features lua51
@@ -54,7 +54,7 @@ jobs:
         with:
           file: ./target/release/astra.exe
           asset_name: astra-lua51-windows-amd64.exe
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.2
         run: cargo build --release --no-default-features --features lua52
@@ -62,7 +62,7 @@ jobs:
         with:
           file: ./target/release/astra.exe
           asset_name: astra-lua52-windows-amd64.exe
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.3
         run: cargo build --release --no-default-features --features lua53
@@ -70,7 +70,7 @@ jobs:
         with:
           file: ./target/release/astra.exe
           asset_name: astra-lua53-windows-amd64.exe
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.4
         run: cargo build --release --no-default-features --features lua54
@@ -78,7 +78,7 @@ jobs:
         with:
           file: ./target/release/astra.exe
           asset_name: astra-lua54-windows-amd64.exe
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - name: Lua 5.5
         run: cargo build --release --no-default-features --features lua55
@@ -86,7 +86,7 @@ jobs:
         with:
           file: ./target/release/astra.exe
           asset_name: astra-lua55-windows-amd64.exe
-          tag: ${{ github.ref }}
+          tag: "${{ github.event.release.tag_name }}"
 
       - uses: chrnorm/deployment-action@v2
         name: Create GitHub deployment
@@ -152,7 +152,7 @@ jobs:
 #       with:
 #         file: ./target/release/astra.exe
 #         asset_name: astra-luajit-windows-arm64.exe
-#         tag: ${{ github.ref }}
+#         tag: "${{ github.event.release.tag_name }}"
 
 #     - name: LuaJIT 52
 #       run: cargo build --release --no-default-features --features luajit52
@@ -160,7 +160,7 @@ jobs:
 #       with:
 #         file: ./target/release/astra.exe
 #         asset_name: astra-luajit52-windows-arm64.exe
-#         tag: ${{ github.ref }}
+#         tag: "${{ github.event.release.tag_name }}"
 
 #     - name: Luau
 #       run: cargo build --release --no-default-features --features luau
@@ -168,7 +168,7 @@ jobs:
 #       with:
 #         file: ./target/release/astra.exe
 #         asset_name: astra-luau-windows-arm64.exe
-#         tag: ${{ github.ref }}
+#         tag: "${{ github.event.release.tag_name }}"
 
 #     - name: Lua 5.1
 #       run: cargo build --release --no-default-features --features lua51
@@ -176,7 +176,7 @@ jobs:
 #       with:
 #         file: ./target/release/astra.exe
 #         asset_name: astra-lua51-windows-arm64.exe
-#         tag: ${{ github.ref }}
+#         tag: "${{ github.event.release.tag_name }}"
 
 #     - name: Lua 5.2
 #       run: cargo build --release --no-default-features --features lua52
@@ -184,7 +184,7 @@ jobs:
 #       with:
 #         file: ./target/release/astra.exe
 #         asset_name: astra-lua52-windows-arm64.exe
-#         tag: ${{ github.ref }}
+#         tag: "${{ github.event.release.tag_name }}"
 
 #     - name: Lua 5.3
 #       run: cargo build --release --no-default-features --features lua53
@@ -192,7 +192,7 @@ jobs:
 #       with:
 #         file: ./target/release/astra.exe
 #         asset_name: astra-lua53-windows-arm64.exe
-#         tag: ${{ github.ref }}
+#         tag: "${{ github.event.release.tag_name }}"
 
 #     - name: Lua 5.4
 #       run: cargo build --release --no-default-features --features lua54
@@ -200,7 +200,7 @@ jobs:
 #       with:
 #         file: ./target/release/astra.exe
 #         asset_name: astra-lua54-windows-arm64.exe
-#         tag: ${{ github.ref }}
+#         tag: "${{ github.event.release.tag_name }}"
 
 #     - uses: chrnorm/deployment-action@v2
 #       name: Create GitHub deployment

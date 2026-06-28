@@ -34,49 +34,48 @@ lua55 = ["mlua/lua55"]
 
 [dependencies]
 mlua = { version = "0.11.6", features = [
+  "anyhow",
+  "async",
+  "macros",
+  "send",
   "serialize",
   "vendored",
-  "async",
-  "send",
-  "error-send",
-  "macros",
-  "anyhow",
 ] }
 
 # http
-axum = { version = "0.8.9", features = ["macros", "multipart", "http2", "ws"] }
+axum = { version = "0.8.9", features = ["http2", "macros", "multipart", "ws"] }
 axum-extra = { version = "0.12.6", features = ["cookie"] }
 reqwest = { version = "0.13.4", features = [
-  "json",
-  "rustls",
   "charset",
-  "multipart",
-  "http2",
-  "stream",
   "form",
+  "http2",
+  "json",
+  "multipart",
+  "rustls",
+  "stream",
 ], default-features = false }
 reqwest-websocket = "0.6.0"
 tower = { version = "0.5.3" }
 tower-http = { version = "0.7.0", features = [
-  "fs",
-  "trace",
   "compression-full",
   "decompression-full",
+  "fs",
   "set-header",
+  "trace",
 ] }
 time = "0.3.51"
 minijinja = { version = "2.21.0", features = [
   "loader",
-  "urlencode",
   "loop_controls",
   "speedups",
+  "urlencode",
 ] }
 glob = "0.3.3"
 
 # data formats
 serde = { version = "1.0.228", features = ["derive"] }
 serde-value = { version = "0.7.0" }
-serde_json = { version = "1.0.150" }
+serde_json = "1.0.150"
 serde_json5 = { version = "0.2.1" }
 serde_yaml = { version = "0.9.34" }
 serde_ini = { version = "0.2.0" }
@@ -88,7 +87,7 @@ quick-xml = { version = "0.40.1", features = [
   "overlapped-lists",
   "serialize",
 ] }
-toml = { version = "1.1.2" }
+toml = "1.1.2"
 uuid = { version = "1.23.4", features = ["serde", "v4"] }
 sha2 = "0.11.0"
 sha3 = "0.12.0"
@@ -100,8 +99,8 @@ markdown = { version = "1.0.0", features = ["serde"] }
 # runtime
 tokio = { version = "1.52.3", features = [
   "macros",
-  "signal",
   "rt-multi-thread",
+  "signal",
 ] }
 futures = "0.3.32"
 clap = { version = "4.6.1", features = ["cargo", "derive"] }
@@ -114,12 +113,12 @@ pastey = "0.2.3"
 
 # database
 sqlx = { version = "0.9.0", features = [
-  "runtime-tokio",
-  "tls-rustls",
-  "postgres",
-  "sqlite",
-  "json",
   "chrono",
+  "json",
+  "postgres",
+  "runtime-tokio",
+  "sqlite",
+  "tls-rustls",
   "uuid",
 ] }
 include_dir = "0.7.4"
