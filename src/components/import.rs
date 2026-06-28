@@ -74,6 +74,8 @@ pub async fn find_first_lua_match_with_content(
             } else {
                 if chars.peek().is_some_and(|c| *c == '/' || *c == '\\') {
                     chars.next(); // consume the separator
+                } else {
+                    result.extend(MAIN_SEPARATOR_STR.chars());
                 }
             }
         } else {
