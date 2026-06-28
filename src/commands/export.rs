@@ -9,11 +9,12 @@ pub async fn export_bundle_command(folder_path: Option<String>) -> std::io::Resu
 
     ASTRA_STD_LIBS.extract(&folder_path)?;
 
-    #[cfg(not(feature = "luau"))]
     let runtime = if cfg!(feature = "lua54") {
         "Lua 5.4"
     } else if cfg!(feature = "luajit52") {
         "LuaJIT 5.2"
+    } else if cfg!(feature = "luau") {
+        "Luau"
     } else if cfg!(feature = "lua51") {
         "Lua 5.1"
     } else if cfg!(feature = "lua52") {

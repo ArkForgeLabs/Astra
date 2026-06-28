@@ -49,7 +49,10 @@ pub async fn dependency_resolution(
     Box::pin(async {
         if !matches.entries.contains_key(file_path)
             && let Some((_, file_content)) =
-                crate::components::import::find_first_lua_match_with_content(None, file_path).await
+                crate::components::import::find_first_lua_match_with_content(
+                    None, file_path, file_path,
+                )
+                .await
         {
             for (_, [import_path]) in REQUIRE_REGEX
                 .captures_iter(&file_content)
