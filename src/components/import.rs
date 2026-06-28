@@ -90,12 +90,14 @@ pub async fn find_first_lua_match_with_content(
         "lua"
     };
 
+    let original_script = PathBuf::from(current_script_path);
     let mut current_script_path = PathBuf::from(current_script_path);
     current_script_path.pop();
 
     // check the lua paths if the module exist there
     for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
-        let candidates = build_candidates(pattern, &current_script_path, &module_path, runtime);
+        let mut candidates = build_candidates(pattern, &current_script_path, &module_path, runtime);
+        candidates.retain(|candidate| resolve_path(candidate.as_path()) != original_script);
 
         if let Some(result) = find_candidates(candidates, runtime).await {
             return Some(result);
@@ -208,13 +210,9 @@ async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(Pat
             MAIN_SEPARATOR_STR, MAIN_SEPARATOR_STR, MAIN_SEPARATOR_STR
         )) {
             file_path
-        } else if let Ok(file_path) = candidate.strip_prefix(format!(".{}", MAIN_SEPARATOR_STR)) {
-            file_path
         } else {
             candidate
         };
-
-        // println!("FILE TO IMPORT: {:?}", file_path);
 
         if let Some(file) = ASTRA_STD_LIBS.get_file(file_path)
             && let Some(content) = file.contents_utf8()
