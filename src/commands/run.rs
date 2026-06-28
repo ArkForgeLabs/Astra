@@ -16,8 +16,8 @@ pub async fn run_command(
 
     // Load and execute the Lua script.
     #[allow(clippy::expect_used)]
-    let (user_file, actual_path_str) = if let Some(code) = code {
-        actual_path = "<commandline>".to_string();
+    let (user_file, actual_path_str) = if let Some(code) = code.clone() {
+        actual_path = file_path.unwrap_or("<commandline>".to_string());
         (code, actual_path.clone())
     } else {
         let file = if let Some(file_path) = file_path {
@@ -28,7 +28,14 @@ pub async fn run_command(
         (file, actual_path.clone())
     };
 
-    run_command_prerequisite(lua, &actual_path_str, stdlib_path, extra_args).await;
+    run_command_prerequisite(
+        lua,
+        &actual_path_str,
+        stdlib_path,
+        extra_args,
+        code.is_some(),
+    )
+    .await;
     spawn_termination_task();
 
     // Remove the Shebang lines
@@ -64,6 +71,7 @@ async fn run_command_prerequisite(
     file_path: &str,
     stdlib_path: Option<String>,
     extra_args: Option<Vec<String>>,
+    is_headless: bool,
 ) {
     if let Err(e) = super::remove_old_runtime() {
         error!("{e:?}");
@@ -84,13 +92,15 @@ async fn run_command_prerequisite(
 
     // Handle extra arguments.
     if let Ok(args) = lua.create_table() {
-        if let Err(e) = args.set(1, file_path) {
+        if !is_headless && let Err(e) = args.set(1, file_path) {
             error!("Error adding arg to the args list: {e:?}");
         }
 
+        let index_addition = if is_headless { 1 } else { 2 };
+
         if let Some(extra_args) = extra_args {
             for (index, value) in extra_args.into_iter().enumerate() {
-                if let Err(e) = args.set((index + 2) as i32, value) {
+                if let Err(e) = args.set((index + index_addition) as i32, value) {
                     error!("Error adding arg to the args list: {e:?}");
                 }
             }

@@ -1,92 +1,15 @@
 use crate::ASTRA_STD_LIBS;
 use std::path::{MAIN_SEPARATOR_STR, PathBuf};
 
-pub async fn find_first_lua_match_with_content(
-    lua: &mlua::Lua,
-    module_name: &str,
-) -> Option<(PathBuf, String)> {
-    let lua_path: String;
-    if let Ok(path) = lua.load("return package.path").eval::<String>() {
-        lua_path = path
-    } else {
-        lua_path = "?".to_string();
-    }
-    let module_path = module_name.replace(".", MAIN_SEPARATOR_STR);
-
-    let runtime = if cfg!(feature = "luau") {
-        "luau"
-    } else {
-        "lua"
-    };
-
-    // check the lua paths if the module exist there
-    for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
-        let pattern = pattern.replacen('?', &module_path, 1).replacen(
-            &(".".to_owned() + MAIN_SEPARATOR_STR),
-            "",
-            1,
-        );
-        let pattern_path = PathBuf::from(&pattern);
-        let pattern_path_without_extension =
-            PathBuf::from(&pattern.replace(".luau", "").replace(".lua", ""));
-
-        // Check all possible file patterns
-        let path_builder = |base_path: &str| -> Vec<PathBuf> {
-            vec![
-                PathBuf::from(base_path).join(pattern_path.with_extension("lua")),
-                PathBuf::from(base_path).join(pattern_path.with_extension("luau")),
-                PathBuf::from(base_path).join(pattern_path_without_extension.join("init.lua")),
-                PathBuf::from(base_path).join(pattern_path_without_extension.join("init.luau")),
-                PathBuf::from(base_path).join(pattern_path_without_extension.join("d.lua")),
-                PathBuf::from(base_path).join(pattern_path_without_extension.join("d.luau")),
-                PathBuf::from(base_path).join(pattern_path.clone()), // For directories or files without extensions
-            ]
-        };
-        let mut candidates = path_builder(".");
-        candidates.extend(path_builder(runtime));
-
-        // Check the file system
-        for candidate in candidates.iter() {
-            if let Ok(content) = tokio::fs::read_to_string(&candidate).await {
-                return Some((candidate.clone(), content));
-            }
-        }
-
-        // Check in packaged libs if it exists
-        for candidate in &candidates {
-            let file_path = if let Ok(file_path) = candidate.strip_prefix(format!(
-                ".{}astra{}{runtime}{}",
-                MAIN_SEPARATOR_STR, MAIN_SEPARATOR_STR, MAIN_SEPARATOR_STR
-            )) {
-                file_path
-            } else if let Ok(file_path) = candidate.strip_prefix(format!(".{}", MAIN_SEPARATOR_STR))
-            {
-                file_path
-            } else {
-                candidate
-            };
-
-            // println!("FILE TO IMPORT: {:?}", file_path);
-
-            if let Some(file) = ASTRA_STD_LIBS.get_file(file_path)
-                && let Some(content) = file.contents_utf8()
-            {
-                return Some((candidate.to_path_buf(), content.to_string()));
-            }
-        }
-    }
-
-    None
-}
-
 async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua::Value> {
     let current_script_path: String = lua.globals().get::<String>("CURRENT_SCRIPT")?;
 
-    if let Some((file_path, content)) = find_first_lua_match_with_content(lua, path).await {
-        let file_path = file_path
+    if let Some((file_path, content)) =
+        find_first_lua_match_with_content(Some(lua), &current_script_path, path).await
+    {
+        let file_path = resolve_path(file_path.as_path())
             .to_string_lossy()
-            .replace("./", "")
-            .replace(".\\", "");
+            .to_string();
 
         lua.globals().set("CURRENT_SCRIPT", file_path.clone())?;
         let result = lua
@@ -125,4 +48,178 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
             }
         })?,
     )
+}
+
+pub async fn find_first_lua_match_with_content(
+    lua: Option<&mlua::Lua>,
+    current_script_path: &str,
+    module_name: &str,
+) -> Option<(PathBuf, String)> {
+    let lua_path: String;
+    if let Some(lua) = lua
+        && let Ok(path) = lua.load("return package.path").eval::<String>()
+    {
+        lua_path = path
+    } else {
+        lua_path = "?;".to_string();
+    }
+
+    let mut result = Vec::new();
+    let mut chars = module_name.chars().peekable();
+    while let Some(ch) = chars.next() {
+        if ch == '.' {
+            if chars.peek() == Some(&'.') || result.last() == Some(&'.') {
+                // Keep the dot if it's part of ".."
+                result.push(ch);
+            } else {
+                if chars.peek().is_some_and(|c| *c == '/' || *c == '\\') {
+                    chars.next(); // consume the separator
+                } else {
+                    result.extend(MAIN_SEPARATOR_STR.chars());
+                }
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+    let module_path: String = result.into_iter().collect();
+
+    let runtime = if cfg!(feature = "luau") {
+        "luau"
+    } else {
+        "lua"
+    };
+
+    let original_script = PathBuf::from(current_script_path);
+    let mut current_script_path = PathBuf::from(current_script_path);
+    current_script_path.pop();
+
+    // check the lua paths if the module exist there
+    for pattern in lua_path.split(';').filter(|s| !s.is_empty()) {
+        let mut candidates = build_candidates(pattern, &current_script_path, &module_path, runtime);
+        candidates.retain(|candidate| resolve_path(candidate.as_path()) != original_script);
+
+        if let Some(result) = find_candidates(candidates, runtime).await {
+            return Some(result);
+        }
+    }
+
+    None
+}
+
+fn resolve_path(path: &std::path::Path) -> PathBuf {
+    let mut resolved = PathBuf::new();
+    for component in path.components() {
+        match component {
+            std::path::Component::ParentDir => {
+                resolved.pop();
+            }
+            std::path::Component::CurDir => {}
+            other => {
+                resolved.push(other);
+            }
+        }
+    }
+    resolved
+}
+
+fn build_candidates(
+    main_pattern: &str,
+    current_script_path: &PathBuf,
+    module_path: &str,
+    runtime: &str,
+) -> Vec<PathBuf> {
+    let pattern = main_pattern
+        .replacen('?', module_path, 1)
+        // .replacen(&(".".to_owned() + MAIN_SEPARATOR_STR), "", 1)
+        .replace("\\\\", "\\")
+        .replace("//", "/");
+    let pattern = pattern.strip_prefix(MAIN_SEPARATOR_STR).unwrap_or(&pattern);
+
+    let pattern_path = PathBuf::from(&pattern);
+    let pattern_path_without_extension =
+        PathBuf::from(&pattern.replace(".luau", "").replace(".lua", ""));
+
+    let relative_pattern = main_pattern
+        .replacen('?', module_path, 1)
+        // .replacen(&(".".to_owned() + MAIN_SEPARATOR_STR), "", 1)
+        .replace("\\\\", "\\")
+        .replace("//", "/");
+    let relative_pattern = relative_pattern
+        .strip_prefix(MAIN_SEPARATOR_STR)
+        .unwrap_or(&relative_pattern);
+
+    let relative_pattern_path = PathBuf::from(&relative_pattern);
+    let relative_pattern_path_without_extension =
+        PathBuf::from(&pattern.replace(".luau", "").replace(".lua", ""));
+
+    // Check all possible file patterns
+    let path_builder = |base_path: &PathBuf| -> Vec<PathBuf> {
+        vec![
+            base_path.join(pattern_path.with_extension("lua")),
+            base_path.join(pattern_path.with_extension("luau")),
+            base_path.join(pattern_path_without_extension.join("init.lua")),
+            base_path.join(pattern_path_without_extension.join("init.luau")),
+            base_path.join(pattern_path_without_extension.join("d.lua")),
+            base_path.join(pattern_path_without_extension.join("d.luau")),
+            base_path.join(pattern_path.clone()), // For directories or files without extensions
+            base_path.join(relative_pattern_path.with_extension("lua")),
+            base_path.join(relative_pattern_path.with_extension("luau")),
+            base_path.join(relative_pattern_path_without_extension.join("init.lua")),
+            base_path.join(relative_pattern_path_without_extension.join("init.luau")),
+            base_path.join(relative_pattern_path_without_extension.join("d.lua")),
+            base_path.join(relative_pattern_path_without_extension.join("d.luau")),
+            base_path.join(relative_pattern_path.clone()), // For directories or files without extensions
+        ]
+    };
+
+    let mut candidates = path_builder(&PathBuf::from("."));
+    candidates.extend(path_builder(&PathBuf::from(runtime)));
+    candidates.extend(path_builder(current_script_path));
+
+    candidates
+        .into_iter()
+        .map(|p| resolve_path(p.as_path())) // normalize ./ and ../
+        .collect()
+}
+
+async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(PathBuf, String)> {
+    // Check from the packed files
+    if let Some(contents) = crate::commands::PACKED_FILES.get() {
+        for candidate in candidates.iter() {
+            if let Some(content) = contents
+                .entries
+                .get(&candidate.to_string_lossy().to_string())
+            {
+                return Some((candidate.clone(), content.clone()));
+            }
+        }
+    }
+
+    // Check the file system
+    for candidate in candidates.iter() {
+        if let Ok(content) = tokio::fs::read_to_string(&candidate).await {
+            return Some((candidate.clone(), content));
+        }
+    }
+
+    // Check in packaged libs if it exists
+    for candidate in &candidates {
+        let file_path = if let Ok(file_path) = candidate.strip_prefix(format!(
+            ".{}astra{}{runtime}{}",
+            MAIN_SEPARATOR_STR, MAIN_SEPARATOR_STR, MAIN_SEPARATOR_STR
+        )) {
+            file_path
+        } else {
+            candidate
+        };
+
+        if let Some(file) = ASTRA_STD_LIBS.get_file(file_path)
+            && let Some(content) = file.contents_utf8()
+        {
+            return Some((candidate.to_path_buf(), content.to_string()));
+        }
+    }
+
+    None
 }

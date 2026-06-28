@@ -45,7 +45,7 @@ type FileIOPermissions = {
 type GlobResult = {
   --- The directory path that entries are in
   base_path: string,
-  entries: {string}
+  entries: { string }
 }
 
 local fs = {}

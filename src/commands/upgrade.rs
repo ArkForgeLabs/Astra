@@ -1,4 +1,8 @@
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 use clap::crate_version;
+use tokio::io::AsyncWriteExt;
 
 /// Upgrades to the latest version.
 pub async fn upgrade_command(user_agent: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
@@ -80,23 +84,20 @@ pub async fn upgrade_command(user_agent: Option<String>) -> Result<(), Box<dyn s
         let content = reqwest::get(url).await?.bytes().await?;
         let current_file_name = std::env::current_exe()?.to_string_lossy().to_string();
 
-        std::fs::write(format!("{file_name}-{latest_tag}"), content)?;
         std::fs::rename(
             current_file_name.clone(),
             format!("{current_file_name}_old"),
         )?;
-        std::fs::rename(
-            format!("{file_name}-{latest_tag}"),
-            current_file_name.clone(),
-        )?;
 
-        #[cfg(any(target_os = "linux", target_os = "macos"))]
-        {
-            let _ = std::process::Command::new("chmod")
-                .arg("+x")
-                .arg(current_file_name)
-                .spawn();
-        }
+        let mut file = tokio::fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(current_file_name.clone())
+            .await?;
+        #[cfg(unix)]
+        file.set_permissions(std::fs::Permissions::from_mode(0o755))
+            .await?;
+        file.write_all(&content).await?;
 
         println!(
             r#"🚀 Update complete!
