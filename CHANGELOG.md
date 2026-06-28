@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.51.0](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.50.0..0.51.0) - 2026-06-28
+
+### Bug Fixes
+
+- **(pack)** dependencies correctly identified and parsed - ([6cd65c8](https://git.arkforge.net/ArkForgeLabs/Astra/commit/6cd65c85c5776ea0f635cb8b0a5bc6851b293829))
+- **(pack)** commandline args - ([0d0b3c2](https://git.arkforge.net/ArkForgeLabs/Astra/commit/0d0b3c2848522b776ca7981e7dd3999ac9b882a2))
+- arg values now correctly start at 1 in Lua - ([61be79d](https://git.arkforge.net/ArkForgeLabs/Astra/commit/61be79da46762f8aece847bebf1cb94f0504dd1d))
+- checkout url - ([1ad8284](https://git.arkforge.net/ArkForgeLabs/Astra/commit/1ad8284298c96518f4c1cb05dafae5805b6a731e))
+- checks if mdbook is installed at all - ([7de129d](https://git.arkforge.net/ArkForgeLabs/Astra/commit/7de129dc82e459b80e1d434fdb364ffacffedf7e))
+- fix-docs (#170) - ([16cf625](https://git.arkforge.net/ArkForgeLabs/Astra/commit/16cf625a86af7bad4a885dd8ddfffa073574e57d))
+- https://git.arkforge.net/ArkForgeLabs/Astra/pulls/170 - ([16cf625](https://git.arkforge.net/ArkForgeLabs/Astra/commit/16cf625a86af7bad4a885dd8ddfffa073574e57d))
+- .luarc.json correctly stating the stdlib directory - ([279d7e3](https://git.arkforge.net/ArkForgeLabs/Astra/commit/279d7e32bc815e03c8268256c64841e08c86657a))
+- chmod issues on unix - ([696bd14](https://git.arkforge.net/ArkForgeLabs/Astra/commit/696bd148f77d49618d9631de149a1a6743ab70f6))
+- luau http request headers type - ([235333c](https://git.arkforge.net/ArkForgeLabs/Astra/commit/235333ce127b046f520887924a6d0cde4af72eae))
+- luau JSON return from Buffer have correct type now - ([f577eaf](https://git.arkforge.net/ArkForgeLabs/Astra/commit/f577eaf8df5aaf1481ed8b13bd11e11e94e9a926))
+- export function now copies stylua formatting as well - ([62cb493](https://git.arkforge.net/ArkForgeLabs/Astra/commit/62cb49371b9122687ca4a7ff7ba400bd01818ed0))
+- update stylua syntax appropriately on export - ([cc017a0](https://git.arkforge.net/ArkForgeLabs/Astra/commit/cc017a00a24b95f0e8d1a990de2068037b15ee6a))
+- upstream relative import fixes - ([1e7dedf](https://git.arkforge.net/ArkForgeLabs/Astra/commit/1e7dedf16d4b4a889910d33d7017cc0ceb1f585e))
+- lua import notation - ([eb7c5d8](https://git.arkforge.net/ArkForgeLabs/Astra/commit/eb7c5d8a0c6d3b59351de7ed8d4529e67622a682))
+- self importing loops in some scenarios - ([6d46be4](https://git.arkforge.net/ArkForgeLabs/Astra/commit/6d46be4ad7a307ddd92ac10d92952a3dee0a8e60))
+
+### Documentation
+
+- fix mdbook overwriting everything in ./docs - ([1ed761d](https://git.arkforge.net/ArkForgeLabs/Astra/commit/1ed761d1bc29f036cdf7077ac0ca35b58f8e3959))
+- separate the steps for build and copy - ([396696a](https://git.arkforge.net/ArkForgeLabs/Astra/commit/396696af074f9b1c513115a773c7d31e0c15903a))
+- bring back cache for mdbook - ([ba5f279](https://git.arkforge.net/ArkForgeLabs/Astra/commit/ba5f27993a0c6cd9b27a3b225cb1787b5c381196))
+- moved the docs action to forgejo instead - ([b461ce8](https://git.arkforge.net/ArkForgeLabs/Astra/commit/b461ce8b2c78d1a0ee5bf27a0be65a70e72246da))
+- attempt to preserve the generated doc structure - ([e9b987e](https://git.arkforge.net/ArkForgeLabs/Astra/commit/e9b987e8af947bdc760ba9c6b216faa0931a8f37))
+
+### Features
+
+- added build command - ([a525b2a](https://git.arkforge.net/ArkForgeLabs/Astra/commit/a525b2a0ca2efe834966e321fd526dab5fe5714c))
+- added initial dependency resolution - ([75308b8](https://git.arkforge.net/ArkForgeLabs/Astra/commit/75308b8daace33fbb0f90026f25ba41d9cd0c7a3))
+- adding the command for build and parsing at imports - ([70cd120](https://git.arkforge.net/ArkForgeLabs/Astra/commit/70cd1206cc6718c3eabd26558d210c182088f79e))
+- details of the entry file for packer - ([071032d](https://git.arkforge.net/ArkForgeLabs/Astra/commit/071032d69a3a0f96223609f52b712fa9d5730a93))
+- nested imports - ([ed323fe](https://git.arkforge.net/ArkForgeLabs/Astra/commit/ed323fe4e92547280b67c09f4105a7909c577663))
+
+### Refactoring
+
+- [**breaking**] renamed `export` command to `init` - ([ac313ae](https://git.arkforge.net/ArkForgeLabs/Astra/commit/ac313aebcd9f283d701af567c5eed9af1f0cde80))
+
+### Reviewed-on
+
+- https://git.arkforge.net/ArkForgeLabs/Astra/pulls/172 - ([6623ca2](https://git.arkforge.net/ArkForgeLabs/Astra/commit/6623ca25025d4ad2a78abd4d85b6344bf6c26ce2))
+
 ## [0.50.0](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.49.0..v0.50.0) - 2026-06-08
 
 ### Features

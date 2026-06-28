@@ -68,7 +68,7 @@ local function print_usage()
 end
 
 local function show_version()
-  io.write("Astra Build CLI Version 1.0\n")
+  io.write("Astra Build CLI Version 1.1\n")
 end
 
 local function execute_update_changelog(tag)
@@ -91,14 +91,14 @@ local function main(args)
     return
   end
 
-  local command = args[1]
+  local command = args[2]
 
   if command == "help" then
     print_usage()
   elseif command == "version" then
     show_version()
   elseif command == "changelog" then
-    execute_update_changelog(args[2])
+    execute_update_changelog(args[3])
   elseif command == "docs" then
     execute_build_docs()
   else
