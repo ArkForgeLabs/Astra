@@ -6,7 +6,6 @@ All notable changes to this project will be documented in this file. See [conven
 
 ### Bug Fixes
 
-- builds on windows failing due to unix feature - ([dd93056](https://git.arkforge.net/ArkForgeLabs/Astra/commit/dd930561e31fb755f7d2b28152fdaed86cde65d7))
 - publish crates on release creation - ([592bb3f](https://git.arkforge.net/ArkForgeLabs/Astra/commit/592bb3f8e64e7faba33b5ebabda8564ba4a59469))
 - using the correct crates.io tokens - ([e9dc853](https://git.arkforge.net/ArkForgeLabs/Astra/commit/e9dc85336477d53f93a29b8395d370c4ecd51eea))
 - builds on windows failing due to unix feature - ([dd93056](https://git.arkforge.net/ArkForgeLabs/Astra/commit/dd930561e31fb755f7d2b28152fdaed86cde65d7))
