@@ -1,10 +1,11 @@
 use std::{
     collections::HashMap,
-    os::unix::fs::PermissionsExt,
     sync::{LazyLock, OnceLock},
 };
-
 use tokio::io::AsyncWriteExt;
+
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PackedFiles {
@@ -88,6 +89,7 @@ pub async fn pack(path: String, output: String) -> std::io::Result<()> {
         .truncate(true)
         .open(output)
         .await?;
+
     #[cfg(unix)]
     file.set_permissions(std::fs::Permissions::from_mode(0o755))
         .await?;
