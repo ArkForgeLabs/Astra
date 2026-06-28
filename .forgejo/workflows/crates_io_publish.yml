@@ -2,7 +2,8 @@ name: Publish the crate
 
 on:
   release:
-    types: [created]
+    types: [published]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
