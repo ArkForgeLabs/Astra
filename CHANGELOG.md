@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file. See [conven
 ### Bug Fixes
 
 - builds on windows failing due to unix feature - ([dd93056](https://git.arkforge.net/ArkForgeLabs/Astra/commit/dd930561e31fb755f7d2b28152fdaed86cde65d7))
+- publish crates on release creation - ([592bb3f](https://git.arkforge.net/ArkForgeLabs/Astra/commit/592bb3f8e64e7faba33b5ebabda8564ba4a59469))
+- using the correct crates.io tokens - ([e9dc853](https://git.arkforge.net/ArkForgeLabs/Astra/commit/e9dc85336477d53f93a29b8395d370c4ecd51eea))
+- builds on windows failing due to unix feature - ([dd93056](https://git.arkforge.net/ArkForgeLabs/Astra/commit/dd930561e31fb755f7d2b28152fdaed86cde65d7))
 - **(pack)** dependencies correctly identified and parsed - ([6cd65c8](https://git.arkforge.net/ArkForgeLabs/Astra/commit/6cd65c85c5776ea0f635cb8b0a5bc6851b293829))
 - **(pack)** commandline args - ([0d0b3c2](https://git.arkforge.net/ArkForgeLabs/Astra/commit/0d0b3c2848522b776ca7981e7dd3999ac9b882a2))
 - arg values now correctly start at 1 in Lua - ([61be79d](https://git.arkforge.net/ArkForgeLabs/Astra/commit/61be79da46762f8aece847bebf1cb94f0504dd1d))
