@@ -7,10 +7,9 @@ async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua:
     if let Some((file_path, content)) =
         find_first_lua_match_with_content(Some(lua), &current_script_path, path).await
     {
-        let file_path = file_path
+        let file_path = resolve_path(file_path.as_path())
             .to_string_lossy()
-            .replace("./", "")
-            .replace(".\\", "");
+            .to_string();
 
         lua.globals().set("CURRENT_SCRIPT", file_path.clone())?;
         let result = lua
@@ -64,7 +63,24 @@ pub async fn find_first_lua_match_with_content(
     } else {
         lua_path = "?;".to_string();
     }
-    let module_path = module_name.replace(".", MAIN_SEPARATOR_STR);
+
+    let mut result = Vec::new();
+    let mut chars = module_name.chars().peekable();
+    while let Some(ch) = chars.next() {
+        if ch == '.' {
+            if chars.peek() == Some(&'.') || result.last() == Some(&'.') {
+                // Keep the dot if it's part of ".."
+                result.push(ch);
+            } else {
+                if chars.peek().is_some_and(|c| *c == '/' || *c == '\\') {
+                    chars.next(); // consume the separator
+                }
+            }
+        } else {
+            result.push(ch);
+        }
+    }
+    let module_path: String = result.into_iter().collect();
 
     let runtime = if cfg!(feature = "luau") {
         "luau"
@@ -87,21 +103,50 @@ pub async fn find_first_lua_match_with_content(
     None
 }
 
+fn resolve_path(path: &std::path::Path) -> PathBuf {
+    let mut resolved = PathBuf::new();
+    for component in path.components() {
+        match component {
+            std::path::Component::ParentDir => {
+                resolved.pop();
+            }
+            std::path::Component::CurDir => {}
+            other => {
+                resolved.push(other);
+            }
+        }
+    }
+    resolved
+}
+
 fn build_candidates(
-    pattern: &str,
+    main_pattern: &str,
     current_script_path: &PathBuf,
     module_path: &str,
     runtime: &str,
 ) -> Vec<PathBuf> {
-    let pattern = pattern
-        .replacen('?', &module_path, 1)
-        .replacen(&(".".to_owned() + MAIN_SEPARATOR_STR), "", 1)
+    let pattern = main_pattern
+        .replacen('?', module_path, 1)
+        // .replacen(&(".".to_owned() + MAIN_SEPARATOR_STR), "", 1)
         .replace("\\\\", "\\")
         .replace("//", "/");
     let pattern = pattern.strip_prefix(MAIN_SEPARATOR_STR).unwrap_or(&pattern);
 
     let pattern_path = PathBuf::from(&pattern);
     let pattern_path_without_extension =
+        PathBuf::from(&pattern.replace(".luau", "").replace(".lua", ""));
+
+    let relative_pattern = main_pattern
+        .replacen('?', module_path, 1)
+        // .replacen(&(".".to_owned() + MAIN_SEPARATOR_STR), "", 1)
+        .replace("\\\\", "\\")
+        .replace("//", "/");
+    let relative_pattern = relative_pattern
+        .strip_prefix(MAIN_SEPARATOR_STR)
+        .unwrap_or(&relative_pattern);
+
+    let relative_pattern_path = PathBuf::from(&relative_pattern);
+    let relative_pattern_path_without_extension =
         PathBuf::from(&pattern.replace(".luau", "").replace(".lua", ""));
 
     // Check all possible file patterns
@@ -114,13 +159,24 @@ fn build_candidates(
             base_path.join(pattern_path_without_extension.join("d.lua")),
             base_path.join(pattern_path_without_extension.join("d.luau")),
             base_path.join(pattern_path.clone()), // For directories or files without extensions
+            base_path.join(relative_pattern_path.with_extension("lua")),
+            base_path.join(relative_pattern_path.with_extension("luau")),
+            base_path.join(relative_pattern_path_without_extension.join("init.lua")),
+            base_path.join(relative_pattern_path_without_extension.join("init.luau")),
+            base_path.join(relative_pattern_path_without_extension.join("d.lua")),
+            base_path.join(relative_pattern_path_without_extension.join("d.luau")),
+            base_path.join(relative_pattern_path.clone()), // For directories or files without extensions
         ]
     };
+
     let mut candidates = path_builder(&PathBuf::from("."));
     candidates.extend(path_builder(&PathBuf::from(runtime)));
-    candidates.extend(path_builder(&current_script_path));
+    candidates.extend(path_builder(current_script_path));
 
     candidates
+        .into_iter()
+        .map(|p| resolve_path(p.as_path())) // normalize ./ and ../
+        .collect()
 }
 
 async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(PathBuf, String)> {
@@ -165,5 +221,5 @@ async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(Pat
         }
     }
 
-    return None;
+    None
 }
