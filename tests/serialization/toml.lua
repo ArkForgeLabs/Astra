@@ -40,10 +40,14 @@ return function(test, roundtrip_test, _test_data, read_sample)
       roundtrip_test("TOML", data, serde.toml.encode, serde.toml.decode)
     end)
 
-    test.it("handles comments", function()
+    test.it("encode produces valid TOML with correct content", function()
       local data = { value = 42 }
       local encoded = serde.toml.encode(data)
       test.expect(encoded).to.be.a("string")
+      test.expect(encoded).to.match(".*value.*")
+      test.expect(encoded).to.match(".*42.*")
+      local decoded = serde.toml.decode(encoded)
+      test.expect(decoded.value).to.equal(42)
     end)
 
     test.it("handles multiline strings", function()
@@ -69,11 +73,24 @@ Line 3]] }
       test.expect(data.address.street).to.equal("123 Main St")
     end)
 
-    test.it("handles sections", function()
+    test.it("handles sections with all field values", function()
       local toml_str = '[server]\nhost = "localhost"\nport = 8080\n'
       local data = serde.toml.decode(toml_str)
       test.expect(data.server).to.be.a("table")
       test.expect(data.server.host).to.equal("localhost")
+      test.expect(data.server.port).to.equal(8080)
+    end)
+
+    test.it("handles boolean values in TOML", function()
+      local toml_str = "flag = true\n"
+      local data = serde.toml.decode(toml_str)
+      test.expect(data.flag).to.equal(true)
+    end)
+
+    test.it("handles integer values in TOML", function()
+      local toml_str = "count = 42\n"
+      local data = serde.toml.decode(toml_str)
+      test.expect(data.count).to.equal(42)
     end)
 
     test.it("handles invalid TOML", function()

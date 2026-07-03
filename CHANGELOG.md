@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.51.1](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.51.0..0.51.1) - 2026-07-03
+
+### Bug Fixes
+
+- attempt for fixing the upload tag to releases - ([94caf08](https://git.arkforge.net/ArkForgeLabs/Astra/commit/94caf086d681f5403c545fcc37b50b6b1932c379))
+- serde decode now correctly parses nulls - ([bc7781d](https://git.arkforge.net/ArkForgeLabs/Astra/commit/bc7781da9726ad006cc1977b019f3d46ecc21d9b))
+- better null handling - ([8a61907](https://git.arkforge.net/ArkForgeLabs/Astra/commit/8a61907145b93fd2820bfafc7d1ea10e25d8cc09))
+- #175 imports now can fallback to native Lua - ([349bc52](https://git.arkforge.net/ArkForgeLabs/Astra/commit/349bc523947e070e75eae09dd85c741b7c70ce7a))
+- issues with native lua require - ([25d8b77](https://git.arkforge.net/ArkForgeLabs/Astra/commit/25d8b7782db1a028cc6e4bbb8d37abf12d5e7dc5))
+- updater issue with write - ([9d0ca97](https://git.arkforge.net/ArkForgeLabs/Astra/commit/9d0ca978ea4c30ef320c9142d1740782c1694ee5))
+
+### Features
+
+- http client can set many files and with names now in requests - ([ba84078](https://git.arkforge.net/ArkForgeLabs/Astra/commit/ba840784c38428fa71f8ce697cad911041d9003b))
+
+### Refactoring
+
+- rearranged the dependencies - ([fc6dede](https://git.arkforge.net/ArkForgeLabs/Astra/commit/fc6dede90742bf57162d53cd6a30d5bf60d99ef2))
+- better tests - ([38b3c9c](https://git.arkforge.net/ArkForgeLabs/Astra/commit/38b3c9ce059c5f6b86603e9ec55086da12a8bd2b))
+
 ## [0.51.0](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.50.0..0.51.0) - 2026-06-28
 
 ### Bug Fixes

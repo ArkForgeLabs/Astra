@@ -44,7 +44,12 @@ return function(test, roundtrip_test, test_data, read_sample)
     ]]
       local decoded = serde.json.decode(unicode_json)
       test.expect(decoded.greeting).to.equal("Hello world")
+      test.expect(decoded.emoji).to.equal("smile")
       test.expect(decoded.special).to.equal('Quote: " Test: \\ Tab: \t Newline: \n')
+      test.expect(decoded.unicode[1]).to.equal("Cafe")
+      test.expect(decoded.unicode[2]).to.equal("Naive")
+      test.expect(decoded.unicode[3]).to.equal("Japanese")
+      test.expect(#decoded.unicode).to.equal(3)
     end)
 
     test.it("handles numbers", function()
@@ -67,11 +72,14 @@ return function(test, roundtrip_test, test_data, read_sample)
       roundtrip_test("JSON", bool_data, serde.json.encode, serde.json.decode)
     end)
 
-    test.it("encodes to valid JSON string", function()
+    test.it("encodes to valid JSON string with correct content", function()
       local data = { name = "test", value = 123 }
       local encoded = serde.json.encode(data)
       test.expect(encoded).to.match('.*"name".*')
       test.expect(encoded).to.match('.*"value".*')
+      local decoded = serde.json.decode(encoded)
+      test.expect(decoded.name).to.equal("test")
+      test.expect(decoded.value).to.equal(123)
     end)
 
     test.it("decodes valid JSON string", function()
@@ -104,11 +112,17 @@ return function(test, roundtrip_test, test_data, read_sample)
       test.expect(decoded.text).to.equal(data.text)
     end)
 
-    test.it("encodes nested empty tables", function()
+    test.it("encodes nested empty tables preserves structure", function()
       local data = { nested = { empty = {} } }
       local encoded = serde.json.encode(data)
       local decoded = serde.json.decode(encoded)
-      test.expect(decoded.nested.empty).to.be.a("table")
+      test.expect(decoded.nested.empty).to.equal({})
+    end)
+
+    test.it("handles null-to-nil roundtrip", function()
+      local json_str = '{"value": null}'
+      local decoded = serde.json.decode(json_str)
+      test.expect(decoded.value).to.equal(nil)
     end)
   end)
 

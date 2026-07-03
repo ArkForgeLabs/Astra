@@ -41,7 +41,12 @@ pub fn sanetize_lua_input(lua: &mlua::Lua, input: mlua::Value) -> mlua::Result<m
             }
         }
 
-        lua.to_value(&new_input)
+        lua.to_value_with(
+            &new_input,
+            mlua::SerializeOptions::new()
+                .serialize_none_to_null(false)
+                .serialize_unit_to_null(false),
+        )
     } else {
         Ok(input)
     }
@@ -57,7 +62,12 @@ macro_rules! gen_methods {
                         let value =
                             lua.from_value::<serde_value::Value>(sanetize_lua_input(&lua, input)?)?;
                         match $crate_name::to_string(&value) {
-                            Ok(serialized) => Ok(lua.to_value(&serialized)?),
+                            Ok(serialized) => lua.to_value_with(
+                                &serialized,
+                                mlua::SerializeOptions::new()
+                                    .serialize_none_to_null(false)
+                                    .serialize_unit_to_null(false),
+                            ),
                             Err(e) => Err(e.into_lua_err()),
                         }
                     })?,
@@ -69,7 +79,14 @@ macro_rules! gen_methods {
                     "astra_internal__".to_string() + stringify!($name) + "_decode",
                     lua.create_function(|lua, input: String| {
                         match $crate_name::from_str::<serde_value::Value>(&input) {
-                            Ok(deserialized) => lua.to_value(&deserialized),
+                            Ok(deserialized) => {
+                                lua.to_value_with(
+                                    &deserialized,
+                                    mlua::SerializeOptions::new()
+                                        .serialize_none_to_null(false)
+                                        .serialize_unit_to_null(false),
+                                )
+                              },
                             Err(e) => Err(e.into_lua_err()),
                         }
                     })?,
@@ -92,7 +109,12 @@ fn xml_encode(lua: &mlua::Lua) -> mlua::Result<()> {
             //
             let value = lua.from_value::<serde_value::Value>(sanetize_lua_input(&lua, input)?)?;
             match quick_xml::se::to_string_with_root(&root, &value) {
-                Ok(serialized) => Ok(lua.to_value(&serialized)?),
+                Ok(serialized) => lua.to_value_with(
+                    &serialized,
+                    mlua::SerializeOptions::new()
+                        .serialize_none_to_null(false)
+                        .serialize_unit_to_null(false),
+                ),
                 Err(e) => Err(e.into_lua_err()),
             }
         })?,
@@ -106,7 +128,12 @@ fn xml_decode(lua: &mlua::Lua) -> mlua::Result<()> {
             let result = quick_xml::de::from_str::<serde_value::Value>(&input);
 
             match result {
-                Ok(res) => lua.to_value(&res),
+                Ok(res) => lua.to_value_with(
+                    &res,
+                    mlua::SerializeOptions::new()
+                        .serialize_none_to_null(false)
+                        .serialize_unit_to_null(false),
+                ),
                 Err(e) => Err(e.into_lua_err()),
             }
         })?,
@@ -171,7 +198,12 @@ fn csv_decode(lua: &mlua::Lua) -> mlua::Result<()> {
                 })
                 .collect::<Vec<_>>();
 
-            lua.to_value(&(body, header))
+            lua.to_value_with(
+                &(body, header),
+                mlua::SerializeOptions::new()
+                    .serialize_none_to_null(false)
+                    .serialize_unit_to_null(false),
+            )
         })?,
     )
 }

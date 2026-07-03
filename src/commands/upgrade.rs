@@ -1,8 +1,6 @@
+use clap::crate_version;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
-
-use clap::crate_version;
-use tokio::io::AsyncWriteExt;
 
 /// Upgrades to the latest version.
 pub async fn upgrade_command(user_agent: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
@@ -88,16 +86,11 @@ pub async fn upgrade_command(user_agent: Option<String>) -> Result<(), Box<dyn s
             current_file_name.clone(),
             format!("{current_file_name}_old"),
         )?;
+        tokio::fs::write(&current_file_name, &content).await?;
 
-        let mut file = tokio::fs::OpenOptions::new()
-            .write(true)
-            .truncate(true)
-            .open(current_file_name.clone())
-            .await?;
         #[cfg(unix)]
-        file.set_permissions(std::fs::Permissions::from_mode(0o755))
+        tokio::fs::set_permissions(&current_file_name, std::fs::Permissions::from_mode(0o755))
             .await?;
-        file.write_all(&content).await?;
 
         println!(
             r#"🚀 Update complete!

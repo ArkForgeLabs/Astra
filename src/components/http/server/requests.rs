@@ -53,7 +53,12 @@ impl UserData for RequestLua {
         methods.add_method("uri", |_, this, ()| Ok(this.parts.uri.to_string()));
         methods.add_method("queries", |lua, this, ()| {
             match axum::extract::Query::<serde_json::Value>::try_from_uri(&this.parts.uri) {
-                Ok(queries) => lua.to_value(&queries.clone().take()),
+                Ok(queries) => lua.to_value_with(
+                    &queries.clone().take(),
+                    mlua::SerializeOptions::new()
+                        .serialize_none_to_null(false)
+                        .serialize_unit_to_null(false),
+                ),
                 Err(e) => Err(e.into_lua_err()),
             }
         });
@@ -112,7 +117,15 @@ impl UserData for RequestLua {
                                         continue;
                                     }
 
-                                    key_value.set(key.clone(), lua.to_value(&value)?)?;
+                                    key_value.set(
+                                        key.clone(),
+                                        lua.to_value_with(
+                                            &value,
+                                            mlua::SerializeOptions::new()
+                                                .serialize_none_to_null(false)
+                                                .serialize_unit_to_null(false),
+                                        )?,
+                                    )?;
                                 } else {
                                     key_value.raw_push(key)?;
                                 }
@@ -263,7 +276,12 @@ impl UserData for AstraMultipart {
 
             for field in &this.fields {
                 if let Some(filename) = &field.file_name {
-                    file_name = lua.to_value(&filename);
+                    file_name = lua.to_value_with(
+                        &filename,
+                        mlua::SerializeOptions::new()
+                            .serialize_none_to_null(false)
+                            .serialize_unit_to_null(false),
+                    );
                     break;
                 }
             }

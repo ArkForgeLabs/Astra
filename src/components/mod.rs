@@ -52,7 +52,12 @@ macro_rules! astra_buffer_types {
                     match serde_json::from_str::<serde_json::Value>(
                         &String::from_utf8_lossy(&bytes).to_string(),
                     ) {
-                        Ok(parsed_json) => lua.to_value(&parsed_json),
+                        Ok(parsed_json) => lua.to_value_with(
+                            &parsed_json,
+                            mlua::SerializeOptions::new()
+                                .serialize_none_to_null(false)
+                                .serialize_unit_to_null(false),
+                        ),
                         Err(e) => Err(e.into_lua_err()),
                     }
                 });

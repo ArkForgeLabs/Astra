@@ -72,7 +72,12 @@ pub fn getenv(lua: &mlua::Lua) -> mlua::Result<()> {
         "astra_internal__getenv",
         lua.create_function(|lua, key: String| {
             if let Ok(value) = std::env::var(key) {
-                Ok(lua.to_value(&value)?)
+                lua.to_value_with(
+                    &value,
+                    mlua::SerializeOptions::new()
+                        .serialize_none_to_null(false)
+                        .serialize_unit_to_null(false),
+                )
             } else {
                 Ok(mlua::Value::Nil)
             }
@@ -94,7 +99,14 @@ pub fn setenv(lua: &mlua::Lua) -> mlua::Result<()> {
 pub fn uuid_v4(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__uuid",
-        lua.create_function(|lua, _: ()| lua.to_value(&uuid::Uuid::new_v4()))?,
+        lua.create_function(|lua, _: ()| {
+            lua.to_value_with(
+                &uuid::Uuid::new_v4(),
+                mlua::SerializeOptions::new()
+                    .serialize_none_to_null(false)
+                    .serialize_unit_to_null(false),
+            )
+        })?,
     )
 }
 

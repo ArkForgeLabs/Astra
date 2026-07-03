@@ -183,10 +183,26 @@ impl UserData for Database {
                     macro_rules! try_set_lua_value {
                         ($i:expr, $key:expr, $ty:ty) => {
                             if let Ok(v) = row.try_get::<$ty, _>($i) {
-                                table.set($key, lua.to_value(&v)?)?;
+                                table.set(
+                                    $key,
+                                    lua.to_value_with(
+                                        &v,
+                                        mlua::SerializeOptions::new()
+                                            .serialize_none_to_null(false)
+                                            .serialize_unit_to_null(false),
+                                    )?,
+                                )?;
                                 continue;
                             } else if let Ok(v) = row.try_get::<Option<$ty>, _>($i) {
-                                table.set($key, lua.to_value(&v)?)?;
+                                table.set(
+                                    $key,
+                                    lua.to_value_with(
+                                        &v,
+                                        mlua::SerializeOptions::new()
+                                            .serialize_none_to_null(false)
+                                            .serialize_unit_to_null(false),
+                                    )?,
+                                )?;
                                 continue;
                             }
                         };
@@ -329,7 +345,12 @@ impl UserData for Database {
                         {
                             Ok(row) => {
                                 if let Some(row) = row {
-                                    $lua.to_value(&row)
+                                    $lua.to_value_with(
+                                        &row,
+                                        mlua::SerializeOptions::new()
+                                            .serialize_none_to_null(false)
+                                            .serialize_unit_to_null(false),
+                                    )
                                 } else {
                                     Ok(mlua::Value::Nil)
                                 }
@@ -345,7 +366,12 @@ impl UserData for Database {
                         {
                             Ok(row) => {
                                 if let Some(row) = row {
-                                    $lua.to_value(&row)
+                                    $lua.to_value_with(
+                                        &row,
+                                        mlua::SerializeOptions::new()
+                                            .serialize_none_to_null(false)
+                                            .serialize_unit_to_null(false),
+                                    )
                                 } else {
                                     Ok(mlua::Value::Nil)
                                 }

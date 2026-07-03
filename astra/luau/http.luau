@@ -22,11 +22,16 @@ type HTTPClientResponse = {
   remote_address: (self: HTTPClientResponse) -> string?,
 }
 
+type HTTPClientFile = {
+  name: string,
+  path: string
+}
+
 type HTTPClientRequestTableType = {
   url: string,
   method: string?,
   body: any?,
-  file: string?,
+  file: string | HTTPClientFile | { HTTPClientFile } | nil,
   headers: { [string]: string }?,
   form: { any }?,
 }
@@ -38,7 +43,7 @@ type HTTPClientRequest = {
   set_form: (self: HTTPClientRequest, headers: { any }) -> HTTPClientRequest,
   set_body: (self: HTTPClientRequest, body: any) -> HTTPClientRequest,
   --- Sets the for-upload file path
-  set_file: (self: HTTPClientRequest, file_path: string) -> HTTPClientRequest,
+  set_file: (self: HTTPClientRequest, file_path: string | HTTPClientFile | { HTTPClientFile } | nil) -> HTTPClientRequest,
   --- Executes the request and returns the response
   execute: (self: HTTPClientRequest) -> HTTPClientResponse,
   --- Executes the request in a streaming manner

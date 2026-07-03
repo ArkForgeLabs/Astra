@@ -17,11 +17,15 @@ local http = {}
 ---@diagnostic disable-next-line: duplicate-doc-alias
 ---@alias http_client_callback fun(response: HTTPClientResponse)
 
+---@class HTTPClientFile
+---@field name string
+---@field path string
+
 ---@class HTTPClientRequestTableType
 ---@field url string
 ---@field method string?
 ---@field body any?
----@field file string?
+---@field file string | HTTPClientFile | HTTPClientFile[] | nil
 ---@field headers table?
 ---@field form table?
 
@@ -32,7 +36,7 @@ local http = {}
 ---@field set_headers fun(self: HTTPClientRequest, headers: table): HTTPClientRequest
 ---@field set_form fun(self: HTTPClientRequest, headers: table): HTTPClientRequest
 ---@field set_body fun(self: HTTPClientRequest, body: any): HTTPClientRequest
----@field set_file fun(self: HTTPClientRequest, file_path: string): HTTPClientRequest Sets the for-upload file path
+---@field set_file fun(self: HTTPClientRequest, file_path: string|HTTPClientFile|HTTPClientFile[]|nil): HTTPClientRequest Sets the for-upload file path
 ---@field execute fun(self: HTTPClientRequest): HTTPClientResponse Executes the request and returns the response
 ---@field execute_streaming fun(self: HTTPClientRequest, callback: http_client_callback) Executes the request in a streaming manner
 ---@field execute_websocket fun(self: HTTPClientRequest, callback: wscallback) Executes the request as an async task

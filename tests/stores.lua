@@ -119,6 +119,24 @@ return function(test)
       obs:publish(99)
       expect(obs.value).to.equal(42)
     end)
+
+    it("observer that errors does not prevent other observers", function()
+      local obs = stores.observable(0)
+      local count = 0
+      obs:subscribe(function()
+        count = count + 1
+      end)
+      obs:subscribe(function()
+        error("observer error")
+      end)
+      obs:subscribe(function()
+        count = count + 1
+      end)
+      local ok = pcall(function()
+        obs:publish("data")
+      end)
+      expect(count).to.equal(1)
+    end)
   end)
 
   -------------------------------------------------------------------------------

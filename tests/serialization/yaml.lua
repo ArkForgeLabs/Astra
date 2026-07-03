@@ -19,13 +19,17 @@ return function(test, roundtrip_test, test_data, read_sample)
       roundtrip_test("YAML", test_data.complex, serde.yaml.encode, serde.yaml.decode)
     end)
 
-    test.it("handles comments", function()
+    test.it("encode produces valid YAML string", function()
       local data = { value = 42 }
       local encoded = serde.yaml.encode(data)
       test.expect(encoded).to.be.a("string")
+      test.expect(encoded).to.match(".*value.*")
+      test.expect(encoded).to.match(".*42.*")
+      local decoded = serde.yaml.decode(encoded)
+      test.expect(decoded.value).to.equal(42)
     end)
 
-    test.it("handles multiline strings", function()
+    test.it("handles literal block scalar multiline strings", function()
       local yaml_multiline = [[
       description: |
         This is a multiline string
@@ -40,6 +44,9 @@ return function(test, roundtrip_test, test_data, read_sample)
       local decoded = serde.yaml.decode(yaml_multiline)
       test.expect(decoded.description).to.be.a("string")
       test.expect(decoded.compact).to.be.a("string")
+      test.expect(decoded.description).to.match(".*multiline string.*")
+      test.expect(decoded.description).to.match(".*preserves newlines.*")
+      test.expect(decoded.compact).to.equal("This is a compact string that removes newlines and joins lines\n")
     end)
 
     test.it("handles lists", function()
@@ -73,6 +80,12 @@ return function(test, roundtrip_test, test_data, read_sample)
         string = "value",
       }
       roundtrip_test("YAML", data, serde.yaml.encode, serde.yaml.decode)
+    end)
+
+    test.it("handles null values correctly", function()
+      local yaml_str = "key: null\n"
+      local decoded = serde.yaml.decode(yaml_str)
+      test.expect(decoded.key).to.equal(nil)
     end)
 
     test.it("decodes sample.yaml from file", function()
