@@ -3,9 +3,13 @@ use std::path::{MAIN_SEPARATOR_STR, PathBuf};
 
 pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
-        "astra_internal__require",
+        "astra_internal__original_require",
+        lua.globals().get::<mlua::Function>("require")?,
+    )?;
+
+    lua.globals().set(
+        "require",
         lua.create_async_function(|lua, path: String| async move {
-            let previous_require = lua.globals().get::<mlua::Function>("require")?;
             let path = path.replace("@astra/", "");
             let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
 
@@ -22,7 +26,10 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
             if let Ok(result) = result {
                 Ok(result)
             } else {
-                previous_require.call_async(path).await
+                lua.globals()
+                    .get::<mlua::Function>("astra_internal__original_require")?
+                    .call_async(path)
+                    .await
             }
         })?,
     )
