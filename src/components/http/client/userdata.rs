@@ -54,7 +54,7 @@ impl UserData for super::HTTPClientRequest {
             #[allow(unreachable_code)]
             Ok(())
         });
-        methods.add_method_mut("set_file", |_, this, file_path: String| {
+        methods.add_method_mut("set_file", |_, this, file_path: mlua::Value| {
             let mut request = this.clone();
             request.file = Some(file_path);
             Ok(request)

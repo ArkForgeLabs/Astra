@@ -16,7 +16,7 @@ pub struct HTTPClientRequest {
     pub method: String,
     pub headers: HashMap<String, String>,
     pub body: Option<HTTPClientRequestBodyTypes>,
-    pub file: Option<String>,
+    pub file: Option<mlua::Value>,
     pub form: HashMap<String, String>,
 }
 
@@ -45,7 +45,7 @@ impl HTTPClientRequest {
                         .unwrap_or("GET".to_string()),
                     headers,
                     body,
-                    file: details.get::<String>("file").ok(),
+                    file: details.get::<mlua::Value>("file").ok(),
                     form: details
                         .get::<HashMap<String, String>>("form")
                         .unwrap_or_default(),
@@ -82,20 +82,52 @@ impl HTTPClientRequest {
             client = client.body(body.clone())
         } else if let Some(HTTPClientRequestBodyTypes::Json(body)) = &self.body {
             client = client.json(&body)
-        } else if let Some(file_body) = &self.file {
-            let path = std::path::PathBuf::from(&file_body);
-            let path_filename = path.clone();
-            let file_form = reqwest::multipart::Form::new();
+        } else if let Some(file_field) = &self.file {
+            let mut file_form = reqwest::multipart::Form::new();
+            let mut files = Vec::new();
 
-            let filename = path_filename
-                .file_name()
-                .and_then(|filename| filename.to_str())
-                .unwrap_or("file.txt")
-                .to_string();
+            fn parse_table(
+                files: &mut Vec<(String, String)>,
+                file_details: &mlua::Table,
+            ) -> mlua::Result<()> {
+                let filename = file_details.get::<String>("name")?;
+                let path = file_details.get::<String>("path")?;
 
-            if let Ok(file_form) = file_form.file(filename, path).await {
-                client = client.multipart(file_form)
+                files.push((filename, path));
+
+                Ok(())
             }
+
+            match file_field {
+                mlua::Value::String(path) => {
+                    let path = std::path::PathBuf::from(&path.to_string_lossy());
+                    let path_filename = path.clone();
+
+                    let filename = path_filename
+                        .file_name()
+                        .and_then(|filename| filename.to_str())
+                        .unwrap_or("file.txt")
+                        .to_string();
+
+                    file_form = file_form.file(filename, path).await?;
+                }
+                mlua::Value::Table(file_details) => {
+                    if parse_table(&mut files, file_details).is_err() {
+                        for (_, file_details) in
+                            file_details.pairs::<mlua::Value, mlua::Table>().flatten()
+                        {
+                            let _ = parse_table(&mut files, &file_details);
+                        }
+                    }
+
+                    for (filename, path) in files {
+                        file_form = file_form.file(filename, path).await?;
+                    }
+                }
+                _ => {}
+            }
+
+            client = client.multipart(file_form)
         }
 
         if !self.headers.is_empty() {
