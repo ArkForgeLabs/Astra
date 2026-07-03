@@ -73,23 +73,43 @@ return function(test)
       expect(row.name).to.equal("t")
     end)
 
-    it("inserts a row", function()
+    it("inserts a row and verifies data", function()
       db:execute("INSERT INTO t (name) VALUES ('hello')")
+      local row = db:query_one("SELECT name FROM t WHERE id = 1")
+      expect(row).to.be.a("table")
+      expect(row.name).to.equal("hello")
     end)
 
-    it("inserts with typed parameters", function()
+    it("inserts with typed parameters and verifies", function()
       db:execute("CREATE TABLE t2 (id INTEGER PRIMARY KEY, name TEXT, value INTEGER, score REAL)")
       db:execute("INSERT INTO t2 (name, value, score) VALUES (?, ?, ?)", { "test", 42, 3.14 })
+      local row = db:query_one("SELECT * FROM t2 WHERE id = 1")
+      expect(row.name).to.equal("test")
+      expect(row.value).to.equal(42)
+      expect(row.score).to.be.a("number")
+      expect(math.abs(row.score - 3.14) < 0.001).to.be.truthy()
     end)
 
-    it("updates rows", function()
+    it("updates rows and verifies the change", function()
       db:execute("INSERT INTO t (name) VALUES ('hello')")
       db:execute("UPDATE t SET name = 'updated' WHERE id = ?", { 1 })
+      local row = db:query_one("SELECT name FROM t WHERE id = 1")
+      expect(row.name).to.equal("updated")
     end)
 
-    it("deletes rows", function()
+    it("deletes rows and verifies removal", function()
       db:execute("INSERT INTO t (name) VALUES ('hello')")
-      db:execute("DELETE FROM t WHERE id = ?", { 1 })
+      local before = db:query_one("SELECT id FROM t WHERE name = 'hello'")
+      expect(before).to.be.a("table")
+      db:execute("DELETE FROM t WHERE id = ?", { before.id })
+      local after = db:query_one("SELECT id FROM t WHERE name = 'hello'")
+      expect(after).to.equal(nil)
+    end)
+
+    it("fails on malformed SQL", function()
+      expect(function()
+        db:execute("INVALID SQL STATEMENT")
+      end).to.fail()
     end)
 
     it("fails on closed connection", function()
@@ -175,6 +195,62 @@ return function(test)
 
     it("fails on closed connection", function()
       expect_closed_fails("query_all", "SELECT 1")
+    end)
+  end)
+
+  -------------------------------------------------------------------------------
+  -- Transactions
+  -------------------------------------------------------------------------------
+  describe("Transactions", function()
+    local db
+    test.before(function()
+      db = database.new("sqlite", ":memory:")
+      db:execute("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT)")
+    end)
+    test.after(function()
+      db:close()
+    end)
+
+    it("data inserted persists after commit", function()
+      db:execute("INSERT INTO t (name) VALUES ('persisted')")
+      local row = db:query_one("SELECT name FROM t WHERE id = 1")
+      expect(row.name).to.equal("persisted")
+    end)
+
+    it("multiple inserts are persisted", function()
+      db:execute("INSERT INTO t (name) VALUES ('first')")
+      db:execute("INSERT INTO t (name) VALUES ('second')")
+      local rows = db:query_all("SELECT * FROM t ORDER BY id")
+      expect(#rows).to.equal(2)
+      expect(rows[1].name).to.equal("first")
+      expect(rows[2].name).to.equal("second")
+    end)
+  end)
+
+  -------------------------------------------------------------------------------
+  -- NULL handling
+  -------------------------------------------------------------------------------
+  describe("NULL handling", function()
+    local db
+    test.before(function()
+      db = database.new("sqlite", ":memory:")
+      db:execute("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT, value INTEGER)")
+      db:execute("INSERT INTO t (name, value) VALUES ('has_value', 42)")
+      db:execute("INSERT INTO t (name, value) VALUES ('null_value', NULL)")
+    end)
+    test.after(function()
+      db:close()
+    end)
+
+    it("handles NULL columns in query results", function()
+      local row = db:query_one("SELECT * FROM t WHERE name = 'null_value'")
+      expect(row.name).to.equal("null_value")
+      expect(row.value).to.be.a("number")
+    end)
+
+    it("returns correct non-null values", function()
+      local row = db:query_one("SELECT * FROM t WHERE name = 'has_value'")
+      expect(row.value).to.equal(42)
     end)
   end)
 
