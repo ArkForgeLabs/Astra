@@ -1,6 +1,33 @@
 use crate::ASTRA_STD_LIBS;
 use std::path::{MAIN_SEPARATOR_STR, PathBuf};
 
+pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
+    lua.globals().set(
+        "astra_internal__require",
+        lua.create_async_function(|lua, path: String| async move {
+            let previous_require = lua.globals().get::<mlua::Function>("require")?;
+            let path = path.replace("@astra/", "");
+            let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
+
+            let result = if let Ok(cache) = lua
+                .globals()
+                .get::<Option<mlua::RegistryKey>>(key_id.as_str())
+                && let Some(key) = cache
+            {
+                lua.registry_value::<mlua::Value>(&key)
+            } else {
+                import(&lua, &key_id, &path).await
+            };
+
+            if let Ok(result) = result {
+                Ok(result)
+            } else {
+                previous_require.call_async(path).await
+            }
+        })?,
+    )
+}
+
 async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua::Value> {
     let current_script_path: String = lua.globals().get::<String>("CURRENT_SCRIPT")?;
 
@@ -28,26 +55,6 @@ async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua:
             "Could not find the module {path}"
         )))
     }
-}
-
-pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
-    lua.globals().set(
-        "require",
-        lua.create_async_function(|lua, path: String| async move {
-            let path = path.replace("@astra/", "");
-            let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
-
-            if let Ok(cache) = lua
-                .globals()
-                .get::<Option<mlua::RegistryKey>>(key_id.as_str())
-                && let Some(key) = cache
-            {
-                lua.registry_value::<mlua::Value>(&key)
-            } else {
-                import(&lua, &key_id, &path).await
-            }
-        })?,
-    )
 }
 
 pub async fn find_first_lua_match_with_content(
