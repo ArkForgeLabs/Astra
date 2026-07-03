@@ -47,6 +47,22 @@ pub fn sanetize_lua_input(lua: &mlua::Lua, input: mlua::Value) -> mlua::Result<m
     }
 }
 
+/// mlua cannot deserialize the null correctly.
+fn sanetize_nulls(tree: &mut mlua::Value) -> mlua::Result<()> {
+    if let mlua::Value::Table(table) = tree {
+        let mut iter = table.pairs::<mlua::Value, mlua::Value>();
+        while let Some(Ok((k, mut v))) = iter.next() {
+            if v.as_light_userdata().is_some() {
+                table.set(k, mlua::Value::Nil)?;
+            } else {
+                sanetize_nulls(&mut v)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
 macro_rules! gen_methods {
     ($crate_name:ident, $name:ident) => {
         paste! {
@@ -69,7 +85,11 @@ macro_rules! gen_methods {
                     "astra_internal__".to_string() + stringify!($name) + "_decode",
                     lua.create_function(|lua, input: String| {
                         match $crate_name::from_str::<serde_value::Value>(&input) {
-                            Ok(deserialized) => lua.to_value(&deserialized),
+                            Ok(deserialized) => {
+                                let mut deserialized = lua.to_value(&deserialized)?;
+                                sanetize_nulls(&mut deserialized)?;
+                                Ok(deserialized)
+                              },
                             Err(e) => Err(e.into_lua_err()),
                         }
                     })?,
