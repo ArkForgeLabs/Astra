@@ -41,26 +41,15 @@ pub fn sanetize_lua_input(lua: &mlua::Lua, input: mlua::Value) -> mlua::Result<m
             }
         }
 
-        lua.to_value(&new_input)
+        lua.to_value_with(
+            &new_input,
+            mlua::SerializeOptions::new()
+                .serialize_none_to_null(false)
+                .serialize_unit_to_null(false),
+        )
     } else {
         Ok(input)
     }
-}
-
-/// mlua cannot deserialize the null correctly.
-fn sanetize_nulls(tree: &mut mlua::Value) -> mlua::Result<()> {
-    if let mlua::Value::Table(table) = tree {
-        let mut iter = table.pairs::<mlua::Value, mlua::Value>();
-        while let Some(Ok((k, mut v))) = iter.next() {
-            if v.as_light_userdata().is_some() {
-                table.set(k, mlua::Value::Nil)?;
-            } else {
-                sanetize_nulls(&mut v)?;
-            }
-        }
-    }
-
-    Ok(())
 }
 
 macro_rules! gen_methods {
@@ -73,7 +62,12 @@ macro_rules! gen_methods {
                         let value =
                             lua.from_value::<serde_value::Value>(sanetize_lua_input(&lua, input)?)?;
                         match $crate_name::to_string(&value) {
-                            Ok(serialized) => Ok(lua.to_value(&serialized)?),
+                            Ok(serialized) => lua.to_value_with(
+                                &serialized,
+                                mlua::SerializeOptions::new()
+                                    .serialize_none_to_null(false)
+                                    .serialize_unit_to_null(false),
+                            ),
                             Err(e) => Err(e.into_lua_err()),
                         }
                     })?,
@@ -86,9 +80,12 @@ macro_rules! gen_methods {
                     lua.create_function(|lua, input: String| {
                         match $crate_name::from_str::<serde_value::Value>(&input) {
                             Ok(deserialized) => {
-                                let mut deserialized = lua.to_value(&deserialized)?;
-                                sanetize_nulls(&mut deserialized)?;
-                                Ok(deserialized)
+                                lua.to_value_with(
+                                    &deserialized,
+                                    mlua::SerializeOptions::new()
+                                        .serialize_none_to_null(false)
+                                        .serialize_unit_to_null(false),
+                                )
                               },
                             Err(e) => Err(e.into_lua_err()),
                         }
@@ -112,7 +109,12 @@ fn xml_encode(lua: &mlua::Lua) -> mlua::Result<()> {
             //
             let value = lua.from_value::<serde_value::Value>(sanetize_lua_input(&lua, input)?)?;
             match quick_xml::se::to_string_with_root(&root, &value) {
-                Ok(serialized) => Ok(lua.to_value(&serialized)?),
+                Ok(serialized) => lua.to_value_with(
+                    &serialized,
+                    mlua::SerializeOptions::new()
+                        .serialize_none_to_null(false)
+                        .serialize_unit_to_null(false),
+                ),
                 Err(e) => Err(e.into_lua_err()),
             }
         })?,
@@ -126,7 +128,12 @@ fn xml_decode(lua: &mlua::Lua) -> mlua::Result<()> {
             let result = quick_xml::de::from_str::<serde_value::Value>(&input);
 
             match result {
-                Ok(res) => lua.to_value(&res),
+                Ok(res) => lua.to_value_with(
+                    &res,
+                    mlua::SerializeOptions::new()
+                        .serialize_none_to_null(false)
+                        .serialize_unit_to_null(false),
+                ),
                 Err(e) => Err(e.into_lua_err()),
             }
         })?,
@@ -191,7 +198,12 @@ fn csv_decode(lua: &mlua::Lua) -> mlua::Result<()> {
                 })
                 .collect::<Vec<_>>();
 
-            lua.to_value(&(body, header))
+            lua.to_value_with(
+                &(body, header),
+                mlua::SerializeOptions::new()
+                    .serialize_none_to_null(false)
+                    .serialize_unit_to_null(false),
+            )
         })?,
     )
 }

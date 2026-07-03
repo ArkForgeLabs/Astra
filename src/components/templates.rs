@@ -192,7 +192,12 @@ impl UserData for TemplatingEngine<'_> {
                                                                             -> Result<minijinja::Value, minijinja::Error> {
                     futures::executor::block_on(async {
                       if let Some(lua) = LUA.get() {
-                      let lua_value = lua.to_value(&args).map_err(|e| minijinja::Error::new(UndefinedError,
+                      let lua_value = lua.to_value_with(
+                          &args,
+                          mlua::SerializeOptions::new()
+                              .serialize_none_to_null(false)
+                              .serialize_unit_to_null(false),
+                      ).map_err(|e| minijinja::Error::new(UndefinedError,
                               format!("ERROR TEMPLATE FUNCTION - Could not convert arguments into Lua table: {e}")))?;
 
                       let function_result = func.call_async::<mlua::Value>(lua_value).await.map_err(|e| minijinja::Error::new(UndefinedError,
@@ -223,7 +228,14 @@ impl UserData for TemplatingEngine<'_> {
             {
                 Ok(result) => {
                     match result.render(if let Some(context) = context {
-                        lua.from_value::<minijinja::Value>(lua.to_value(&context)?)?
+                        lua.from_value::<minijinja::Value>(
+                            lua.to_value_with(
+                                &context,
+                                mlua::SerializeOptions::new()
+                                    .serialize_none_to_null(false)
+                                    .serialize_unit_to_null(false),
+                            )?,
+                        )?
                     } else {
                         minijinja::Value::UNDEFINED
                     }) {
@@ -246,10 +258,16 @@ pub fn markdown_support(lua: &mlua::Lua) -> mlua::Result<()> {
         "astra_internal__new_markdown_ast",
         lua.create_function(|lua, input: String| {
             match markdown::to_mdast(&input, &markdown::ParseOptions::gfm()) {
-                Ok(result) => match serde_value::to_value(result) {
-                    Ok(result) => lua.to_value(&result),
-                    Err(e) => Err(e.into_lua_err()),
-                },
+                Ok(result) => serde_value::to_value(result)
+                    .map_err(|err| err.into_lua_err())
+                    .and_then(|result| {
+                        lua.to_value_with(
+                            &result,
+                            mlua::SerializeOptions::new()
+                                .serialize_none_to_null(false)
+                                .serialize_unit_to_null(false),
+                        )
+                    }),
                 Err(e) => Err(e.to_string().into_lua_err()),
             }
         })?,
