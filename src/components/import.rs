@@ -23,13 +23,21 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                 import(&lua, &key_id, &path).await
             };
 
-            if let Ok(result) = result {
-                Ok(result)
-            } else {
-                lua.globals()
-                    .get::<mlua::Function>("astra_internal__original_require")?
-                    .call_async(path)
-                    .await
+            match result {
+                Ok(result) => Ok(result),
+                Err(e) => match e {
+                    mlua::Error::RuntimeError(ref error_message) => {
+                        if error_message.contains("Could not find the module") {
+                            lua.globals()
+                                .get::<mlua::Function>("astra_internal__original_require")?
+                                .call_async(path)
+                                .await
+                        } else {
+                            Err(e)
+                        }
+                    }
+                    _ => Err(e),
+                },
             }
         })?,
     )
