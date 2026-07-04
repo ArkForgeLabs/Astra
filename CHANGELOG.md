@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.51.2](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.51.1..0.51.2) - 2026-07-04
+
+### Bug Fixes
+
+- incorrect delegation of native import - ([42efcc0](https://git.arkforge.net/ArkForgeLabs/Astra/commit/42efcc0cc5ff804621f53aa0e5a7fe6de289c71e))
+
 ## [0.51.1](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.51.0..0.51.1) - 2026-07-03
 
 ### Bug Fixes
