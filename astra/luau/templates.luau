@@ -82,7 +82,6 @@ end
 local function new_engine(dir: string?): Jinja2Engine
   local engine: Jinja2Engine = astra_internal__new_templating_engine(dir)
   local Jinja2EngineWrapper: Jinja2Engine = { engine = engine }
-  local templates_re = require("@astra/validation").regex([[(?:index)?\.(html|lua)$]])
 
   local function normalize_paths(path: string): { string }
     -- Ensure path starts with "/"
@@ -106,7 +105,7 @@ local function new_engine(dir: string?): Jinja2Engine
   function Jinja2EngineWrapper:add_to_server(server: HTTPServer, context: { any }?)
     local names = self.engine:get_template_names()
     for _, value in ipairs(names) do
-      local path = templates_re:replace(value, "")
+      local path = value:match("([^%.]+)")
       local content = self.engine:render(value, context)
 
       for _, route in ipairs(normalize_paths(path)) do
@@ -123,7 +122,7 @@ local function new_engine(dir: string?): Jinja2Engine
     debug_watch(self.engine:get_template_paths_all(), server)
 
     for _, value in ipairs(names) do
-      local path = templates_re:replace(value, "")
+      local path = value:match("([^%.]+)")
       for _, route in ipairs(normalize_paths(path)) do
         server:get(route, function(_: HTTPServerRequest, response: HTTPServerResponse)
           self.engine:reload_templates()

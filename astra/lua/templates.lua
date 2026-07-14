@@ -85,7 +85,6 @@ local function new_engine(dir)
   ---@type Jinja2Engine
   ---@diagnostic disable-next-line: missing-fields
   local Jinja2EngineWrapper = { engine = engine }
-  local templates_re = require("validation").regex([[(?:index)?\.(html|lua)$]])
 
   local function normalize_paths(path)
     -- Ensure path starts with "/"
@@ -109,7 +108,7 @@ local function new_engine(dir)
   function Jinja2EngineWrapper:add_to_server(server, context)
     local names = self.engine:get_template_names()
     for _, value in ipairs(names) do
-      local path = templates_re:replace(value, "")
+      local path = value:match("([^%.]+)")
       local content = self.engine:render(value, context)
 
       for _, route in ipairs(normalize_paths(path)) do
@@ -126,7 +125,7 @@ local function new_engine(dir)
     debug_watch(self.engine:get_template_paths_all(), server)
 
     for _, value in ipairs(names) do
-      local path = templates_re:replace(value, "")
+      local path = value:match("([^%.]+)")
 
       for _, route in ipairs(normalize_paths(path)) do
         server:get(route, function(_, response)
