@@ -106,6 +106,10 @@ local function new_engine(dir: string?): Jinja2Engine
     local names = self.engine:get_template_names()
     for _, value in ipairs(names) do
       local path = value:match("([^%.]+)")
+      if path == "index" then
+        path = ""
+      end
+
       local content = self.engine:render(value, context)
 
       for _, route in ipairs(normalize_paths(path)) do
@@ -123,6 +127,10 @@ local function new_engine(dir: string?): Jinja2Engine
 
     for _, value in ipairs(names) do
       local path = value:match("([^%.]+)")
+      if path == "index" then
+        path = ""
+      end
+
       for _, route in ipairs(normalize_paths(path)) do
         server:get(route, function(_: HTTPServerRequest, response: HTTPServerResponse)
           self.engine:reload_templates()
