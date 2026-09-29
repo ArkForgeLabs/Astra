@@ -187,29 +187,21 @@ impl UserData for AstraDateTime {
                 methods.add_method($method_name, |_, this, ()| Ok($operation));
             };
         }
-        macro_rules! add_to_datetime {
-            ($method_name:expr, $method:ident) => {
-                methods.add_method($method_name, |_, this, millis: i64| {
-                    match this
-                        .dt
-                        .checked_add_signed(chrono::TimeDelta::$method(millis))
-                    {
-                        Some(delta) => Ok(Self { dt: delta }),
-                        None => Err(mlua::Error::runtime("Invalid value")),
-                    }
+        macro_rules! add_delta_method {
+            ($method_name:expr, $constructor:ident) => {
+                methods.add_method($method_name, |_, this, amount: i64| {
+                    chrono::TimeDelta::$constructor(amount)
+                        .and_then(|delta| this.dt.checked_add_signed(delta))
+                        .map(|dt| Self { dt })
+                        .ok_or_else(|| mlua::Error::runtime("Invalid value"))
                 });
             };
-        }
-        macro_rules! sub_from_datetime {
-            ($method_name:expr, $method:ident) => {
-                methods.add_method($method_name, |_, this, millis: i64| {
-                    match this
-                        .dt
-                        .checked_sub_signed(chrono::TimeDelta::$method(millis))
-                    {
-                        Some(delta) => Ok(Self { dt: delta }),
-                        None => Err(mlua::Error::runtime("Invalid value")),
-                    }
+            ($method_name:expr, $constructor:ident, neg) => {
+                methods.add_method($method_name, |_, this, amount: i64| {
+                    chrono::TimeDelta::$constructor(amount.wrapping_neg())
+                        .and_then(|delta| this.dt.checked_add_signed(delta))
+                        .map(|dt| Self { dt })
+                        .ok_or_else(|| mlua::Error::runtime("Invalid value"))
                 });
             };
         }
@@ -261,14 +253,14 @@ impl UserData for AstraDateTime {
             this.with_replaced(new_dt, "Invalid millisecond!")
         });
 
-        add_to_datetime!("add_milliseconds", milliseconds);
-        add_to_datetime!("add_seconds", seconds);
-        add_to_datetime!("add_minutes", minutes);
-        add_to_datetime!("add_hours", hours);
-        sub_from_datetime!("sub_milliseconds", milliseconds);
-        sub_from_datetime!("sub_seconds", seconds);
-        sub_from_datetime!("sub_minutes", minutes);
-        sub_from_datetime!("sub_hours", hours);
+        add_delta_method!("add_milliseconds", try_milliseconds);
+        add_delta_method!("add_seconds", try_seconds);
+        add_delta_method!("add_minutes", try_minutes);
+        add_delta_method!("add_hours", try_hours);
+        add_delta_method!("sub_milliseconds", try_milliseconds, neg);
+        add_delta_method!("sub_seconds", try_seconds, neg);
+        add_delta_method!("sub_minutes", try_minutes, neg);
+        add_delta_method!("sub_hours", try_hours, neg);
 
         add_shift_method!("add_days", shift_days, i64);
         add_shift_method!("add_weeks", shift_weeks, i64);

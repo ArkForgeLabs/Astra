@@ -457,6 +457,11 @@ return function(test)
           epoch:add_days(9223372036854775807)
         end).to
         .fail()
+      test
+        .expect(function()
+          epoch:add_milliseconds(9223372036854775807)
+        end).to
+        .fail()
     end)
   end)
 

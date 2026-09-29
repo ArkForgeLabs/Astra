@@ -26,7 +26,8 @@ local dt = datetime.new(2001, 7, 8, 0, 24, 48, 241)
 
 -- Or parse a string. RFC 2822, RFC 3339 and date-only (`YYYY-MM-DD`) strings are supported.
 -- Strings carrying an explicit offset (e.g. `+0200`) keep it; date-only strings are
--- interpreted as midnight in the local timezone.
+-- interpreted as midnight in the local timezone. On failure, the error reports only
+-- the category the string belongs to (date-only, RFC 3339, or RFC 2822).
 local dt = datetime.new("Tue, 1 Jul 2003 10:52:37 +0200")
 local dt = datetime.new("2001-07-08T00:24:48.241+00:00")
 local dt = datetime.new("2001-07-08")
@@ -69,7 +70,7 @@ dt = dt:set_year(2030):set_month(6):set_day(15) -- dt is now 2030-06-15
 - `set_minute(min: number)`
 - `set_second(sec: number)`
 - `set_millisecond(milli: number)`
-- `set_epoch_milliseconds(milli: number)`
+- `set_epoch_milliseconds(milli: number)` — keeps the current timezone offset
 - `set_time(hour: number, minute: number, second: number, millis: number)`
 - `set_date(year: number, month: number, day: number)`
 - `add_milliseconds(millis: number)`
