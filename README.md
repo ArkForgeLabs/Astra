@@ -107,6 +107,10 @@ In the past, we had a discord server where you could join and talk in, however w
 
 Astra is licensed under the [Apache License, Version 2.0](LICENSE).
 
+## AI Policy
+
+We adopt the [LLVM's AI Policy](https://github.com/llvm/llvm-project/blob/6286f77214be257eed1cff70d3e2e16f024e3dfb/llvm/docs/AIToolPolicy.md) for this project. Please read that document before proceeding with contributions.
+
 ## Note
 
 This project may have breaking changes in minor versions until v1.0. Afterwhich semver will be followed. Contributions are always welcome!
