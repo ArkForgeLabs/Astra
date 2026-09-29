@@ -114,21 +114,20 @@ async fn run_command_prerequisite(
 
 fn check_for_default_file(actual_path: &mut String, file_path: String) -> String {
     actual_path.clone_from(&file_path);
-    let result;
     let file_path = std::path::Path::new(&file_path);
 
     #[allow(clippy::expect_used)]
-    if file_path.exists() && file_path.is_file() {
-        result = std::fs::read_to_string(file_path).expect("Couldn't read file");
+    let result = if file_path.exists() && file_path.is_file() {
+        std::fs::read_to_string(file_path).expect("Couldn't read file")
     } else if file_path.join("init.lua").exists() {
         actual_path.clone_from(&file_path.join("init.lua").to_string_lossy().to_string());
-        result = std::fs::read_to_string(file_path.join("init.lua")).expect("Couldn't read file");
+        std::fs::read_to_string(file_path.join("init.lua")).expect("Couldn't read file")
     } else if file_path.join("init.luau").exists() {
         actual_path.clone_from(&file_path.join("init.luau").to_string_lossy().to_string());
-        result = std::fs::read_to_string(file_path.join("init.luau")).expect("Couldn't read file");
+        std::fs::read_to_string(file_path.join("init.luau")).expect("Couldn't read file")
     } else {
         panic!("Could not find any file to run...");
-    }
+    };
 
     result
 }

@@ -74,7 +74,7 @@ pub fn getenv(lua: &mlua::Lua) -> mlua::Result<()> {
             if let Ok(value) = std::env::var(key) {
                 lua.to_value_with(
                     &value,
-                    mlua::SerializeOptions::new()
+                    mlua::serde::SerializeOptions::new()
                         .serialize_none_to_null(false)
                         .serialize_unit_to_null(false),
                 )
@@ -102,7 +102,7 @@ pub fn uuid_v4(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.create_function(|lua, _: ()| {
             lua.to_value_with(
                 &uuid::Uuid::new_v4(),
-                mlua::SerializeOptions::new()
+                mlua::serde::SerializeOptions::new()
                     .serialize_none_to_null(false)
                     .serialize_unit_to_null(false),
             )

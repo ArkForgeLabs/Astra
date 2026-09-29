@@ -33,7 +33,7 @@ lua54 = ["mlua/lua54"]
 lua55 = ["mlua/lua55"]
 
 [dependencies]
-mlua = { version = "0.11.6", features = [
+mlua = { version = "0.12.1", features = [
   "anyhow",
   "async",
   "macros",
@@ -45,7 +45,7 @@ mlua = { version = "0.11.6", features = [
 # http
 axum = { version = "0.8.9", features = ["http2", "macros", "multipart", "ws"] }
 axum-extra = { version = "0.12.6", features = ["cookie"] }
-reqwest = { version = "0.13.4", features = [
+reqwest = { version = "0.13.5", features = [
   "charset",
   "form",
   "http2",
@@ -56,59 +56,59 @@ reqwest = { version = "0.13.4", features = [
 ], default-features = false }
 reqwest-websocket = "0.6.0"
 tower = { version = "0.5.3" }
-tower-http = { version = "0.7.0", features = [
+tower-http = { version = "0.7.1", features = [
   "compression-full",
   "decompression-full",
   "fs",
   "set-header",
   "trace",
 ] }
-time = "0.3.53"
-minijinja = { version = "2.21.0", features = [
+time = "0.3.55"
+minijinja = { version = "2.24.0", features = [
   "loader",
   "loop_controls",
   "speedups",
   "urlencode",
 ] }
-glob = "0.3.3"
+glob = "0.3.4"
 
 # data formats
-serde = { version = "1.0.228", features = ["derive"] }
+serde = { version = "1.0.229", features = ["derive"] }
 serde-value = { version = "0.7.0" }
-serde_json = "1.0.150"
+serde_json = "1.0.151"
 serde_json5 = { version = "0.2.1" }
 serde_yaml = { version = "0.9.34" }
 serde_ini = { version = "0.2.0" }
 csv = { version = "1.4.0" }
-quick-xml = { version = "0.41.0", features = [
+quick-xml = { version = "0.42.0", features = [
   "async-tokio",
   "encoding",
   "escape-html",
   "overlapped-lists",
   "serialize",
 ] }
-toml = "1.1.2"
-uuid = { version = "1.23.4", features = ["serde", "v4"] }
+toml = "1.1.6"
+uuid = { version = "1.26.1", features = ["serde", "v4"] }
 sha2 = "0.11.0"
 sha3 = "0.12.0"
-base64 = "0.22.1"
-bytes = { version = "1.12.0", features = ["serde"] }
+base64 = "0.23.1"
+bytes = { version = "1.12.1", features = ["serde"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 markdown = { version = "1.0.0", features = ["serde"] }
 
 # runtime
-tokio = { version = "1.52.3", features = [
+tokio = { version = "1.53.1", features = [
   "macros",
   "rt-multi-thread",
   "signal",
 ] }
-futures = "0.3.32"
-clap = { version = "4.6.1", features = ["cargo", "derive"] }
+futures = "0.3.34"
+clap = { version = "4.6.7", features = ["cargo", "derive"] }
 dotenvy = "0.15.7"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 version-compare = "0.2.1"
-regex = "1.12.4"
+regex = "1.13.1"
 pastey = "0.2.3"
 
 # database

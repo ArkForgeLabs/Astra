@@ -54,7 +54,7 @@ macro_rules! astra_buffer_types {
                     ) {
                         Ok(parsed_json) => lua.to_value_with(
                             &parsed_json,
-                            mlua::SerializeOptions::new()
+                            mlua::serde::SerializeOptions::new()
                                 .serialize_none_to_null(false)
                                 .serialize_unit_to_null(false),
                         ),

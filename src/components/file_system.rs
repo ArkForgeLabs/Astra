@@ -162,7 +162,7 @@ impl UserData for AstraFile {
         methods.add_method("path", |lua, this, _: ()| {
             lua.to_value_with(
                 &this.path,
-                mlua::SerializeOptions::new()
+                mlua::serde::SerializeOptions::new()
                     .serialize_none_to_null(false)
                     .serialize_unit_to_null(false),
             )
