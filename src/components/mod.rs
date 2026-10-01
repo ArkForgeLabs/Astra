@@ -5,12 +5,14 @@ pub mod crypto;
 pub mod database;
 pub mod datetime;
 pub mod file_system;
+pub mod globals;
 pub mod http;
 pub mod import;
 pub mod templates;
 pub mod utils;
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
+    globals::register_to_lua(lua)?;
     import::register_import_function(lua)?;
     utils::register_to_lua(lua)?;
     astra_serde::register_to_lua(lua)?;

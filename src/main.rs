@@ -10,6 +10,9 @@ mod components;
 /// Global Lua instance.
 pub static LUA: std::sync::OnceLock<mlua::Lua> = std::sync::OnceLock::new();
 
+/// Whether the current VM was created in safe mode (no standard libraries).
+pub static SAFE_MODE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 #[derive(Debug, Clone)]
 pub struct RuntimeFlags {
     pub stdlib_path: std::path::PathBuf,
@@ -146,12 +149,14 @@ pub async fn main() -> std::io::Result<()> {
 }
 
 fn create_lua_vm(is_safe: bool) -> std::io::Result<()> {
+    SAFE_MODE.store(is_safe, std::sync::atomic::Ordering::Relaxed);
+
     if is_safe {
         #[allow(clippy::expect_used)]
         LUA.set(
             #[allow(clippy::expect_used)]
             mlua::Lua::new_with(
-                mlua::StdLib::ALL_SAFE,
+                mlua::StdLib::NONE,
                 mlua::LuaOptions::new()
                     .thread_pool_size(std::thread::available_parallelism()?.get()),
             )

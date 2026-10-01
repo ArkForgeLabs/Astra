@@ -4,7 +4,6 @@ use mlua::{LuaSerdeExt, UserData};
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     dotenv_function(lua)?;
     invalidate_cache(lua)?;
-    pprint(lua)?;
     AstraRegex::register_to_lua(lua)?;
     uuid_v4(lua)?;
     close_dbs(lua)?;

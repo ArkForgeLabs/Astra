@@ -50,7 +50,7 @@ pub async fn run_command(
     #[cfg(feature = "luau")]
     {
         content_to_run =
-            content_to_run.set_compiler(mlua::Compiler::new().set_optimization_level(2));
+            content_to_run.set_compiler(mlua::chunk::Compiler::new().set_optimization_level(2));
     }
     if let Err(e) = content_to_run.exec_async().await {
         eprintln!("{}", e)
