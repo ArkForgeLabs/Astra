@@ -26,10 +26,12 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     // env access as globals, filling the gap the disabled `os` library leaves
     lua.globals().set(
         "getenv",
-        lua.create_function(move |lua, key: String| {
-            if let Ok(value) = std::env::var(key)
-                && !safe_mode
-            {
+        lua.create_function(move |lua, key: String| -> mlua::Result<mlua::Value> {
+            if safe_mode {
+                return Err(mlua::Error::runtime("getenv is disabled in safe mode"));
+            }
+
+            if let Ok(value) = std::env::var(key) {
                 lua.to_value_with(
                     &value,
                     mlua::serde::SerializeOptions::new()
@@ -37,7 +39,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
                         .serialize_unit_to_null(false),
                 )
             } else {
-                Err(mlua::Error::runtime("loadfile is disabled in safe mode"))
+                Ok(mlua::Value::Nil)
             }
         })?,
     )?;
@@ -91,7 +93,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
                     };
                     load_chunk(lua, &filename)?.call(())
                 } else {
-                    Err(mlua::Error::runtime("loadfile is disabled in safe mode"))
+                    Err(mlua::Error::runtime("dofile is disabled in safe mode"))
                 }
             },
         )?,
