@@ -51,8 +51,8 @@ enum AstraCLI {
         #[arg(short, long)]
         stdlib_path: Option<String>,
         /// Enables safe mode by removing access to dangerous standard library and behaviors
-        #[arg(long, action)]
-        safe: bool,
+        #[command(flatten)]
+        safety_args: crate::components::SafetyArgs,
         /// Extra arguments to pass to the script.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         extra_args: Option<Vec<String>>,
@@ -121,10 +121,10 @@ pub async fn main() -> std::io::Result<()> {
                 file_path,
                 code,
                 stdlib_path,
-                safe,
+                safety_args,
                 extra_args,
             } => {
-                create_lua_vm(safe)?;
+                create_lua_vm(safety_args.safe)?;
                 commands::run_command(file_path, code, stdlib_path, extra_args).await
             }
             AstraCLI::Init { path } => commands::export_bundle_command(path).await?,
