@@ -10,9 +10,6 @@ mod components;
 /// Global Lua instance.
 pub static LUA: std::sync::OnceLock<mlua::Lua> = std::sync::OnceLock::new();
 
-/// Whether the current VM was created in safe mode (no standard libraries).
-pub static SAFE_MODE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
-
 #[derive(Debug, Clone)]
 pub struct RuntimeFlags {
     pub stdlib_path: std::path::PathBuf,
@@ -51,8 +48,8 @@ enum AstraCLI {
         #[arg(short, long)]
         stdlib_path: Option<String>,
         /// Enables safe mode by removing access to dangerous standard library and behaviors
-        #[command(flatten)]
-        safety_args: crate::components::SafetyArgs,
+        #[arg(long, value_enum, value_delimiter = ',')]
+        allow: Vec<crate::components::SafetyFlags>,
         /// Extra arguments to pass to the script.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         extra_args: Option<Vec<String>>,
@@ -107,12 +104,13 @@ pub async fn main() -> std::io::Result<()> {
         {
             create_lua_vm(true)?;
 
-            commands::run_command(
-                Some(content.start.clone()),
-                Some(entry_code.clone()),
-                None,
-                Some(std::env::args().collect::<Vec<_>>()),
-            )
+            commands::run_command(commands::RunConfiguration {
+                file_path: Some(content.start.clone()),
+                code: Some(entry_code.clone()),
+                stdlib_path: None,
+                extra_args: Some(std::env::args().collect::<Vec<_>>()),
+                allow_list: components::SafetyFlags::all(),
+            })
             .await;
         }
     } else {
@@ -121,11 +119,23 @@ pub async fn main() -> std::io::Result<()> {
                 file_path,
                 code,
                 stdlib_path,
-                safety_args,
+                allow,
                 extra_args,
             } => {
-                create_lua_vm(safety_args.safe)?;
-                commands::run_command(file_path, code, stdlib_path, extra_args).await
+                let allow = if allow.is_empty() {
+                    crate::components::SafetyFlags::all()
+                } else {
+                    allow
+                };
+                create_lua_vm(!allow.is_empty())?;
+                commands::run_command(commands::RunConfiguration {
+                    file_path,
+                    code,
+                    stdlib_path,
+                    extra_args,
+                    allow_list: allow,
+                })
+                .await
             }
             AstraCLI::Init { path } => commands::export_bundle_command(path).await?,
             AstraCLI::Upgrade { user_agent } => {
@@ -149,8 +159,6 @@ pub async fn main() -> std::io::Result<()> {
 }
 
 fn create_lua_vm(is_safe: bool) -> std::io::Result<()> {
-    SAFE_MODE.store(is_safe, std::sync::atomic::Ordering::Relaxed);
-
     if is_safe {
         #[allow(clippy::expect_used)]
         LUA.set(

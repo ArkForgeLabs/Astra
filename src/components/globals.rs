@@ -2,7 +2,7 @@ use mlua::LuaSerdeExt;
 
 /// Registers Astra replacements and additions for the base-library globals.
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
-    let safe_mode = crate::SAFE_MODE.load(std::sync::atomic::Ordering::Relaxed);
+    let safe_mode = false;
 
     lua.globals().set(
         "print",

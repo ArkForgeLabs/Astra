@@ -2,13 +2,17 @@ use crate::{LUA, RUNTIME_FLAGS, components::database::DATABASE_POOLS};
 use std::path::PathBuf;
 use tracing::error;
 
+#[derive(Debug, Clone)]
+pub struct RunConfiguration {
+    pub file_path: Option<String>,
+    pub code: Option<String>,
+    pub stdlib_path: Option<String>,
+    pub extra_args: Option<Vec<String>>,
+    pub allow_list: Vec<crate::components::SafetyFlags>,
+}
+
 /// Runs a Lua script.
-pub async fn run_command(
-    file_path: Option<String>,
-    code: Option<String>,
-    stdlib_path: Option<String>,
-    extra_args: Option<Vec<String>>,
-) {
+pub async fn run_command(config: RunConfiguration) {
     #[allow(clippy::expect_used)]
     let lua = LUA.get().expect("Could not get access to the global VM");
 
@@ -16,11 +20,11 @@ pub async fn run_command(
 
     // Load and execute the Lua script.
     #[allow(clippy::expect_used)]
-    let (user_file, actual_path_str) = if let Some(code) = code.clone() {
-        actual_path = file_path.unwrap_or("<commandline>".to_string());
+    let (user_file, actual_path_str) = if let Some(code) = config.code.clone() {
+        actual_path = config.file_path.unwrap_or("<commandline>".to_string());
         (code, actual_path.clone())
     } else {
-        let file = if let Some(file_path) = file_path {
+        let file = if let Some(file_path) = config.file_path {
             check_for_default_file(&mut actual_path, file_path)
         } else {
             check_for_default_file(&mut actual_path, ".".to_string())
@@ -31,9 +35,9 @@ pub async fn run_command(
     run_command_prerequisite(
         lua,
         &actual_path_str,
-        stdlib_path,
-        extra_args,
-        code.is_some(),
+        config.stdlib_path,
+        config.extra_args,
+        config.code.is_some(),
     )
     .await;
     spawn_termination_task();

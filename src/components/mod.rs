@@ -12,7 +12,7 @@ pub mod templates;
 pub mod utils;
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
-    let safe_mode = crate::SAFE_MODE.load(std::sync::atomic::Ordering::Relaxed);
+    let safe_mode = false;
 
     globals::register_to_lua(lua)?;
     import::register_import_function(lua)?;
@@ -31,21 +31,39 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone, clap::ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, clap::ValueEnum)]
 pub enum SafetyFlags {
-    All,
     None,
+    Globals,
+    Import,
+    Utils,
+    #[value(name = "serde")]
+    AstraSerde,
+    HttpServer,
+    HttpClient,
+    Database,
+    #[value(name = "datetime")]
+    DateTime,
+    Crypto,
+    FileSystem,
+    Templates,
 }
-
-/// Args shared by multiple subcommands.
-#[derive(clap::Args)]
-pub struct SafetyArgs {
-    /// Enables safe mode
-    #[arg(long, action)]
-    pub safe: bool,
-    /// Which safety flags to apply
-    #[arg(long, value_enum)]
-    pub safety: Option<SafetyFlags>,
+impl SafetyFlags {
+    pub fn all() -> Vec<Self> {
+        vec![
+            SafetyFlags::Globals,
+            SafetyFlags::Import,
+            SafetyFlags::Utils,
+            SafetyFlags::AstraSerde,
+            SafetyFlags::HttpServer,
+            SafetyFlags::HttpClient,
+            SafetyFlags::Database,
+            SafetyFlags::DateTime,
+            SafetyFlags::Crypto,
+            SafetyFlags::FileSystem,
+            SafetyFlags::Templates,
+        ]
+    }
 }
 
 macro_rules! astra_buffer_types {
