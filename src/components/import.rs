@@ -205,6 +205,7 @@ fn build_candidates(
         .collect()
 }
 
+// TODO: prioritize flagged stdlib path
 async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(PathBuf, String)> {
     // Check from the packed files
     if let Some(contents) = crate::commands::PACKED_FILES.get() {

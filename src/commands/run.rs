@@ -1,4 +1,4 @@
-use crate::{LUA, RUNTIME_FLAGS, components::database::DATABASE_POOLS};
+use crate::{LUA, components::database::DATABASE_POOLS};
 use std::path::PathBuf;
 use tracing::error;
 
@@ -83,10 +83,9 @@ async fn run_command_prerequisite(
 
     let stdlib_path = stdlib_path.unwrap_or("astra".to_string());
 
-    if let Err(e) = RUNTIME_FLAGS.set(crate::RuntimeFlags {
-        stdlib_path: PathBuf::from(stdlib_path.clone()),
-    }) {
-        error!("Could not set the global STDLIB_PATH: {e:?}");
+    if let Err(e) = lua.set_named_registry_value("stdlib_path", PathBuf::from(stdlib_path.clone()))
+    {
+        error!("{e:?}");
     }
 
     // Register Lua components.
