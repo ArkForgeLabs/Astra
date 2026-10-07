@@ -11,20 +11,37 @@ pub mod import;
 pub mod templates;
 pub mod utils;
 
-pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
-    globals::register_to_lua(lua)?;
-    import::register_import_function(lua)?;
-    utils::register_to_lua(lua)?;
-    astra_serde::register_to_lua(lua)?;
-    http::server::register_to_lua(lua)?;
-    http::client::HTTPClientRequest::register_to_lua(lua)?;
-    database::Database::register_to_lua(lua)?;
-    datetime::AstraDateTime::register_to_lua(lua)?;
-    crypto::register_to_lua(lua)?;
-    file_system::register_to_lua(lua)?;
-    file_system::GlobResult::register_to_lua(lua)?;
-    templates::register_to_lua(lua)?;
-    templates::markdown_support(lua)?;
+type Registrar = fn(&mlua::Lua) -> mlua::Result<()>;
+
+const REGISTRARS: &[(SafetyFlags, Registrar)] = &[
+    (
+        SafetyFlags::DateTime,
+        datetime::AstraDateTime::register_to_lua,
+    ),
+    (SafetyFlags::AstraSerde, astra_serde::register_to_lua),
+    (SafetyFlags::Crypto, crypto::register_to_lua),
+    (SafetyFlags::Database, database::Database::register_to_lua),
+    (SafetyFlags::FileSystem, file_system::register_to_lua),
+    (SafetyFlags::Globals, globals::register_to_lua),
+    (
+        SafetyFlags::HttpClient,
+        http::client::HTTPClientRequest::register_to_lua,
+    ),
+    (SafetyFlags::HttpServer, http::server::register_to_lua),
+    (SafetyFlags::Import, import::register_to_lua),
+    (SafetyFlags::Templates, templates::register_to_lua),
+    (SafetyFlags::Utils, utils::register_to_lua),
+];
+
+pub async fn register_components(lua: &mlua::Lua, allow_list: &[SafetyFlags]) -> mlua::Result<()> {
+    if !allow_list.contains(&SafetyFlags::None) {
+        globals::register_to_lua(lua)?;
+        for (flag, method) in REGISTRARS {
+            if allow_list.contains(flag) {
+                method(lua)?;
+            }
+        }
+    }
 
     Ok(())
 }
@@ -48,19 +65,7 @@ pub enum SafetyFlags {
 }
 impl SafetyFlags {
     pub fn all() -> Vec<Self> {
-        vec![
-            SafetyFlags::Globals,
-            SafetyFlags::Import,
-            SafetyFlags::Utils,
-            SafetyFlags::AstraSerde,
-            SafetyFlags::HttpServer,
-            SafetyFlags::HttpClient,
-            SafetyFlags::Database,
-            SafetyFlags::DateTime,
-            SafetyFlags::Crypto,
-            SafetyFlags::FileSystem,
-            SafetyFlags::Templates,
-        ]
+        REGISTRARS.iter().map(|(flag, _)| *flag).collect()
     }
 }
 

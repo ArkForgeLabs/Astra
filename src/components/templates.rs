@@ -37,6 +37,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
             Ok(engine)
         })?,
     )?;
+    markdown_support(lua)?;
 
     Ok(())
 }

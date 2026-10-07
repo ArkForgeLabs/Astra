@@ -1,11 +1,11 @@
 use crate::ASTRA_STD_LIBS;
 use std::path::{MAIN_SEPARATOR_STR, PathBuf};
 
-pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
-    lua.globals().set(
-        "astra_internal__original_require",
-        lua.globals().get::<mlua::Function>("require")?,
-    )?;
+pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
+    if let Ok(function) = lua.globals().get::<mlua::Function>("require") {
+        lua.globals()
+            .set("astra_internal__original_require", function)?;
+    }
 
     lua.globals().set(
         "require",
@@ -27,11 +27,12 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                 Ok(result) => Ok(result),
                 Err(e) => match e {
                     mlua::Error::RuntimeError(ref error_message) => {
-                        if error_message.contains("Could not find the module") {
-                            lua.globals()
-                                .get::<mlua::Function>("astra_internal__original_require")?
-                                .call_async(path)
-                                .await
+                        if error_message.contains("Could not find the module")
+                            && let Ok(function) = lua
+                                .globals()
+                                .get::<mlua::Function>("astra_internal__original_require")
+                        {
+                            function.call_async(path).await
                         } else {
                             Err(e)
                         }
