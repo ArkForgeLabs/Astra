@@ -23,7 +23,6 @@ const REGISTRARS: &[(SafetyFlags, Registrar)] = &[
     (SafetyFlags::Crypto, crypto::register_to_lua),
     (SafetyFlags::Database, database::Database::register_to_lua),
     (SafetyFlags::FileSystem, file_system::register_to_lua),
-    (SafetyFlags::Globals, globals::register_to_lua),
     (
         SafetyFlags::HttpClient,
         http::client::HTTPClientRequest::register_to_lua,
@@ -31,6 +30,7 @@ const REGISTRARS: &[(SafetyFlags, Registrar)] = &[
     (SafetyFlags::HttpServer, http::server::register_to_lua),
     (SafetyFlags::Templates, templates::register_to_lua),
     (SafetyFlags::Utils, utils::register_to_lua),
+    (SafetyFlags::Import, import::register_to_lua),
 ];
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
@@ -41,6 +41,8 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
             import::register_to_lua(lua)?;
         }
 
+        let mut registrars = REGISTRARS.to_vec();
+        registrars.pop();
         for (flag, method) in REGISTRARS {
             if allow_list.contains(flag) {
                 method(lua)?;

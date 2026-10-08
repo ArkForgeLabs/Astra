@@ -206,6 +206,18 @@ fn build_candidates(
         .collect()
 }
 
+const REGISTRARS: &[(super::SafetyFlags, &str)] = &[
+    (super::SafetyFlags::Crypto, "crypto"),
+    (super::SafetyFlags::DateTime, "datetime"),
+    (super::SafetyFlags::Database, "database"),
+    (super::SafetyFlags::FileSystem, "fs"),
+    (super::SafetyFlags::HttpClient, "http"),
+    (super::SafetyFlags::HttpServer, "http"),
+    (super::SafetyFlags::AstraSerde, "serde"),
+    (super::SafetyFlags::Templates, "templates"),
+    (super::SafetyFlags::Utils, "utils"),
+];
+
 // TODO: prioritize flagged stdlib path
 async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(PathBuf, String)> {
     // Check from the packed files
@@ -241,7 +253,19 @@ async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(Pat
         if let Some(file) = ASTRA_STD_LIBS.get_file(file_path)
             && let Some(content) = file.contents_utf8()
         {
-            return Some((candidate.to_path_buf(), content.to_string()));
+            if let Some(file_name) = file_path.file_name()
+                && let Some(allow_list) = crate::ALLOW_LIST.get()
+            {
+                for (flag, name) in REGISTRARS {
+                    if file_name.to_string_lossy().to_string().as_str() == *name
+                        && allow_list.contains(flag)
+                    {
+                        return Some((candidate.to_path_buf(), content.to_string()));
+                    }
+                }
+            } else {
+                return Some((candidate.to_path_buf(), content.to_string()));
+            }
         }
     }
 
