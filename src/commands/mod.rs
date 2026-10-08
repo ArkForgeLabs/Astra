@@ -43,12 +43,8 @@ async fn stdlib_to_lua_table(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
         .cloned()
 }
 
-async fn registration(
-    lua: &mlua::Lua,
-    script_path: &str,
-    allow_list: &[crate::components::SafetyFlags],
-) -> mlua::Result<()> {
-    crate::components::register_components(lua, allow_list).await?;
+async fn registration(lua: &mlua::Lua, script_path: &str) -> mlua::Result<()> {
+    crate::components::register_components(lua).await?;
 
     lua.globals().set(
         "ASTRA_INTERNAL__STDLIB_TABLE",

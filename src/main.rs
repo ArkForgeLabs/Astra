@@ -9,6 +9,8 @@ mod components;
 
 /// Global Lua instance.
 pub static LUA: std::sync::OnceLock<mlua::Lua> = std::sync::OnceLock::new();
+pub static ALLOW_LIST: std::sync::OnceLock<Vec<components::SafetyFlags>> =
+    std::sync::OnceLock::new();
 
 /// Global standard libraries and type definitions from Astra
 pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
@@ -98,12 +100,16 @@ pub async fn main() -> std::io::Result<()> {
         {
             create_lua_vm(true)?;
 
+            #[allow(clippy::expect_used)]
+            ALLOW_LIST
+                .set(components::SafetyFlags::all())
+                .expect("Could not set the global sandbox flags");
+
             commands::run_command(commands::RunConfiguration {
                 file_path: Some(content.start.clone()),
                 code: Some(entry_code.clone()),
                 stdlib_path: None,
                 extra_args: Some(std::env::args().collect::<Vec<_>>()),
-                allow_list: components::SafetyFlags::all(),
             })
             .await;
         }
@@ -121,13 +127,19 @@ pub async fn main() -> std::io::Result<()> {
                 } else {
                     allow
                 };
+
                 create_lua_vm(!allow.is_empty())?;
+
+                #[allow(clippy::expect_used)]
+                ALLOW_LIST
+                    .set(allow)
+                    .expect("Could not set the global sandbox flags");
+
                 commands::run_command(commands::RunConfiguration {
                     file_path,
                     code,
                     stdlib_path,
                     extra_args,
-                    allow_list: allow,
                 })
                 .await
             }

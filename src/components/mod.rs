@@ -14,6 +14,7 @@ pub mod utils;
 type Registrar = fn(&mlua::Lua) -> mlua::Result<()>;
 
 const REGISTRARS: &[(SafetyFlags, Registrar)] = &[
+    (SafetyFlags::Globals, globals::register_to_lua),
     (
         SafetyFlags::DateTime,
         datetime::AstraDateTime::register_to_lua,
@@ -28,14 +29,18 @@ const REGISTRARS: &[(SafetyFlags, Registrar)] = &[
         http::client::HTTPClientRequest::register_to_lua,
     ),
     (SafetyFlags::HttpServer, http::server::register_to_lua),
-    (SafetyFlags::Import, import::register_to_lua),
     (SafetyFlags::Templates, templates::register_to_lua),
     (SafetyFlags::Utils, utils::register_to_lua),
 ];
 
-pub async fn register_components(lua: &mlua::Lua, allow_list: &[SafetyFlags]) -> mlua::Result<()> {
-    if !allow_list.contains(&SafetyFlags::None) {
-        globals::register_to_lua(lua)?;
+pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
+    if let Some(allow_list) = crate::ALLOW_LIST.get() {
+        if allow_list.contains(&SafetyFlags::None) {
+            return Ok(());
+        } else if allow_list.contains(&SafetyFlags::Import) {
+            import::register_to_lua(lua)?;
+        }
+
         for (flag, method) in REGISTRARS {
             if allow_list.contains(flag) {
                 method(lua)?;
