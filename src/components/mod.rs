@@ -13,24 +13,24 @@ pub mod utils;
 
 type Registrar = fn(&mlua::Lua) -> mlua::Result<()>;
 
-const REGISTRARS: &[(SafetyFlags, Registrar)] = &[
-    (SafetyFlags::Globals, globals::register_to_lua),
+const REGISTRARS: &[(SandboxFlags, Registrar)] = &[
+    (SandboxFlags::Globals, globals::register_to_lua),
     (
-        SafetyFlags::DateTime,
+        SandboxFlags::DateTime,
         datetime::AstraDateTime::register_to_lua,
     ),
-    (SafetyFlags::AstraSerde, astra_serde::register_to_lua),
-    (SafetyFlags::Crypto, crypto::register_to_lua),
-    (SafetyFlags::Database, database::Database::register_to_lua),
-    (SafetyFlags::FileSystem, file_system::register_to_lua),
+    (SandboxFlags::AstraSerde, astra_serde::register_to_lua),
+    (SandboxFlags::Crypto, crypto::register_to_lua),
+    (SandboxFlags::Database, database::Database::register_to_lua),
+    (SandboxFlags::FileSystem, file_system::register_to_lua),
     (
-        SafetyFlags::HttpClient,
+        SandboxFlags::HttpClient,
         http::client::HTTPClientRequest::register_to_lua,
     ),
-    (SafetyFlags::HttpServer, http::server::register_to_lua),
-    (SafetyFlags::Templates, templates::register_to_lua),
-    (SafetyFlags::Utils, utils::register_to_lua),
-    (SafetyFlags::Import, import::register_to_lua),
+    (SandboxFlags::HttpServer, http::server::register_to_lua),
+    (SandboxFlags::Templates, templates::register_to_lua),
+    (SandboxFlags::Utils, utils::register_to_lua),
+    (SandboxFlags::Import, import::register_to_lua),
 ];
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
@@ -45,7 +45,7 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
         Some(allow_list) => {
             globals::sanitize_base(lua)?;
 
-            if allow_list.contains(&SafetyFlags::None) {
+            if allow_list.contains(&SandboxFlags::None) {
                 return Ok(());
             }
 
@@ -61,7 +61,7 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, clap::ValueEnum)]
-pub enum SafetyFlags {
+pub enum SandboxFlags {
     None,
     Globals,
     Import,

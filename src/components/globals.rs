@@ -12,7 +12,7 @@ pub fn sanitize_base(lua: &mlua::Lua) -> mlua::Result<()> {
         "getfenv",
         "setfenv",
     ] {
-        let message = format!("{name} is disabled in safe mode");
+        let message = format!("{name} is disabled in sandbox mode");
         lua.globals().set(
             name,
             lua.create_function(move |_, _: mlua::MultiValue| -> mlua::Result<()> {

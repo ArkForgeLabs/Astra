@@ -210,16 +210,16 @@ fn build_candidates(
         .collect()
 }
 
-const REGISTRARS: &[(super::SafetyFlags, &str)] = &[
-    (super::SafetyFlags::Crypto, "crypto"),
-    (super::SafetyFlags::DateTime, "datetime"),
-    (super::SafetyFlags::Database, "database"),
-    (super::SafetyFlags::FileSystem, "fs"),
-    (super::SafetyFlags::HttpClient, "http"),
-    (super::SafetyFlags::HttpServer, "http"),
-    (super::SafetyFlags::AstraSerde, "serde"),
-    (super::SafetyFlags::Templates, "templates"),
-    (super::SafetyFlags::Utils, "utils"),
+const REGISTRARS: &[(super::SandboxFlags, &str)] = &[
+    (super::SandboxFlags::Crypto, "crypto"),
+    (super::SandboxFlags::DateTime, "datetime"),
+    (super::SandboxFlags::Database, "database"),
+    (super::SandboxFlags::FileSystem, "fs"),
+    (super::SandboxFlags::HttpClient, "http"),
+    (super::SandboxFlags::HttpServer, "http"),
+    (super::SandboxFlags::AstraSerde, "serde"),
+    (super::SandboxFlags::Templates, "templates"),
+    (super::SandboxFlags::Utils, "utils"),
 ];
 
 // TODO: prioritize flagged stdlib path

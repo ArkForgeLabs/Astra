@@ -10,7 +10,7 @@ mod components;
 /// Global Lua instance.
 pub static LUA: std::sync::OnceLock<mlua::Lua> = std::sync::OnceLock::new();
 /// Restricted-VM permissions; unset (`None`) means a fully open runtime.
-pub static ALLOW_LIST: std::sync::OnceLock<Vec<components::SafetyFlags>> =
+pub static ALLOW_LIST: std::sync::OnceLock<Vec<components::SandboxFlags>> =
     std::sync::OnceLock::new();
 
 /// Global standard libraries and type definitions from Astra
@@ -44,9 +44,9 @@ enum AstraCLI {
         /// Path to the standard library folder
         #[arg(short, long)]
         stdlib_path: Option<String>,
-        /// Enables safe mode by removing access to dangerous standard library and behaviors
+        /// Enables sandbox mode by removing access to dangerous standard library and behaviors
         #[arg(long, value_enum, value_delimiter = ',')]
-        allow: Vec<crate::components::SafetyFlags>,
+        allow: Vec<crate::components::SandboxFlags>,
         /// Extra arguments to pass to the script.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         extra_args: Option<Vec<String>>,
@@ -160,8 +160,8 @@ pub async fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn create_lua_vm(is_safe: bool) -> std::io::Result<()> {
-    if is_safe {
+fn create_lua_vm(is_sandbox: bool) -> std::io::Result<()> {
+    if is_sandbox {
         #[allow(clippy::expect_used)]
         LUA.set(
             #[allow(clippy::expect_used)]
@@ -170,7 +170,7 @@ fn create_lua_vm(is_safe: bool) -> std::io::Result<()> {
                 mlua::LuaOptions::new()
                     .thread_pool_size(std::thread::available_parallelism()?.get()),
             )
-            .expect("Could not start the safe runtime"),
+            .expect("Could not start the sandbox runtime"),
         )
         .expect("Could not set up the global VM");
     } else {

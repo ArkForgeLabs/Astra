@@ -50,7 +50,7 @@ async fn registration(lua: &mlua::Lua, script_path: &str) -> mlua::Result<()> {
     // expose it in fully open runtimes or when the import system is allowed
     let import_allowed = match crate::ALLOW_LIST.get() {
         None => true,
-        Some(allow_list) => allow_list.contains(&crate::components::SafetyFlags::Import),
+        Some(allow_list) => allow_list.contains(&crate::components::SandboxFlags::Import),
     };
     if import_allowed {
         lua.globals().set(
