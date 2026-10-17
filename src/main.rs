@@ -9,6 +9,7 @@ mod components;
 
 /// Global Lua instance.
 pub static LUA: std::sync::OnceLock<mlua::Lua> = std::sync::OnceLock::new();
+/// Restricted-VM permissions; unset (`None`) means a fully open runtime.
 pub static ALLOW_LIST: std::sync::OnceLock<Vec<components::SafetyFlags>> =
     std::sync::OnceLock::new();
 
@@ -98,12 +99,8 @@ pub async fn main() -> std::io::Result<()> {
         if let Some(content) = commands::PACKED_FILES.get()
             && let Some(entry_code) = content.entries.get(&content.start.clone())
         {
-            create_lua_vm(true)?;
-
-            #[allow(clippy::expect_used)]
-            ALLOW_LIST
-                .set(components::SafetyFlags::all())
-                .expect("Could not set the global sandbox flags");
+            // packed binaries run fully open
+            create_lua_vm(false)?;
 
             commands::run_command(commands::RunConfiguration {
                 file_path: Some(content.start.clone()),
@@ -122,18 +119,17 @@ pub async fn main() -> std::io::Result<()> {
                 allow,
                 extra_args,
             } => {
-                let allow = if allow.is_empty() {
-                    crate::components::SafetyFlags::all()
+                if allow.is_empty() {
+                    // no --allow flag means a fully open runtime
+                    create_lua_vm(false)?;
                 } else {
-                    allow
-                };
+                    create_lua_vm(true)?;
 
-                create_lua_vm(!allow.is_empty())?;
-
-                #[allow(clippy::expect_used)]
-                ALLOW_LIST
-                    .set(allow)
-                    .expect("Could not set the global sandbox flags");
+                    #[allow(clippy::expect_used)]
+                    ALLOW_LIST
+                        .set(allow)
+                        .expect("Could not set the global sandbox flags");
+                }
 
                 commands::run_command(commands::RunConfiguration {
                     file_path,

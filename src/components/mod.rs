@@ -34,18 +34,25 @@ const REGISTRARS: &[(SafetyFlags, Registrar)] = &[
 ];
 
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
-    if let Some(allow_list) = crate::ALLOW_LIST.get() {
-        if allow_list.contains(&SafetyFlags::None) {
-            return Ok(());
-        } else if allow_list.contains(&SafetyFlags::Import) {
-            import::register_to_lua(lua)?;
-        }
-
-        let mut registrars = REGISTRARS.to_vec();
-        registrars.pop();
-        for (flag, method) in REGISTRARS {
-            if allow_list.contains(flag) {
+    match crate::ALLOW_LIST.get() {
+        // fully open runtime: register everything
+        None => {
+            for (_, method) in REGISTRARS {
                 method(lua)?;
+            }
+        }
+        // restricted VM: stub the base, then register only allowed components
+        Some(allow_list) => {
+            globals::sanitize_base(lua)?;
+
+            if allow_list.contains(&SafetyFlags::None) {
+                return Ok(());
+            }
+
+            for (flag, method) in REGISTRARS {
+                if allow_list.contains(flag) {
+                    method(lua)?;
+                }
             }
         }
     }
@@ -69,11 +76,6 @@ pub enum SafetyFlags {
     Crypto,
     FileSystem,
     Templates,
-}
-impl SafetyFlags {
-    pub fn all() -> Vec<Self> {
-        REGISTRARS.iter().map(|(flag, _)| *flag).collect()
-    }
 }
 
 macro_rules! astra_buffer_types {

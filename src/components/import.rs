@@ -27,7 +27,11 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
                 Ok(result) => Ok(result),
                 Err(e) => match e {
                     mlua::Error::RuntimeError(ref error_message) => {
-                        if error_message.contains("Could not find the module")
+                        // the fallback only makes sense where a working
+                        // original package.require exists
+                        const REQUIRE_FALLBACK: bool = cfg!(not(feature = "luau"));
+                        if REQUIRE_FALLBACK
+                            && error_message.contains("Could not find the module")
                             && let Ok(function) = lua
                                 .globals()
                                 .get::<mlua::Function>("astra_internal__original_require")
@@ -253,15 +257,25 @@ async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(Pat
         if let Some(file) = ASTRA_STD_LIBS.get_file(file_path)
             && let Some(content) = file.contents_utf8()
         {
-            if let Some(file_name) = file_path.file_name()
-                && let Some(allow_list) = crate::ALLOW_LIST.get()
-            {
-                for (flag, name) in REGISTRARS {
-                    if file_name.to_string_lossy().to_string().as_str() == *name
-                        && allow_list.contains(flag)
-                    {
-                        return Some((candidate.to_path_buf(), content.to_string()));
-                    }
+            if let Some(allow_list) = crate::ALLOW_LIST.get() {
+                let file_stem = file_path
+                    .file_stem()
+                    .map(|stem| stem.to_string_lossy().to_string())
+                    .unwrap_or_default();
+
+                // modules without a registrar entry (e.g. stores, test,
+                // validation) follow the same trust level as on-disk files
+                // and are allowed whenever the import system is
+                let allowed = match REGISTRARS
+                    .iter()
+                    .find(|(_, name)| file_stem.as_str() == *name)
+                {
+                    Some((flag, _)) => allow_list.contains(flag),
+                    None => true,
+                };
+
+                if allowed {
+                    return Some((candidate.to_path_buf(), content.to_string()));
                 }
             } else {
                 return Some((candidate.to_path_buf(), content.to_string()));

@@ -1,9 +1,35 @@
 use mlua::LuaSerdeExt;
 
+/// Installs error stubs for dangerous base/builtin globals in restricted VMs.
+pub fn sanitize_base(lua: &mlua::Lua) -> mlua::Result<()> {
+    // These globals are restricted in sandboxed VMs unless explicitly allowed
+    for name in [
+        "print",
+        "load",
+        "loadstring",
+        "loadfile",
+        "dofile",
+        "getfenv",
+        "setfenv",
+    ] {
+        let message = format!("{name} is disabled in safe mode");
+        lua.globals().set(
+            name,
+            lua.create_function(move |_, _: mlua::MultiValue| -> mlua::Result<()> {
+                Err(mlua::Error::runtime(message.clone()))
+            })?,
+        )?;
+    }
+
+    // luau keeps a broken native one, so it is removed
+    // explicitly to match. The import component installs its own require.
+    lua.globals().set("require", mlua::Value::Nil)?;
+
+    Ok(())
+}
+
 /// Registers Astra replacements and additions for the base-library globals.
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
-    let safe_mode = false;
-
     lua.globals().set(
         "print",
         lua.create_function(|_, args: mlua::MultiValue| {
@@ -27,10 +53,6 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "getenv",
         lua.create_function(move |lua, key: String| -> mlua::Result<mlua::Value> {
-            if safe_mode {
-                return Err(mlua::Error::runtime("getenv is disabled in safe mode"));
-            }
-
             if let Ok(value) = std::env::var(key) {
                 lua.to_value_with(
                     &value,
@@ -47,13 +69,9 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "setenv",
         lua.create_function(move |_, (key, value): (String, String)| {
-            if !safe_mode {
-                unsafe { std::env::set_var(key, value) };
+            unsafe { std::env::set_var(key, value) };
 
-                Ok(())
-            } else {
-                Err(mlua::Error::runtime("setenv is disabled in safe mode"))
-            }
+            Ok(())
         })?,
     )?;
 
@@ -64,18 +82,14 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         "loadfile",
         lua.create_function(
             move |lua, filename: String| -> mlua::Result<mlua::MultiValue> {
-                if !safe_mode {
-                    match load_chunk(lua, &filename) {
-                        Ok(chunk) => Ok(mlua::MultiValue::from_vec(vec![mlua::Value::Function(
-                            chunk,
-                        )])),
-                        Err(e) => Ok(mlua::MultiValue::from_vec(vec![
-                            mlua::Value::Nil,
-                            mlua::Value::String(lua.create_string(e.to_string())?),
-                        ])),
-                    }
-                } else {
-                    Err(mlua::Error::runtime("loadfile is disabled in safe mode"))
+                match load_chunk(lua, &filename) {
+                    Ok(chunk) => Ok(mlua::MultiValue::from_vec(vec![mlua::Value::Function(
+                        chunk,
+                    )])),
+                    Err(e) => Ok(mlua::MultiValue::from_vec(vec![
+                        mlua::Value::Nil,
+                        mlua::Value::String(lua.create_string(e.to_string())?),
+                    ])),
                 }
             },
         )?,
@@ -85,43 +99,15 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
         "dofile",
         lua.create_function(
             move |lua, filename: Option<String>| -> mlua::Result<mlua::MultiValue> {
-                if !safe_mode {
-                    let Some(filename) = filename else {
-                        return Err(mlua::Error::runtime(
-                            "bad argument #1 to 'dofile' (filename expected)",
-                        ));
-                    };
-                    load_chunk(lua, &filename)?.call(())
-                } else {
-                    Err(mlua::Error::runtime("dofile is disabled in safe mode"))
-                }
+                let Some(filename) = filename else {
+                    return Err(mlua::Error::runtime(
+                        "bad argument #1 to 'dofile' (filename expected)",
+                    ));
+                };
+                load_chunk(lua, &filename)?.call(())
             },
         )?,
     )?;
-
-    // environment-swap primitives can escape sandbox
-    if safe_mode {
-        #[cfg(any(
-            feature = "lua51",
-            feature = "luajit",
-            feature = "luajit52",
-            feature = "luau"
-        ))]
-        {
-            lua.globals().set(
-                "getfenv",
-                lua.create_function(|_, ()| -> mlua::Result<()> {
-                    Err(mlua::Error::runtime("getfenv is disabled in safe mode"))
-                })?,
-            )?;
-            lua.globals().set(
-                "setfenv",
-                lua.create_function(|_, ()| -> mlua::Result<()> {
-                    Err(mlua::Error::runtime("setfenv is disabled in safe mode"))
-                })?,
-            )?;
-        }
-    }
 
     Ok(())
 }

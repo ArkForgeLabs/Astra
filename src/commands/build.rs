@@ -44,26 +44,36 @@ pub async fn is_packed_binary() -> std::io::Result<bool> {
 
 pub async fn dependency_resolution(
     file_path: &str,
+    script_context: &str,
     matches: &mut PackedFiles,
 ) -> std::io::Result<()> {
     Box::pin(async {
-        if !matches.entries.contains_key(file_path)
-            && let Some((_, file_content)) =
+        let entry_key = file_path.to_string() + ".lua";
+
+        if !matches.entries.contains_key(&entry_key)
+            && let Some((resolved_path, file_content)) =
                 crate::components::import::find_first_lua_match_with_content(
-                    None, file_path, file_path,
+                    None,
+                    script_context,
+                    file_path,
                 )
                 .await
         {
+            // resolve the imports of the current file relative to its own
+            // directory so nested local modules get embedded as well
+            let nested_context = resolved_path
+                .to_string_lossy()
+                .replace(".luau", "")
+                .replace(".lua", "");
+
             for (_, [import_path]) in REQUIRE_REGEX
                 .captures_iter(&file_content)
                 .map(|c| c.extract())
             {
-                dependency_resolution(import_path, matches).await?;
+                dependency_resolution(import_path, &nested_context, matches).await?;
             }
 
-            matches
-                .entries
-                .insert(file_path.to_string() + ".lua", file_content);
+            matches.entries.insert(entry_key, file_content);
         }
 
         Ok(())
@@ -73,7 +83,8 @@ pub async fn dependency_resolution(
 
 pub async fn pack(path: String, output: String) -> std::io::Result<()> {
     let mut result = PackedFiles::default();
-    dependency_resolution(&path.replace(".luau", "").replace(".lua", ""), &mut result).await?;
+    let entry = path.replace(".luau", "").replace(".lua", "");
+    dependency_resolution(&entry, &entry, &mut result).await?;
     result.start = path;
 
     let current_binary = std::env::current_exe()?;
@@ -85,6 +96,7 @@ pub async fn pack(path: String, output: String) -> std::io::Result<()> {
 
     let mut file = tokio::fs::OpenOptions::new()
         .write(true)
+        .create(true)
         .truncate(true)
         .open(output)
         .await?;

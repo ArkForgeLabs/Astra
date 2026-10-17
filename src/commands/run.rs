@@ -23,12 +23,18 @@ pub async fn run_command(config: RunConfiguration) {
         actual_path = config.file_path.unwrap_or("<commandline>".to_string());
         (code, actual_path.clone())
     } else {
-        let file = if let Some(file_path) = config.file_path {
+        let resolved = if let Some(file_path) = config.file_path {
             check_for_default_file(&mut actual_path, file_path)
         } else {
             check_for_default_file(&mut actual_path, ".".to_string())
         };
-        (file, actual_path.clone())
+        match resolved {
+            Ok(file) => (file, actual_path.clone()),
+            Err(message) => {
+                eprintln!("{message}");
+                std::process::exit(1);
+            }
+        }
     };
 
     run_command_prerequisite(
@@ -114,21 +120,21 @@ async fn run_command_prerequisite(
     }
 }
 
-fn check_for_default_file(actual_path: &mut String, file_path: String) -> String {
+fn check_for_default_file(actual_path: &mut String, file_path: String) -> Result<String, String> {
     actual_path.clone_from(&file_path);
     let file_path = std::path::Path::new(&file_path);
 
     #[allow(clippy::expect_used)]
     let result = if file_path.exists() && file_path.is_file() {
-        std::fs::read_to_string(file_path).expect("Couldn't read file")
+        Ok(std::fs::read_to_string(file_path).expect("Couldn't read file"))
     } else if file_path.join("init.lua").exists() {
         actual_path.clone_from(&file_path.join("init.lua").to_string_lossy().to_string());
-        std::fs::read_to_string(file_path.join("init.lua")).expect("Couldn't read file")
+        Ok(std::fs::read_to_string(file_path.join("init.lua")).expect("Couldn't read file"))
     } else if file_path.join("init.luau").exists() {
         actual_path.clone_from(&file_path.join("init.luau").to_string_lossy().to_string());
-        std::fs::read_to_string(file_path.join("init.luau")).expect("Couldn't read file")
+        Ok(std::fs::read_to_string(file_path.join("init.luau")).expect("Couldn't read file"))
     } else {
-        panic!("Could not find any file to run...");
+        Err("Could not find any file to run...".to_string())
     };
 
     result
