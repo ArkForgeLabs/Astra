@@ -134,7 +134,7 @@ pub async fn find_first_lua_match_with_content(
     None
 }
 
-fn resolve_path(path: &std::path::Path) -> PathBuf {
+pub(crate) fn resolve_path(path: &std::path::Path) -> PathBuf {
     let mut resolved = PathBuf::new();
     for component in path.components() {
         match component {
