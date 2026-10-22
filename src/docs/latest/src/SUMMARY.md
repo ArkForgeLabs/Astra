@@ -17,6 +17,8 @@
 - [DateTime](./std/datetime.md)
 - [Utilities](./std/utilities.md)
 - [In-Memory Stores](./std/mem_stores.md)
+- [Globals](./std/globals.md)
+- [Sandbox](./sandbox.md)
 
 # Extending Astra
 
