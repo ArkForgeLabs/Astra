@@ -4,6 +4,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     let lua_globals = lua.globals();
+    GlobResult::register_to_lua(lua)?;
 
     macro_rules! file_io_methods {
         ($name:expr, $method:expr) => {

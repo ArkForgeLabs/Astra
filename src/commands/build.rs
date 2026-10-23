@@ -42,28 +42,55 @@ pub async fn is_packed_binary() -> std::io::Result<bool> {
     }
 }
 
-pub async fn dependency_resolution(
-    file_path: &str,
+fn read_entry(path: &str) -> std::io::Result<(std::path::PathBuf, String)> {
+    let file_path = std::path::Path::new(path);
+
+    if file_path.exists() && file_path.is_file() {
+        return Ok((file_path.to_path_buf(), std::fs::read_to_string(file_path)?));
+    }
+
+    for init in ["init.lua", "init.luau"] {
+        let init_path = file_path.join(init);
+        if init_path.exists() {
+            return Ok((init_path.clone(), std::fs::read_to_string(&init_path)?));
+        }
+    }
+
+    Err(std::io::Error::new(
+        std::io::ErrorKind::NotFound,
+        format!("Could not find any file to pack at {path}"),
+    ))
+}
+
+async fn embed_imports(
+    file_content: &str,
+    script_context: &str,
     matches: &mut PackedFiles,
 ) -> std::io::Result<()> {
     Box::pin(async {
-        if !matches.entries.contains_key(file_path)
-            && let Some((_, file_content)) =
+        for (_, [import_path]) in REQUIRE_REGEX
+            .captures_iter(file_content)
+            .map(|c| c.extract())
+        {
+            if let Some((resolved_path, import_content)) =
                 crate::components::import::find_first_lua_match_with_content(
-                    None, file_path, file_path,
+                    None,
+                    script_context,
+                    import_path,
                 )
                 .await
-        {
-            for (_, [import_path]) in REQUIRE_REGEX
-                .captures_iter(&file_content)
-                .map(|c| c.extract())
             {
-                dependency_resolution(import_path, matches).await?;
-            }
+                let resolved_str = resolved_path.to_string_lossy().to_string();
 
-            matches
-                .entries
-                .insert(file_path.to_string() + ".lua", file_content);
+                // circular imports terminate naturally
+                if matches.entries.contains_key(&resolved_str) {
+                    continue;
+                }
+
+                embed_imports(&import_content, &resolved_str, matches).await?;
+
+                matches.entries.insert(resolved_str.clone(), import_content);
+            }
         }
 
         Ok(())
@@ -73,8 +100,18 @@ pub async fn dependency_resolution(
 
 pub async fn pack(path: String, output: String) -> std::io::Result<()> {
     let mut result = PackedFiles::default();
-    dependency_resolution(&path.replace(".luau", "").replace(".lua", ""), &mut result).await?;
-    result.start = path;
+
+    let (entry_path, entry_content) = read_entry(&path)?;
+    let entry_key = crate::components::import::resolve_path(&entry_path)
+        .to_string_lossy()
+        .to_string();
+    result
+        .entries
+        .insert(entry_key.clone(), entry_content.clone());
+    result.start = entry_key.clone();
+
+    // scan the entry's imports with the entry itself as the script context
+    embed_imports(&entry_content, &entry_key, &mut result).await?;
 
     let current_binary = std::env::current_exe()?;
     let mut bytes = tokio::fs::read(current_binary).await?;
@@ -85,6 +122,7 @@ pub async fn pack(path: String, output: String) -> std::io::Result<()> {
 
     let mut file = tokio::fs::OpenOptions::new()
         .write(true)
+        .create(true)
         .truncate(true)
         .open(output)
         .await?;

@@ -4,7 +4,6 @@ use mlua::{LuaSerdeExt, UserData};
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     dotenv_function(lua)?;
     invalidate_cache(lua)?;
-    pprint(lua)?;
     AstraRegex::register_to_lua(lua)?;
     uuid_v4(lua)?;
     close_dbs(lua)?;
@@ -41,27 +40,6 @@ pub fn dotenv_function(lua: &mlua::Lua) -> mlua::Result<()> {
         "astra_internal__dotenv_load",
         lua.create_function(|_, file_name: String| {
             let _ = dotenvy::from_filename_override(file_name);
-            Ok(())
-        })?,
-    )
-}
-
-pub fn pprint(lua: &mlua::Lua) -> mlua::Result<()> {
-    lua.globals().set(
-        "print",
-        lua.create_function(|_, args: mlua::MultiValue| {
-            for input in args.iter() {
-                if (input.is_string() || input.is_error())
-                    && let Ok(s) = input.to_string()
-                {
-                    print!("{} ", s);
-                } else if input.is_userdata() {
-                    print!("{input:?} ")
-                } else {
-                    print!("{input:#?} ")
-                }
-            }
-            println!();
             Ok(())
         })?,
     )

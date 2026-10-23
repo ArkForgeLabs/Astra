@@ -1,11 +1,11 @@
 use crate::ASTRA_STD_LIBS;
 use std::path::{MAIN_SEPARATOR_STR, PathBuf};
 
-pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
-    lua.globals().set(
-        "astra_internal__original_require",
-        lua.globals().get::<mlua::Function>("require")?,
-    )?;
+pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
+    if let Ok(function) = lua.globals().get::<mlua::Function>("require") {
+        lua.globals()
+            .set("astra_internal__original_require", function)?;
+    }
 
     lua.globals().set(
         "require",
@@ -27,11 +27,16 @@ pub fn register_import_function(lua: &mlua::Lua) -> mlua::Result<()> {
                 Ok(result) => Ok(result),
                 Err(e) => match e {
                     mlua::Error::RuntimeError(ref error_message) => {
-                        if error_message.contains("Could not find the module") {
-                            lua.globals()
-                                .get::<mlua::Function>("astra_internal__original_require")?
-                                .call_async(path)
-                                .await
+                        // the fallback only makes sense where a working
+                        // original package.require exists
+                        const REQUIRE_FALLBACK: bool = cfg!(not(feature = "luau"));
+                        if REQUIRE_FALLBACK
+                            && error_message.contains("Could not find the module")
+                            && let Ok(function) = lua
+                                .globals()
+                                .get::<mlua::Function>("astra_internal__original_require")
+                        {
+                            function.call_async(path).await
                         } else {
                             Err(e)
                         }
@@ -129,7 +134,7 @@ pub async fn find_first_lua_match_with_content(
     None
 }
 
-fn resolve_path(path: &std::path::Path) -> PathBuf {
+pub(crate) fn resolve_path(path: &std::path::Path) -> PathBuf {
     let mut resolved = PathBuf::new();
     for component in path.components() {
         match component {
@@ -205,6 +210,19 @@ fn build_candidates(
         .collect()
 }
 
+const REGISTRARS: &[(super::SandboxFlags, &str)] = &[
+    (super::SandboxFlags::Crypto, "crypto"),
+    (super::SandboxFlags::DateTime, "datetime"),
+    (super::SandboxFlags::Database, "database"),
+    (super::SandboxFlags::FileSystem, "fs"),
+    (super::SandboxFlags::HttpClient, "http"),
+    (super::SandboxFlags::HttpServer, "http"),
+    (super::SandboxFlags::AstraSerde, "serde"),
+    (super::SandboxFlags::Templates, "templates"),
+    (super::SandboxFlags::Utils, "utils"),
+];
+
+// TODO: prioritize flagged stdlib path
 async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(PathBuf, String)> {
     // Check from the packed files
     if let Some(contents) = crate::commands::PACKED_FILES.get() {
@@ -239,7 +257,29 @@ async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(Pat
         if let Some(file) = ASTRA_STD_LIBS.get_file(file_path)
             && let Some(content) = file.contents_utf8()
         {
-            return Some((candidate.to_path_buf(), content.to_string()));
+            if let Some(allow_list) = crate::ALLOW_LIST.get() {
+                let file_stem = file_path
+                    .file_stem()
+                    .map(|stem| stem.to_string_lossy().to_string())
+                    .unwrap_or_default();
+
+                // modules without a registrar entry (e.g. stores, test,
+                // validation) follow the same trust level as on-disk files
+                // and are allowed whenever the import system is
+                let allowed = match REGISTRARS
+                    .iter()
+                    .find(|(_, name)| file_stem.as_str() == *name)
+                {
+                    Some((flag, _)) => allow_list.contains(flag),
+                    None => true,
+                };
+
+                if allowed {
+                    return Some((candidate.to_path_buf(), content.to_string()));
+                }
+            } else {
+                return Some((candidate.to_path_buf(), content.to_string()));
+            }
         }
     }
 

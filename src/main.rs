@@ -9,12 +9,9 @@ mod components;
 
 /// Global Lua instance.
 pub static LUA: std::sync::OnceLock<mlua::Lua> = std::sync::OnceLock::new();
-
-#[derive(Debug, Clone)]
-pub struct RuntimeFlags {
-    pub stdlib_path: std::path::PathBuf,
-}
-pub static RUNTIME_FLAGS: tokio::sync::OnceCell<RuntimeFlags> = tokio::sync::OnceCell::const_new();
+/// Restricted-VM permissions; unset (`None`) means a fully open runtime.
+pub static ALLOW_LIST: std::sync::OnceLock<Vec<components::SandboxFlags>> =
+    std::sync::OnceLock::new();
 
 /// Global standard libraries and type definitions from Astra
 pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
@@ -47,9 +44,9 @@ enum AstraCLI {
         /// Path to the standard library folder
         #[arg(short, long)]
         stdlib_path: Option<String>,
-        /// Enables safe mode by removing access to dangerous standard library and behaviors
-        #[arg(long, action)]
-        safe: bool,
+        /// Enables sandbox mode by removing access to dangerous standard library and behaviors
+        #[arg(long, value_enum, value_delimiter = ',')]
+        allow: Vec<crate::components::SandboxFlags>,
         /// Extra arguments to pass to the script.
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         extra_args: Option<Vec<String>>,
@@ -102,14 +99,15 @@ pub async fn main() -> std::io::Result<()> {
         if let Some(content) = commands::PACKED_FILES.get()
             && let Some(entry_code) = content.entries.get(&content.start.clone())
         {
-            create_lua_vm(true)?;
+            // packed binaries run fully open
+            create_lua_vm(false)?;
 
-            commands::run_command(
-                Some(content.start.clone()),
-                Some(entry_code.clone()),
-                None,
-                Some(std::env::args().collect::<Vec<_>>()),
-            )
+            commands::run_command(commands::RunConfiguration {
+                file_path: Some(content.start.clone()),
+                code: Some(entry_code.clone()),
+                stdlib_path: None,
+                extra_args: Some(std::env::args().collect::<Vec<_>>()),
+            })
             .await;
         }
     } else {
@@ -118,11 +116,28 @@ pub async fn main() -> std::io::Result<()> {
                 file_path,
                 code,
                 stdlib_path,
-                safe,
+                allow,
                 extra_args,
             } => {
-                create_lua_vm(safe)?;
-                commands::run_command(file_path, code, stdlib_path, extra_args).await
+                if allow.is_empty() {
+                    // no --allow flag means a fully open runtime
+                    create_lua_vm(false)?;
+                } else {
+                    create_lua_vm(true)?;
+
+                    #[allow(clippy::expect_used)]
+                    ALLOW_LIST
+                        .set(allow)
+                        .expect("Could not set the global sandbox flags");
+                }
+
+                commands::run_command(commands::RunConfiguration {
+                    file_path,
+                    code,
+                    stdlib_path,
+                    extra_args,
+                })
+                .await
             }
             AstraCLI::Init { path } => commands::export_bundle_command(path).await?,
             AstraCLI::Upgrade { user_agent } => {
@@ -145,17 +160,17 @@ pub async fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn create_lua_vm(is_safe: bool) -> std::io::Result<()> {
-    if is_safe {
+fn create_lua_vm(is_sandbox: bool) -> std::io::Result<()> {
+    if is_sandbox {
         #[allow(clippy::expect_used)]
         LUA.set(
             #[allow(clippy::expect_used)]
             mlua::Lua::new_with(
-                mlua::StdLib::ALL_SAFE,
+                mlua::StdLib::NONE,
                 mlua::LuaOptions::new()
                     .thread_pool_size(std::thread::available_parallelism()?.get()),
             )
-            .expect("Could not start the safe runtime"),
+            .expect("Could not start the sandbox runtime"),
         )
         .expect("Could not set up the global VM");
     } else {
