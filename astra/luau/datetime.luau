@@ -1,6 +1,8 @@
 --!nocheck
 --!nolint
 
+-- Setters mutate the DateTime in place and return an updated copy of it, so
+-- chaining them requires reassignment: dt = dt:set_year(2030):set_month(6)
 type DateTime = {
   get_year: (datetime: DateTime) -> number,
   get_month: (datetime: DateTime) -> number,
@@ -12,14 +14,14 @@ type DateTime = {
   get_millisecond: (datetime: DateTime) -> number,
   get_epoch_milliseconds: (datetime: DateTime) -> number,
   get_timezone_offset: (datetime: DateTime) -> number,
-  set_year: (datetime: DateTime, year: number) -> (),
-  set_month: (datetime: DateTime, month: number) -> (),
-  set_day: (datetime: DateTime, day: number) -> (),
-  set_hour: (datetime: DateTime, hour: number) -> (),
-  set_minute: (datetime: DateTime, min: number) -> (),
-  set_second: (datetime: DateTime, sec: number) -> (),
-  set_millisecond: (datetime: DateTime, milli: number) -> (),
-  set_epoch_milliseconds: (datetime: DateTime, milli: number) -> (),
+  set_year: (datetime: DateTime, year: number) -> DateTime,
+  set_month: (datetime: DateTime, month: number) -> DateTime,
+  set_day: (datetime: DateTime, day: number) -> DateTime,
+  set_hour: (datetime: DateTime, hour: number) -> DateTime,
+  set_minute: (datetime: DateTime, min: number) -> DateTime,
+  set_second: (datetime: DateTime, sec: number) -> DateTime,
+  set_millisecond: (datetime: DateTime, milli: number) -> DateTime,
+  set_epoch_milliseconds: (datetime: DateTime, milli: number) -> DateTime,
   set_time: (datetime: DateTime, hour: number, minute: number, second: number, millis: number) -> DateTime,
   set_date: (datetime: DateTime, year: number, month: number, day: number) -> DateTime,
   add_milliseconds: (datetime: DateTime, millis: number) -> DateTime,
@@ -50,9 +52,10 @@ type DateTime = {
   to_locale_date_string: (datetime: DateTime) -> string,
   to_locale_time_string: (datetime: DateTime) -> string,
   to_locale_datetime_string: (datetime: DateTime) -> string,
+  diff_milliseconds: (datetime: DateTime, other: DateTime) -> number,
 }
 
---- @param differentiator? string | number This field can be used to determine the type of DateTime. On empty it creates a new local DateTime, on number it starts the sequence for letting you define the DateTime by parameters, and on string it allows you to parse a string to DateTime.
+--- @param differentiator? string | number This field can be used to determine the type of DateTime. On empty it creates a new local DateTime for the current moment, on number it starts the sequence for letting you define the DateTime by parameters, and on string it allows you to parse a string (RFC 2822, RFC 3339, or `YYYY-MM-DD`) into a DateTime.
 local function new_datetime(
   differentiator: string | number?,
   month: number?,
@@ -71,9 +74,14 @@ local function new_datetime(
   end
 end
 
+--- Creates a DateTime from milliseconds since the Unix epoch, anchored to UTC (+00:00)
+local function from_epoch_millis(millis: number): DateTime
+  return astra_internal__datetime_new_from_epoch(millis)
+end
+
 --- Stops the execution thread for a given amount of time in milliseconds
 local function sleep(amount: number): ()
   return astra_internal__datetime_sleep(amount)
 end
 
-return { new = new_datetime, sleep = sleep }
+return { new = new_datetime, sleep = sleep, from_epoch_millis = from_epoch_millis }

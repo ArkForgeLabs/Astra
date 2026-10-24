@@ -1,4 +1,4 @@
-use mlua::{ExternalError, LuaSerdeExt};
+use mlua::{ExternalError, LuaSerdeExt, serde::SerializeOptions};
 use pastey::paste;
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
@@ -43,7 +43,7 @@ pub fn sanetize_lua_input(lua: &mlua::Lua, input: mlua::Value) -> mlua::Result<m
 
         lua.to_value_with(
             &new_input,
-            mlua::SerializeOptions::new()
+            SerializeOptions::new()
                 .serialize_none_to_null(false)
                 .serialize_unit_to_null(false),
         )
@@ -64,7 +64,7 @@ macro_rules! gen_methods {
                         match $crate_name::to_string(&value) {
                             Ok(serialized) => lua.to_value_with(
                                 &serialized,
-                                mlua::SerializeOptions::new()
+                                SerializeOptions::new()
                                     .serialize_none_to_null(false)
                                     .serialize_unit_to_null(false),
                             ),
@@ -82,7 +82,7 @@ macro_rules! gen_methods {
                             Ok(deserialized) => {
                                 lua.to_value_with(
                                     &deserialized,
-                                    mlua::SerializeOptions::new()
+                                    SerializeOptions::new()
                                         .serialize_none_to_null(false)
                                         .serialize_unit_to_null(false),
                                 )
@@ -111,7 +111,7 @@ fn xml_encode(lua: &mlua::Lua) -> mlua::Result<()> {
             match quick_xml::se::to_string_with_root(&root, &value) {
                 Ok(serialized) => lua.to_value_with(
                     &serialized,
-                    mlua::SerializeOptions::new()
+                    SerializeOptions::new()
                         .serialize_none_to_null(false)
                         .serialize_unit_to_null(false),
                 ),
@@ -130,7 +130,7 @@ fn xml_decode(lua: &mlua::Lua) -> mlua::Result<()> {
             match result {
                 Ok(res) => lua.to_value_with(
                     &res,
-                    mlua::SerializeOptions::new()
+                    SerializeOptions::new()
                         .serialize_none_to_null(false)
                         .serialize_unit_to_null(false),
                 ),
@@ -200,7 +200,7 @@ fn csv_decode(lua: &mlua::Lua) -> mlua::Result<()> {
 
             lua.to_value_with(
                 &(body, header),
-                mlua::SerializeOptions::new()
+                SerializeOptions::new()
                     .serialize_none_to_null(false)
                     .serialize_unit_to_null(false),
             )

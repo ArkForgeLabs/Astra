@@ -55,7 +55,7 @@ impl UserData for RequestLua {
             match axum::extract::Query::<serde_json::Value>::try_from_uri(&this.parts.uri) {
                 Ok(queries) => lua.to_value_with(
                     &queries.clone().take(),
-                    mlua::SerializeOptions::new()
+                    mlua::serde::SerializeOptions::new()
                         .serialize_none_to_null(false)
                         .serialize_unit_to_null(false),
                 ),
@@ -121,7 +121,7 @@ impl UserData for RequestLua {
                                         key.clone(),
                                         lua.to_value_with(
                                             &value,
-                                            mlua::SerializeOptions::new()
+                                            mlua::serde::SerializeOptions::new()
                                                 .serialize_none_to_null(false)
                                                 .serialize_unit_to_null(false),
                                         )?,
@@ -278,7 +278,7 @@ impl UserData for AstraMultipart {
                 if let Some(filename) = &field.file_name {
                     file_name = lua.to_value_with(
                         &filename,
-                        mlua::SerializeOptions::new()
+                        mlua::serde::SerializeOptions::new()
                             .serialize_none_to_null(false)
                             .serialize_unit_to_null(false),
                     );

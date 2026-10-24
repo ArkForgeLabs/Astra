@@ -5,26 +5,77 @@ pub mod crypto;
 pub mod database;
 pub mod datetime;
 pub mod file_system;
+pub mod globals;
 pub mod http;
 pub mod import;
 pub mod templates;
 pub mod utils;
 
+type Registrar = fn(&mlua::Lua) -> mlua::Result<()>;
+
+const REGISTRARS: &[(SandboxFlags, Registrar)] = &[
+    (SandboxFlags::Globals, globals::register_to_lua),
+    (
+        SandboxFlags::DateTime,
+        datetime::AstraDateTime::register_to_lua,
+    ),
+    (SandboxFlags::AstraSerde, astra_serde::register_to_lua),
+    (SandboxFlags::Crypto, crypto::register_to_lua),
+    (SandboxFlags::Database, database::Database::register_to_lua),
+    (SandboxFlags::FileSystem, file_system::register_to_lua),
+    (
+        SandboxFlags::HttpClient,
+        http::client::HTTPClientRequest::register_to_lua,
+    ),
+    (SandboxFlags::HttpServer, http::server::register_to_lua),
+    (SandboxFlags::Templates, templates::register_to_lua),
+    (SandboxFlags::Utils, utils::register_to_lua),
+    (SandboxFlags::Import, import::register_to_lua),
+];
+
 pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
-    import::register_import_function(lua)?;
-    utils::register_to_lua(lua)?;
-    astra_serde::register_to_lua(lua)?;
-    http::server::register_to_lua(lua)?;
-    http::client::HTTPClientRequest::register_to_lua(lua)?;
-    database::Database::register_to_lua(lua)?;
-    datetime::AstraDateTime::register_to_lua(lua)?;
-    crypto::register_to_lua(lua)?;
-    file_system::register_to_lua(lua)?;
-    file_system::GlobResult::register_to_lua(lua)?;
-    templates::register_to_lua(lua)?;
-    templates::markdown_support(lua)?;
+    match crate::ALLOW_LIST.get() {
+        // fully open runtime: register everything
+        None => {
+            for (_, method) in REGISTRARS {
+                method(lua)?;
+            }
+        }
+        // restricted VM: stub the base, then register only allowed components
+        Some(allow_list) => {
+            globals::sanitize_base(lua)?;
+
+            if allow_list.contains(&SandboxFlags::None) {
+                return Ok(());
+            }
+
+            for (flag, method) in REGISTRARS {
+                if allow_list.contains(flag) {
+                    method(lua)?;
+                }
+            }
+        }
+    }
 
     Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, clap::ValueEnum)]
+pub enum SandboxFlags {
+    None,
+    Globals,
+    Import,
+    Utils,
+    #[value(name = "serde")]
+    AstraSerde,
+    HttpServer,
+    HttpClient,
+    Database,
+    #[value(name = "datetime")]
+    DateTime,
+    Crypto,
+    FileSystem,
+    Templates,
 }
 
 macro_rules! astra_buffer_types {
@@ -54,7 +105,7 @@ macro_rules! astra_buffer_types {
                     ) {
                         Ok(parsed_json) => lua.to_value_with(
                             &parsed_json,
-                            mlua::SerializeOptions::new()
+                            mlua::serde::SerializeOptions::new()
                                 .serialize_none_to_null(false)
                                 .serialize_unit_to_null(false),
                         ),

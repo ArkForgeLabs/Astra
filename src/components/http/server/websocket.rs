@@ -3,6 +3,8 @@ use bytes::Bytes;
 use mlua::{ExternalError, UserData};
 
 pub struct AstraWebSocket(pub WebSocket);
+unsafe impl Send for AstraWebSocket {}
+unsafe impl Sync for AstraWebSocket {}
 impl AstraWebSocket {
     fn value_to_bytes(value: &mlua::Value) -> Result<Bytes, mlua::Error> {
         if let Some(table) = value.as_table() {

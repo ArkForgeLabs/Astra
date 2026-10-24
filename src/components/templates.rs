@@ -37,6 +37,7 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
             Ok(engine)
         })?,
     )?;
+    markdown_support(lua)?;
 
     Ok(())
 }
@@ -194,7 +195,7 @@ impl UserData for TemplatingEngine<'_> {
                       if let Some(lua) = LUA.get() {
                       let lua_value = lua.to_value_with(
                           &args,
-                          mlua::SerializeOptions::new()
+                          mlua::serde::SerializeOptions::new()
                               .serialize_none_to_null(false)
                               .serialize_unit_to_null(false),
                       ).map_err(|e| minijinja::Error::new(UndefinedError,
@@ -231,7 +232,7 @@ impl UserData for TemplatingEngine<'_> {
                         lua.from_value::<minijinja::Value>(
                             lua.to_value_with(
                                 &context,
-                                mlua::SerializeOptions::new()
+                                mlua::serde::SerializeOptions::new()
                                     .serialize_none_to_null(false)
                                     .serialize_unit_to_null(false),
                             )?,
@@ -263,7 +264,7 @@ pub fn markdown_support(lua: &mlua::Lua) -> mlua::Result<()> {
                     .and_then(|result| {
                         lua.to_value_with(
                             &result,
-                            mlua::SerializeOptions::new()
+                            mlua::serde::SerializeOptions::new()
                                 .serialize_none_to_null(false)
                                 .serialize_unit_to_null(false),
                         )

@@ -4,7 +4,6 @@ use mlua::{LuaSerdeExt, UserData};
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     dotenv_function(lua)?;
     invalidate_cache(lua)?;
-    pprint(lua)?;
     AstraRegex::register_to_lua(lua)?;
     uuid_v4(lua)?;
     close_dbs(lua)?;
@@ -46,27 +45,6 @@ pub fn dotenv_function(lua: &mlua::Lua) -> mlua::Result<()> {
     )
 }
 
-pub fn pprint(lua: &mlua::Lua) -> mlua::Result<()> {
-    lua.globals().set(
-        "print",
-        lua.create_function(|_, args: mlua::MultiValue| {
-            for input in args.iter() {
-                if (input.is_string() || input.is_error())
-                    && let Ok(s) = input.to_string()
-                {
-                    print!("{} ", s);
-                } else if input.is_userdata() {
-                    print!("{input:?} ")
-                } else {
-                    print!("{input:#?} ")
-                }
-            }
-            println!();
-            Ok(())
-        })?,
-    )
-}
-
 pub fn getenv(lua: &mlua::Lua) -> mlua::Result<()> {
     lua.globals().set(
         "astra_internal__getenv",
@@ -74,7 +52,7 @@ pub fn getenv(lua: &mlua::Lua) -> mlua::Result<()> {
             if let Ok(value) = std::env::var(key) {
                 lua.to_value_with(
                     &value,
-                    mlua::SerializeOptions::new()
+                    mlua::serde::SerializeOptions::new()
                         .serialize_none_to_null(false)
                         .serialize_unit_to_null(false),
                 )
@@ -102,7 +80,7 @@ pub fn uuid_v4(lua: &mlua::Lua) -> mlua::Result<()> {
         lua.create_function(|lua, _: ()| {
             lua.to_value_with(
                 &uuid::Uuid::new_v4(),
-                mlua::SerializeOptions::new()
+                mlua::serde::SerializeOptions::new()
                     .serialize_none_to_null(false)
                     .serialize_unit_to_null(false),
             )

@@ -1,14 +1,17 @@
-use crate::{LUA, RUNTIME_FLAGS, components::database::DATABASE_POOLS};
+use crate::{LUA, components::database::DATABASE_POOLS};
 use std::path::PathBuf;
 use tracing::error;
 
+#[derive(Debug, Clone)]
+pub struct RunConfiguration {
+    pub file_path: Option<String>,
+    pub code: Option<String>,
+    pub stdlib_path: Option<String>,
+    pub extra_args: Option<Vec<String>>,
+}
+
 /// Runs a Lua script.
-pub async fn run_command(
-    file_path: Option<String>,
-    code: Option<String>,
-    stdlib_path: Option<String>,
-    extra_args: Option<Vec<String>>,
-) {
+pub async fn run_command(config: RunConfiguration) {
     #[allow(clippy::expect_used)]
     let lua = LUA.get().expect("Could not get access to the global VM");
 
@@ -16,24 +19,30 @@ pub async fn run_command(
 
     // Load and execute the Lua script.
     #[allow(clippy::expect_used)]
-    let (user_file, actual_path_str) = if let Some(code) = code.clone() {
-        actual_path = file_path.unwrap_or("<commandline>".to_string());
+    let (user_file, actual_path_str) = if let Some(code) = config.code.clone() {
+        actual_path = config.file_path.unwrap_or("<commandline>".to_string());
         (code, actual_path.clone())
     } else {
-        let file = if let Some(file_path) = file_path {
+        let resolved = if let Some(file_path) = config.file_path {
             check_for_default_file(&mut actual_path, file_path)
         } else {
             check_for_default_file(&mut actual_path, ".".to_string())
         };
-        (file, actual_path.clone())
+        match resolved {
+            Ok(file) => (file, actual_path.clone()),
+            Err(message) => {
+                eprintln!("{message}");
+                std::process::exit(1);
+            }
+        }
     };
 
     run_command_prerequisite(
         lua,
         &actual_path_str,
-        stdlib_path,
-        extra_args,
-        code.is_some(),
+        config.stdlib_path,
+        config.extra_args,
+        config.code.is_some(),
     )
     .await;
     spawn_termination_task();
@@ -50,7 +59,7 @@ pub async fn run_command(
     #[cfg(feature = "luau")]
     {
         content_to_run =
-            content_to_run.set_compiler(mlua::Compiler::new().set_optimization_level(2));
+            content_to_run.set_compiler(mlua::chunk::Compiler::new().set_optimization_level(2));
     }
     if let Err(e) = content_to_run.exec_async().await {
         eprintln!("{}", e)
@@ -79,10 +88,9 @@ async fn run_command_prerequisite(
 
     let stdlib_path = stdlib_path.unwrap_or("astra".to_string());
 
-    if let Err(e) = RUNTIME_FLAGS.set(crate::RuntimeFlags {
-        stdlib_path: PathBuf::from(stdlib_path.clone()),
-    }) {
-        error!("Could not set the global STDLIB_PATH: {e:?}");
+    if let Err(e) = lua.set_named_registry_value("stdlib_path", PathBuf::from(stdlib_path.clone()))
+    {
+        error!("{e:?}");
     }
 
     // Register Lua components.
@@ -112,23 +120,22 @@ async fn run_command_prerequisite(
     }
 }
 
-fn check_for_default_file(actual_path: &mut String, file_path: String) -> String {
+fn check_for_default_file(actual_path: &mut String, file_path: String) -> Result<String, String> {
     actual_path.clone_from(&file_path);
-    let result;
     let file_path = std::path::Path::new(&file_path);
 
     #[allow(clippy::expect_used)]
-    if file_path.exists() && file_path.is_file() {
-        result = std::fs::read_to_string(file_path).expect("Couldn't read file");
+    let result = if file_path.exists() && file_path.is_file() {
+        Ok(std::fs::read_to_string(file_path).expect("Couldn't read file"))
     } else if file_path.join("init.lua").exists() {
         actual_path.clone_from(&file_path.join("init.lua").to_string_lossy().to_string());
-        result = std::fs::read_to_string(file_path.join("init.lua")).expect("Couldn't read file");
+        Ok(std::fs::read_to_string(file_path.join("init.lua")).expect("Couldn't read file"))
     } else if file_path.join("init.luau").exists() {
         actual_path.clone_from(&file_path.join("init.luau").to_string_lossy().to_string());
-        result = std::fs::read_to_string(file_path.join("init.luau")).expect("Couldn't read file");
+        Ok(std::fs::read_to_string(file_path.join("init.luau")).expect("Couldn't read file"))
     } else {
-        panic!("Could not find any file to run...");
-    }
+        Err("Could not find any file to run...".to_string())
+    };
 
     result
 }

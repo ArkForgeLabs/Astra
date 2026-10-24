@@ -20,6 +20,7 @@ require("tests.http")(test)
 require("tests.templates")(test)
 require("tests.database")(test)
 require("tests.stores")(test)
+require("tests.sandbox")(test)
 
 print(
   "\n\n" .. string.char(27) .. "[32m" .. test.passes,

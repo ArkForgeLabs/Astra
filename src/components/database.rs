@@ -1,4 +1,4 @@
-use mlua::{ExternalError, LuaSerdeExt, UserData};
+use mlua::{ExternalError, LuaSerdeExt, UserData, serde::SerializeOptions};
 use sqlx::{Pool, Postgres, Row, Sqlite, migrate::MigrateDatabase};
 use std::sync::atomic::AtomicU64;
 use std::{str::FromStr, sync::LazyLock};
@@ -187,7 +187,7 @@ impl UserData for Database {
                                     $key,
                                     lua.to_value_with(
                                         &v,
-                                        mlua::SerializeOptions::new()
+                                        SerializeOptions::new()
                                             .serialize_none_to_null(false)
                                             .serialize_unit_to_null(false),
                                     )?,
@@ -198,7 +198,7 @@ impl UserData for Database {
                                     $key,
                                     lua.to_value_with(
                                         &v,
-                                        mlua::SerializeOptions::new()
+                                        SerializeOptions::new()
                                             .serialize_none_to_null(false)
                                             .serialize_unit_to_null(false),
                                     )?,
@@ -347,7 +347,7 @@ impl UserData for Database {
                                 if let Some(row) = row {
                                     $lua.to_value_with(
                                         &row,
-                                        mlua::SerializeOptions::new()
+                                        SerializeOptions::new()
                                             .serialize_none_to_null(false)
                                             .serialize_unit_to_null(false),
                                     )
@@ -368,7 +368,7 @@ impl UserData for Database {
                                 if let Some(row) = row {
                                     $lua.to_value_with(
                                         &row,
-                                        mlua::SerializeOptions::new()
+                                        SerializeOptions::new()
                                             .serialize_none_to_null(false)
                                             .serialize_unit_to_null(false),
                                     )

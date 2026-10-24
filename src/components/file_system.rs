@@ -4,6 +4,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
     let lua_globals = lua.globals();
+    GlobResult::register_to_lua(lua)?;
 
     macro_rules! file_io_methods {
         ($name:expr, $method:expr) => {
@@ -162,7 +163,7 @@ impl UserData for AstraFile {
         methods.add_method("path", |lua, this, _: ()| {
             lua.to_value_with(
                 &this.path,
-                mlua::SerializeOptions::new()
+                mlua::serde::SerializeOptions::new()
                     .serialize_none_to_null(false)
                     .serialize_unit_to_null(false),
             )

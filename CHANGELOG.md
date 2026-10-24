@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
+## [0.52.0](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.51.2..v0.52.0) - 2026-10-24
+
+### Bug Fixes
+
+- **(sandbox)** getenv returns nil on non-safe mode - ([8529f8f](https://git.arkforge.net/ArkForgeLabs/Astra/commit/8529f8fab4b3091425c900385df0af18796f0dc5))
+- **(templating)** better template discovery - ([1d10bbd](https://git.arkforge.net/ArkForgeLabs/Astra/commit/1d10bbdd4a26ceb1a621b7563b5eb3935ad824a4))
+- **(templating)** remove index from the routes - ([118e26b](https://git.arkforge.net/ArkForgeLabs/Astra/commit/118e26bd308406ca1ac007a00fe30d3dfd996ee7))
+- sandboxing bugs on various VMs - ([2880e51](https://git.arkforge.net/ArkForgeLabs/Astra/commit/2880e51b641262a36f7461c814723a3ad8ebfab6))
+- pack command import bugs fixed - ([d5ab8a2](https://git.arkforge.net/ArkForgeLabs/Astra/commit/d5ab8a263983289d49e837b49ce7985dc12797c0))
+
+### Documentation
+
+- added sandboxing documentation - ([064484b](https://git.arkforge.net/ArkForgeLabs/Astra/commit/064484b37effd439b12ed509b4948f5f8211d09b))
+
+### Features
+
+- **(sandbox)** added cli flag structure - ([08e303d](https://git.arkforge.net/ArkForgeLabs/Astra/commit/08e303d9dfd514175b2393efb1ab8599e03d2229))
+- **(sandbox)** Add all possible flags - ([b9048dd](https://git.arkforge.net/ArkForgeLabs/Astra/commit/b9048dd975e310dea32985e2aba70f66f4b2c8ca))
+- **(sandbox)** flags now work with component registration - ([5fb9d6b](https://git.arkforge.net/ArkForgeLabs/Astra/commit/5fb9d6bdde288965591bcdb88d73bad976cb38d0))
+- **(sandbox)** imports respect sandbox flags - ([f094a47](https://git.arkforge.net/ArkForgeLabs/Astra/commit/f094a47fedfc1bb7db099203ded334d1805a83b6))
+- **(sandbox)** add sandboxing tests - ([66871e5](https://git.arkforge.net/ArkForgeLabs/Astra/commit/66871e57888d7d72d52f845bb86758265a20d246))
+- replace Lua risky globals with Astra - ([14c3810](https://git.arkforge.net/ArkForgeLabs/Astra/commit/14c3810c8ba2fa708c181f3ea7babc9e63889c7c))
+
+### Miscellaneous Chores
+
+- **(datetime)** updated docs and README - ([22c5aeb](https://git.arkforge.net/ArkForgeLabs/Astra/commit/22c5aeb36583051a93efd3a3fcc2ced1451050dd))
+- update dependencies to the latest version - ([cd3c772](https://git.arkforge.net/ArkForgeLabs/Astra/commit/cd3c772c3d8a238c40292d1488f4d3378fee2365))
+
+### Refactoring
+
+- **(datetime)** logic bug fixes and code cleanup - ([98f333c](https://git.arkforge.net/ArkForgeLabs/Astra/commit/98f333cb4ddef009b5d1d05ac43d5bab4081319c))
+- **(datetime)** more cleanup, updated docs - ([ff07c85](https://git.arkforge.net/ArkForgeLabs/Astra/commit/ff07c85b88a8e7812e69851b5315a0381b3ea2f8))
+- **(sandbox)** moved the flags to a OnceLock - ([fc60b73](https://git.arkforge.net/ArkForgeLabs/Astra/commit/fc60b7364def435cb58e48187aae41c3e087e034))
+- **(sandbox)** rename safe and safety to sandbox - ([a53b7f7](https://git.arkforge.net/ArkForgeLabs/Astra/commit/a53b7f776fd5e1c4ca2f5efc921ebfdc38d8d2f1))
+- removed stdlib global - ([9cff733](https://git.arkforge.net/ArkForgeLabs/Astra/commit/9cff733de171aa0e18980d620cb69b495985316f))
+
+### Reviewed-on
+
+- https://git.arkforge.net/ArkForgeLabs/Astra/pulls/179 - ([5f34b2c](https://git.arkforge.net/ArkForgeLabs/Astra/commit/5f34b2cc579a23ac884f53fe1771fe8d377d1ac4))
+- https://git.arkforge.net/ArkForgeLabs/Astra/pulls/180 - ([d5446b7](https://git.arkforge.net/ArkForgeLabs/Astra/commit/d5446b71089142dc88fe109d9f6595a13f102b11))
+
 ## [0.51.2](https://git.arkforge.net/ArkForgeLabs/Astra/compare/v0.51.1..0.51.2) - 2026-07-04
 
 ### Bug Fixes
