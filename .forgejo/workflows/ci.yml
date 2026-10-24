@@ -19,6 +19,7 @@ jobs:
       - run: |
           rustup toolchain install 1.94.0
           rustup override set 1.94.0
+          rustup component add rustfmt clippy
           rustup show
 
       - name: Format
