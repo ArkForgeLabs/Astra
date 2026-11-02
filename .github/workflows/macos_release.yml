@@ -88,6 +88,22 @@ jobs:
           asset_name: astra-lua55-macos-arm64
           tag: "${{ github.event.release.tag_name }}"
 
+      - name: Notify Forgejo asset sync
+        if: success()
+        continue-on-error: true
+        env:
+          FORGEJO_SYNC_TOKEN: ${{ secrets.FORGEJO_SYNC_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          payload=$(printf '{"ref":"main","inputs":{"mode":"assets","tag":"%s","dry_run":"false","bootstrap":"false"}}' "$RELEASE_TAG")
+          curl --fail-with-body -sS --retry 3 --retry-delay 2 --retry-all-errors \
+            -X POST "https://git.arkforge.net/api/v1/repos/ArkForgeLabs/Astra/actions/workflows/github_sync.yml/dispatches" \
+            -H "Accept: application/json" \
+            -H "Authorization: token $FORGEJO_SYNC_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload"
+
       - uses: chrnorm/deployment-action@v2
         name: Create GitHub deployment
         id: deployment

@@ -1,0 +1,95 @@
+name: GitHub Sync
+
+on:
+  schedule:
+    - cron: "0 0,12 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "full, issue, comment, release, or assets"
+        required: false
+        default: "full"
+        type: string
+      source:
+        description: "Event source label"
+        required: false
+        default: "forgejo"
+        type: string
+      issue:
+        description: "Issue or pull request number"
+        required: false
+        type: string
+      comment:
+        description: "Comment ID"
+        required: false
+        type: string
+      tag:
+        description: "Release tag"
+        required: false
+        type: string
+      dry_run:
+        description: "Plan only"
+        required: false
+        default: "false"
+        type: string
+      bootstrap:
+        description: "Add sync markers to existing content"
+        required: false
+        default: "false"
+        type: string
+      max_assets:
+        description: "Maximum assets to upload (0 = unlimited)"
+        required: false
+        default: "0"
+        type: string
+      max_bytes:
+        description: "Maximum asset bytes to upload (0 = unlimited)"
+        required: false
+        default: "0"
+        type: string
+  issues:
+    types: [opened, reopened, closed, labeled, unlabeled, edited]
+  issue_comment:
+    types: [created, edited, deleted]
+  release:
+    types: [published, edited]
+
+concurrency:
+  group: github-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync GitHub
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    if: |
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.actor != vars.SYNC_BOT_LOGIN
+    steps:
+      - uses: https://git.arkforge.net/Mirrors/checkout@v6
+
+      - name: Verify Astra
+        run: astra --version
+
+      - name: Run GitHub sync
+        env:
+          GH_SYNC_TOKEN: ${{ secrets.GH_SYNC_TOKEN }}
+          SYNC_FORGEJO_TOKEN: ${{ secrets.SYNC_FORGEJO_TOKEN }}
+          FORGEJO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORGEJO_URL: https://git.arkforge.net
+          FORGEJO_REPO: ArkForgeLabs/Astra
+          GITHUB_API_URL: https://api.github.com
+          GITHUB_REPO: ArkForgeLabs/Astra
+          SYNC_MARKER_NAMESPACE: astra-sync
+          SYNC_EVENT: ${{ github.event_name }}
+          SYNC_MODE: ${{ inputs.mode }}
+          SYNC_ISSUE_NUMBER: ${{ inputs.issue || github.event.issue.number }}
+          SYNC_COMMENT_ID: ${{ inputs.comment || github.event.comment.id }}
+          SYNC_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+          SYNC_INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          SYNC_BOOTSTRAP: ${{ inputs.bootstrap }}
+          SYNC_MAX_ASSETS: ${{ inputs.max_assets }}
+          SYNC_MAX_BYTES: ${{ inputs.max_bytes }}
+        run: astra run .forgejo/scripts/github_sync.lua

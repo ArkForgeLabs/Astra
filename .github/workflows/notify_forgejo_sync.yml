@@ -1,0 +1,68 @@
+name: Notify Forgejo Sync
+
+on:
+  issues:
+    types: [opened, edited, closed, reopened, deleted, labeled, unlabeled, milestoned, demilestoned]
+  issue_comment:
+    types: [created, edited, deleted]
+  release:
+    types: [published, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notify-forgejo-sync
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Dispatch Forgejo sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.actor != vars.SYNC_BOT_LOGIN
+    steps:
+      - name: Dispatch sync workflow
+        env:
+          FORGEJO_SYNC_TOKEN: ${{ secrets.FORGEJO_SYNC_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          mode="full"
+          issue=""
+          comment=""
+          tag=""
+          case "$EVENT_NAME" in
+            issues)
+              mode="issue"
+              issue="$ISSUE_NUMBER"
+              ;;
+            issue_comment)
+              mode="comment"
+              issue="$ISSUE_NUMBER"
+              comment="$COMMENT_ID"
+              ;;
+            release)
+              mode="release"
+              tag="$RELEASE_TAG"
+              ;;
+          esac
+
+          payload=$(jq -n \
+            --arg ref "main" \
+            --arg source "$EVENT_NAME" \
+            --arg mode "$mode" \
+            --arg issue "$issue" \
+            --arg comment "$comment" \
+            --arg tag "$tag" \
+            '{ref: $ref, inputs: {source: $source, mode: $mode, issue: $issue, comment: $comment, tag: $tag, dry_run: "false", bootstrap: "false"}}')
+
+          curl --fail-with-body -sS --retry 3 --retry-delay 2 --retry-all-errors \
+            -X POST "https://git.arkforge.net/api/v1/repos/ArkForgeLabs/Astra/actions/workflows/github_sync.yml/dispatches" \
+            -H "Accept: application/json" \
+            -H "Authorization: token $FORGEJO_SYNC_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$payload"
