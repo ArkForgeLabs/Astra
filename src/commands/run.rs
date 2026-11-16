@@ -79,7 +79,7 @@ pub async fn run_command(config: RunConfiguration) {
 
 async fn run_command_prerequisite(
     lua: &mlua::Lua,
-    allow_list: &Vec<crate::components::SandboxFlags>,
+    allow_list: &[crate::components::SandboxFlags],
     file_path: &str,
     stdlib_path: Option<String>,
     extra_args: Option<Vec<String>>,

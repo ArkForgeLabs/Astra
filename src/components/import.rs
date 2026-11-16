@@ -56,7 +56,7 @@ pub fn register_to_lua(
 
 async fn import(
     lua: &mlua::Lua,
-    allow_list: &Vec<crate::components::SandboxFlags>,
+    allow_list: &[crate::components::SandboxFlags],
     key_id: &str,
     path: &str,
 ) -> mlua::Result<mlua::Value> {
@@ -90,7 +90,7 @@ async fn import(
 
 pub async fn find_first_lua_match_with_content(
     lua: Option<&mlua::Lua>,
-    allow_list: &Vec<crate::components::SandboxFlags>,
+    allow_list: &[crate::components::SandboxFlags],
     current_script_path: &str,
     module_name: &str,
 ) -> Option<(PathBuf, String)> {
@@ -238,7 +238,7 @@ const REGISTRARS: &[(super::SandboxFlags, &str)] = &[
 async fn find_candidates(
     candidates: Vec<PathBuf>,
     runtime: &str,
-    allow_list: &Vec<crate::components::SandboxFlags>,
+    allow_list: &[crate::components::SandboxFlags],
 ) -> Option<(PathBuf, String)> {
     // Check from the packed files
     if let Some(contents) = crate::commands::PACKED_FILES.get() {

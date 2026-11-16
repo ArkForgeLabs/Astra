@@ -35,7 +35,7 @@ const REGISTRARS: &[(SandboxFlags, Registrar)] = &[
 
 pub async fn register_components(
     lua: &mlua::Lua,
-    allow_list: &Vec<crate::components::SandboxFlags>,
+    allow_list: &[crate::components::SandboxFlags],
 ) -> mlua::Result<()> {
     if allow_list.is_empty() {
         // fully open runtime: register everything
@@ -58,7 +58,7 @@ pub async fn register_components(
         }
 
         if allow_list.contains(&SandboxFlags::Import) {
-            import::register_to_lua(lua, allow_list.clone())?;
+            import::register_to_lua(lua, allow_list.to_vec())?;
         }
     }
 
