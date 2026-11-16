@@ -31,30 +31,34 @@ const REGISTRARS: &[(SandboxFlags, Registrar)] = &[
     (SandboxFlags::HttpServer, http::server::register_to_lua),
     (SandboxFlags::Templates, templates::register_to_lua),
     (SandboxFlags::Utils, utils::register_to_lua),
-    (SandboxFlags::Import, import::register_to_lua),
 ];
 
-pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
-    match crate::ALLOW_LIST.get() {
+pub async fn register_components(
+    lua: &mlua::Lua,
+    allow_list: &Vec<crate::components::SandboxFlags>,
+) -> mlua::Result<()> {
+    if allow_list.is_empty() {
         // fully open runtime: register everything
-        None => {
-            for (_, method) in REGISTRARS {
+        for (_, method) in REGISTRARS {
+            method(lua)?;
+        }
+    } else {
+        // restricted VM: stub the base, then register only allowed components
+
+        globals::sanitize_base(lua)?;
+
+        if allow_list.contains(&SandboxFlags::None) {
+            return Ok(());
+        }
+
+        for (flag, method) in REGISTRARS {
+            if allow_list.contains(flag) {
                 method(lua)?;
             }
         }
-        // restricted VM: stub the base, then register only allowed components
-        Some(allow_list) => {
-            globals::sanitize_base(lua)?;
 
-            if allow_list.contains(&SandboxFlags::None) {
-                return Ok(());
-            }
-
-            for (flag, method) in REGISTRARS {
-                if allow_list.contains(flag) {
-                    method(lua)?;
-                }
-            }
+        if allow_list.contains(&SandboxFlags::Import) {
+            import::register_to_lua(lua, allow_list.clone())?;
         }
     }
 

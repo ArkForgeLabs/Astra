@@ -9,6 +9,8 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
             let features = features.unwrap_or(lua.to_value(&Vec::<SandboxFlags>::new())?);
             let features = lua.from_value::<Vec<SandboxFlags>>(features)?;
 
+            println!("{features:?}");
+
             Ok(AstraVM {
                 lua: crate::create_lua_vm(false)?,
             })

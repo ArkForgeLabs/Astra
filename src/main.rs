@@ -9,9 +9,6 @@ mod components;
 
 /// Global Lua instance.
 pub static LUA: std::sync::OnceLock<mlua::Lua> = std::sync::OnceLock::new();
-/// Restricted-VM permissions; unset (`None`) means a fully open runtime.
-pub static ALLOW_LIST: std::sync::OnceLock<Vec<components::SandboxFlags>> =
-    std::sync::OnceLock::new();
 
 /// Global standard libraries and type definitions from Astra
 pub static ASTRA_STD_LIBS: std::sync::LazyLock<include_dir::Dir<'_>> =
@@ -109,6 +106,7 @@ pub async fn main() -> std::io::Result<()> {
                 code: Some(entry_code.clone()),
                 stdlib_path: None,
                 extra_args: Some(std::env::args().collect::<Vec<_>>()),
+                allow_list: Vec::new(),
             })
             .await;
         }
@@ -131,10 +129,10 @@ pub async fn main() -> std::io::Result<()> {
                     LUA.set(create_lua_vm(true).expect("Could not start a sandboxed runtime"))
                         .expect("Could not set up the global VM");
 
-                    #[allow(clippy::expect_used)]
-                    ALLOW_LIST
-                        .set(allow)
-                        .expect("Could not set the global sandbox flags");
+                    // #[allow(clippy::expect_used)]
+                    // ALLOW_LIST
+                    //     .set(allow)
+                    //     .expect("Could not set the global sandbox flags");
                 }
 
                 commands::run_command(commands::RunConfiguration {
@@ -142,6 +140,7 @@ pub async fn main() -> std::io::Result<()> {
                     code,
                     stdlib_path,
                     extra_args,
+                    allow_list: allow,
                 })
                 .await
             }

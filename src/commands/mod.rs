@@ -43,15 +43,17 @@ async fn stdlib_to_lua_table(lua: &mlua::Lua) -> mlua::Result<mlua::Table> {
         .cloned()
 }
 
-async fn registration(lua: &mlua::Lua, script_path: &str) -> mlua::Result<()> {
-    crate::components::register_components(lua).await?;
+async fn registration(
+    lua: &mlua::Lua,
+    script_path: &str,
+    allow_list: &Vec<crate::components::SandboxFlags>,
+) -> mlua::Result<()> {
+    crate::components::register_components(lua, &allow_list).await?;
 
     // the embedded stdlib source table is require-machinery data; only
     // expose it in fully open runtimes or when the import system is allowed
-    let import_allowed = match crate::ALLOW_LIST.get() {
-        None => true,
-        Some(allow_list) => allow_list.contains(&crate::components::SandboxFlags::Import),
-    };
+    let import_allowed = allow_list.contains(&crate::components::SandboxFlags::Import);
+
     if import_allowed {
         lua.globals().set(
             "ASTRA_INTERNAL__STDLIB_TABLE",

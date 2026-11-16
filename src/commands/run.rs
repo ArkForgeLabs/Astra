@@ -8,6 +8,7 @@ pub struct RunConfiguration {
     pub code: Option<String>,
     pub stdlib_path: Option<String>,
     pub extra_args: Option<Vec<String>>,
+    pub allow_list: Vec<crate::components::SandboxFlags>,
 }
 
 /// Runs a Lua script.
@@ -39,6 +40,7 @@ pub async fn run_command(config: RunConfiguration) {
 
     run_command_prerequisite(
         lua,
+        &config.allow_list,
         &actual_path_str,
         config.stdlib_path,
         config.extra_args,
@@ -77,6 +79,7 @@ pub async fn run_command(config: RunConfiguration) {
 
 async fn run_command_prerequisite(
     lua: &mlua::Lua,
+    allow_list: &Vec<crate::components::SandboxFlags>,
     file_path: &str,
     stdlib_path: Option<String>,
     extra_args: Option<Vec<String>>,
@@ -94,7 +97,7 @@ async fn run_command_prerequisite(
     }
 
     // Register Lua components.
-    if let Err(e) = super::registration(lua, file_path).await {
+    if let Err(e) = super::registration(lua, file_path, allow_list).await {
         error!("Error setting up the standard library: {e:?}");
     }
 

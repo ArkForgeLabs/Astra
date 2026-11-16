@@ -75,6 +75,7 @@ async fn embed_imports(
             if let Some((resolved_path, import_content)) =
                 crate::components::import::find_first_lua_match_with_content(
                     None,
+                    &Vec::new(),
                     script_context,
                     import_path,
                 )

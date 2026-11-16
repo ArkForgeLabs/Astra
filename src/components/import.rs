@@ -1,7 +1,10 @@
 use crate::ASTRA_STD_LIBS;
 use std::path::{MAIN_SEPARATOR_STR, PathBuf};
 
-pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
+pub fn register_to_lua(
+    lua: &mlua::Lua,
+    allow_list: Vec<crate::components::SandboxFlags>,
+) -> mlua::Result<()> {
     if let Ok(function) = lua.globals().get::<mlua::Function>("require") {
         lua.globals()
             .set("astra_internal__original_require", function)?;
@@ -9,50 +12,58 @@ pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
 
     lua.globals().set(
         "require",
-        lua.create_async_function(|lua, path: String| async move {
-            let path = path.replace("@astra/", "");
-            let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
+        lua.create_async_function(move |lua, path: String| {
+            let allow_list = allow_list.clone();
+            async move {
+                let path = path.replace("@astra/", "");
+                let key_id = format!("ASTRA_INTERNAL__IMPORT_CACHE_{path}");
 
-            let result = if let Ok(cache) = lua
-                .globals()
-                .get::<Option<mlua::RegistryKey>>(key_id.as_str())
-                && let Some(key) = cache
-            {
-                lua.registry_value::<mlua::Value>(&key)
-            } else {
-                import(&lua, &key_id, &path).await
-            };
+                let result = if let Ok(cache) = lua
+                    .globals()
+                    .get::<Option<mlua::RegistryKey>>(key_id.as_str())
+                    && let Some(key) = cache
+                {
+                    lua.registry_value::<mlua::Value>(&key)
+                } else {
+                    import(&lua, &allow_list, &key_id, &path).await
+                };
 
-            match result {
-                Ok(result) => Ok(result),
-                Err(e) => match e {
-                    mlua::Error::RuntimeError(ref error_message) => {
-                        // the fallback only makes sense where a working
-                        // original package.require exists
-                        const REQUIRE_FALLBACK: bool = cfg!(not(feature = "luau"));
-                        if REQUIRE_FALLBACK
-                            && error_message.contains("Could not find the module")
-                            && let Ok(function) = lua
-                                .globals()
-                                .get::<mlua::Function>("astra_internal__original_require")
-                        {
-                            function.call_async(path).await
-                        } else {
-                            Err(e)
+                match result {
+                    Ok(result) => Ok(result),
+                    Err(e) => match e {
+                        mlua::Error::RuntimeError(ref error_message) => {
+                            // the fallback only makes sense where a working
+                            // original package.require exists
+                            const REQUIRE_FALLBACK: bool = cfg!(not(feature = "luau"));
+                            if REQUIRE_FALLBACK
+                                && error_message.contains("Could not find the module")
+                                && let Ok(function) = lua
+                                    .globals()
+                                    .get::<mlua::Function>("astra_internal__original_require")
+                            {
+                                function.call_async(path).await
+                            } else {
+                                Err(e)
+                            }
                         }
-                    }
-                    _ => Err(e),
-                },
+                        _ => Err(e),
+                    },
+                }
             }
         })?,
     )
 }
 
-async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua::Value> {
+async fn import(
+    lua: &mlua::Lua,
+    allow_list: &Vec<crate::components::SandboxFlags>,
+    key_id: &str,
+    path: &str,
+) -> mlua::Result<mlua::Value> {
     let current_script_path: String = lua.globals().get::<String>("CURRENT_SCRIPT")?;
 
     if let Some((file_path, content)) =
-        find_first_lua_match_with_content(Some(lua), &current_script_path, path).await
+        find_first_lua_match_with_content(Some(lua), allow_list, &current_script_path, path).await
     {
         let file_path = resolve_path(file_path.as_path())
             .to_string_lossy()
@@ -79,6 +90,7 @@ async fn import(lua: &mlua::Lua, key_id: &str, path: &str) -> mlua::Result<mlua:
 
 pub async fn find_first_lua_match_with_content(
     lua: Option<&mlua::Lua>,
+    allow_list: &Vec<crate::components::SandboxFlags>,
     current_script_path: &str,
     module_name: &str,
 ) -> Option<(PathBuf, String)> {
@@ -126,7 +138,7 @@ pub async fn find_first_lua_match_with_content(
         let mut candidates = build_candidates(pattern, &current_script_path, &module_path, runtime);
         candidates.retain(|candidate| resolve_path(candidate.as_path()) != original_script);
 
-        if let Some(result) = find_candidates(candidates, runtime).await {
+        if let Some(result) = find_candidates(candidates, runtime, allow_list).await {
             return Some(result);
         }
     }
@@ -223,7 +235,11 @@ const REGISTRARS: &[(super::SandboxFlags, &str)] = &[
 ];
 
 // TODO: prioritize flagged stdlib path
-async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(PathBuf, String)> {
+async fn find_candidates(
+    candidates: Vec<PathBuf>,
+    runtime: &str,
+    allow_list: &Vec<crate::components::SandboxFlags>,
+) -> Option<(PathBuf, String)> {
     // Check from the packed files
     if let Some(contents) = crate::commands::PACKED_FILES.get() {
         for candidate in candidates.iter() {
@@ -257,27 +273,23 @@ async fn find_candidates(candidates: Vec<PathBuf>, runtime: &str) -> Option<(Pat
         if let Some(file) = ASTRA_STD_LIBS.get_file(file_path)
             && let Some(content) = file.contents_utf8()
         {
-            if let Some(allow_list) = crate::ALLOW_LIST.get() {
-                let file_stem = file_path
-                    .file_stem()
-                    .map(|stem| stem.to_string_lossy().to_string())
-                    .unwrap_or_default();
+            let file_stem = file_path
+                .file_stem()
+                .map(|stem| stem.to_string_lossy().to_string())
+                .unwrap_or_default();
 
-                // modules without a registrar entry (e.g. stores, test,
-                // validation) follow the same trust level as on-disk files
-                // and are allowed whenever the import system is
-                let allowed = match REGISTRARS
-                    .iter()
-                    .find(|(_, name)| file_stem.as_str() == *name)
-                {
-                    Some((flag, _)) => allow_list.contains(flag),
-                    None => true,
-                };
+            // modules without a registrar entry (e.g. stores, test,
+            // validation) follow the same trust level as on-disk files
+            // and are allowed whenever the import system is
+            let allowed = match REGISTRARS
+                .iter()
+                .find(|(_, name)| file_stem.as_str() == *name)
+            {
+                Some((flag, _)) => allow_list.contains(flag),
+                None => true,
+            };
 
-                if allowed {
-                    return Some((candidate.to_path_buf(), content.to_string()));
-                }
-            } else {
+            if allowed {
                 return Some((candidate.to_path_buf(), content.to_string()));
             }
         }
