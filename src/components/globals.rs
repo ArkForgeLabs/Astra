@@ -30,6 +30,8 @@ pub fn sanitize_base(lua: &mlua::Lua) -> mlua::Result<()> {
 
 /// Registers Astra replacements and additions for the base-library globals.
 pub fn register_to_lua(lua: &mlua::Lua) -> mlua::Result<()> {
+    super::vm::register_to_lua(lua)?;
+
     lua.globals().set(
         "print",
         lua.create_function(|_, args: mlua::MultiValue| {

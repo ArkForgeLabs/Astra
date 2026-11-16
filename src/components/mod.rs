@@ -10,6 +10,7 @@ pub mod http;
 pub mod import;
 pub mod templates;
 pub mod utils;
+pub mod vm;
 
 type Registrar = fn(&mlua::Lua) -> mlua::Result<()>;
 
@@ -60,7 +61,8 @@ pub async fn register_components(lua: &mlua::Lua) -> mlua::Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, clap::ValueEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "kebab-case")]
 pub enum SandboxFlags {
     None,
     Globals,

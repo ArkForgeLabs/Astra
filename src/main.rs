@@ -100,7 +100,9 @@ pub async fn main() -> std::io::Result<()> {
             && let Some(entry_code) = content.entries.get(&content.start.clone())
         {
             // packed binaries run fully open
-            create_lua_vm(false)?;
+            #[allow(clippy::expect_used)]
+            LUA.set(create_lua_vm(false).expect("Could not start a runtime"))
+                .expect("Could not set up the global VM");
 
             commands::run_command(commands::RunConfiguration {
                 file_path: Some(content.start.clone()),
@@ -121,9 +123,13 @@ pub async fn main() -> std::io::Result<()> {
             } => {
                 if allow.is_empty() {
                     // no --allow flag means a fully open runtime
-                    create_lua_vm(false)?;
+                    #[allow(clippy::expect_used)]
+                    LUA.set(create_lua_vm(false).expect("Could not start a runtime"))
+                        .expect("Could not set up the global VM");
                 } else {
-                    create_lua_vm(true)?;
+                    #[allow(clippy::expect_used)]
+                    LUA.set(create_lua_vm(true).expect("Could not start a sandboxed runtime"))
+                        .expect("Could not set up the global VM");
 
                     #[allow(clippy::expect_used)]
                     ALLOW_LIST
@@ -160,31 +166,33 @@ pub async fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn create_lua_vm(is_sandbox: bool) -> std::io::Result<()> {
+pub fn create_lua_vm(is_sandbox: bool) -> mlua::Result<mlua::Lua> {
     if is_sandbox {
+        // #[allow(clippy::expect_used)]
+        // LUA.set(
+        //     #[allow(clippy::expect_used)]
+        //     mlua::Lua::new_with(
+        //         mlua::StdLib::NONE,
+        //         mlua::LuaOptions::new()
+        //             .thread_pool_size(std::thread::available_parallelism()?.get()),
+        //     )
+        //     .expect("Could not start the sandbox runtime"),
+        // )
+        // .expect("Could not set up the global VM");
+
         #[allow(clippy::expect_used)]
-        LUA.set(
-            #[allow(clippy::expect_used)]
-            mlua::Lua::new_with(
-                mlua::StdLib::NONE,
-                mlua::LuaOptions::new()
-                    .thread_pool_size(std::thread::available_parallelism()?.get()),
-            )
-            .expect("Could not start the sandbox runtime"),
+        mlua::Lua::new_with(
+            mlua::StdLib::NONE,
+            mlua::LuaOptions::new().thread_pool_size(std::thread::available_parallelism()?.get()),
         )
-        .expect("Could not set up the global VM");
     } else {
         #[allow(clippy::expect_used)]
-        LUA.set(unsafe {
-            #[allow(clippy::expect_used)]
+        Ok(unsafe {
             mlua::Lua::unsafe_new_with(
                 mlua::StdLib::ALL,
                 mlua::LuaOptions::new()
                     .thread_pool_size(std::thread::available_parallelism()?.get()),
             )
         })
-        .expect("Could not set up the global VM");
     }
-
-    Ok(())
 }
